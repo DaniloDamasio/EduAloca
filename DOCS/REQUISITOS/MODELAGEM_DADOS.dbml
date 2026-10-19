@@ -1,0 +1,144 @@
+// EduAloca — Modelagem de Dados (dbdiagram.io)
+// Importar em https://dbdiagram.io/d — cole este conteúdo em "Import DBML".
+// Espelha o modelo descrito em MODELAGEM_DADOS.md; manter os dois em sincronia.
+
+Table usuario {
+  id bigint [pk, increment]
+  nome varchar [not null]
+  email varchar [not null, unique, note: 'usado como login']
+  senha_hash varchar [not null, note: 'hash BCrypt — RNF-05, nunca texto plano']
+  perfil varchar [not null, note: 'SOLICITANTE | RESPONSAVEL | ADMINISTRADOR — RF-02']
+  ativo boolean [not null, default: true]
+  criado_em timestamp [not null]
+  atualizado_em timestamp [not null]
+
+  Note: 'Pessoa autenticada no sistema. Suporta RF-01, RF-02.'
+}
+
+Table professor {
+  id bigint [pk, increment]
+  nome varchar [not null]
+  identificador_institucional varchar [not null, unique, note: 'matrícula']
+  usuario_id bigint [ref: - usuario.id, note: 'vínculo opcional com conta de login']
+  ativo boolean [not null, default: true]
+
+  Note: 'Recurso "professor", distinto de Usuario. Suporta RF-05.'
+}
+
+Table competencia {
+  id bigint [pk, increment]
+  nome varchar [not null, unique, note: 'ex.: Robótica, Língua Inglesa']
+
+  Note: 'Catálogo de competências. Suporta RF-09.'
+}
+
+Table professor_competencia {
+  professor_id bigint [ref: > professor.id]
+  competencia_id bigint [ref: > competencia.id]
+
+  indexes {
+    (professor_id, competencia_id) [pk]
+  }
+
+  Note: 'Associativa N:N entre Professor e Competencia.'
+}
+
+Table sala {
+  id bigint [pk, increment]
+  nome varchar [not null]
+  tipo varchar [not null, note: 'laboratório, auditório, sala comum, etc.']
+  capacidade int [not null]
+  localizacao varchar [not null, note: 'bloco/andar']
+  restrito boolean [not null, default: false, note: 'exige aprovação — RF-18']
+  ativo boolean [not null, default: true]
+}
+
+Table material {
+  id bigint [pk, increment]
+  nome varchar [not null]
+  tipo varchar [not null, note: 'projetor, notebook, kit de laboratório, etc.']
+  quantidade_total int [not null]
+  restrito boolean [not null, default: false]
+  ativo boolean [not null, default: true]
+}
+
+Table reserva {
+  id bigint [pk, increment]
+  solicitante_id bigint [ref: > usuario.id, not null, note: 'autor da reserva — RF-03']
+  inicio timestamp [not null]
+  fim timestamp [not null, note: 'CHECK (fim > inicio) — regra crítica']
+  finalidade varchar [not null]
+  estado varchar [not null, note: 'SOLICITADA | APROVADA | EM_USO | CONCLUIDA | REJEITADA | CANCELADA | NAO_COMPARECEU']
+  exige_aprovacao boolean [not null, default: false, note: 'derivado: algum recurso vinculado é restrito']
+  aprovado_por_id bigint [ref: > usuario.id, note: 'Responsável/Administrador que decidiu']
+  motivo_rejeicao_ou_cancelamento varchar [note: 'obrigatório em rejeição (RF-20) e cancelamento (RF-14)']
+  versao int [not null, default: 0, note: 'controle de concorrência otimista — RF-17, RNF-08']
+  criado_em timestamp [not null]
+  atualizado_em timestamp [not null]
+
+  Note: 'Entidade central do sistema. Ciclo de vida descrito em JORNADAS.md (J9).'
+}
+
+Table reserva_recurso {
+  id bigint [pk, increment]
+  reserva_id bigint [ref: > reserva.id, not null]
+  tipo_recurso varchar [not null, note: 'SALA | PROFESSOR | MATERIAL']
+  recurso_id bigint [not null, note: 'id da Sala, Professor ou Material correspondente']
+  quantidade int [note: 'aplicável a Material, ex.: 3 notebooks']
+
+  indexes {
+    (tipo_recurso, recurso_id, reserva_id) [name: 'idx_reserva_recurso_overlap']
+  }
+
+  Note: 'Associativa polimórfica reserva↔recurso. Base da checagem de sobreposição (RF-15, RF-16). Constraint de não-sobreposição por (tipo_recurso, recurso_id, intervalo) implementada via EXCLUDE USING gist ou lock + revalidação.'
+}
+
+Table manutencao {
+  id bigint [pk, increment]
+  tipo_recurso varchar [not null, note: 'SALA | PROFESSOR | MATERIAL']
+  recurso_id bigint [not null]
+  inicio timestamp [not null]
+  fim timestamp [not null]
+  motivo varchar [not null]
+  criado_por_id bigint [ref: > usuario.id, not null]
+
+  Note: 'Período de bloqueio de um recurso. Suporta RF-21, RF-22, RF-23.'
+}
+
+Table retirada_devolucao {
+  id bigint [pk, increment]
+  reserva_recurso_id bigint [ref: > reserva_recurso.id, not null, note: 'item de material específico']
+  retirado_em timestamp
+  retirado_por_id bigint [ref: > usuario.id]
+  devolvido_em timestamp
+  condicao_devolucao varchar [note: 'INTEGRO | DANIFICADO | NAO_DEVOLVIDO']
+  registrado_por_id bigint [ref: > usuario.id, not null, note: 'Responsável que operou o registro']
+
+  Note: 'Ciclo de retirada/devolução de material físico. Suporta RF-24, RF-25, RF-26.'
+}
+
+Table auditoria_evento {
+  id bigint [pk, increment]
+  entidade varchar [not null, note: 'RESERVA | SALA | PROFESSOR | MATERIAL | USUARIO | MANUTENCAO']
+  entidade_id bigint [not null]
+  autor_id bigint [ref: > usuario.id, not null]
+  perfil_autor varchar [not null, note: 'perfil do autor no momento da ação']
+  acao varchar [not null, note: 'CRIACAO | APROVACAO | REJEICAO | CANCELAMENTO | ATUALIZACAO | INATIVACAO']
+  estado_anterior varchar [note: 'aplicável a reservas']
+  estado_novo varchar [note: 'aplicável a reservas']
+  motivo varchar
+  data_hora timestamp [not null]
+
+  Note: 'Log imutável, append-only — nenhuma API de UPDATE/DELETE exposta (RF-29). Suporta RF-27, RF-28.'
+}
+
+Table notificacao_enviada {
+  id bigint [pk, increment]
+  destinatario_id bigint [ref: > usuario.id, not null]
+  reserva_id bigint [ref: > reserva.id]
+  canal varchar [not null, note: 'SIMULADO | API_EXTERNA']
+  status varchar [not null, note: 'ENVIADA | FALHA — falha não reverte a transação de negócio (RF-33)']
+  enviado_em timestamp [not null]
+
+  Note: 'Registro de efeito colateral de notificação. Suporta RF-31, RF-32, RF-33.'
+}

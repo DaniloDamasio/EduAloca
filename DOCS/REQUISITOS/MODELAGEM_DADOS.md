@@ -4,6 +4,11 @@
 > entidades citadas no [enunciado.md](enunciado.md). Tipos são indicativos (a ser refinado
 > na implementação em Java 21/Spring Boot/JPA), suficientes para validar relacionamentos e
 > regras críticas de concorrência/auditoria.
+>
+> Versão navegável do diagrama: [MODELAGEM_DADOS.dbml](MODELAGEM_DADOS.dbml) — cole o
+> conteúdo em [dbdiagram.io](https://dbdiagram.io) (botão "Import DBML") para visualizar e
+> editar o ER graficamente. Mantenha as duas versões (tabelas abaixo e `.dbml`)
+> sincronizadas ao alterar o modelo.
 
 ## Entidades principais
 

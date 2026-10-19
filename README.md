@@ -88,6 +88,7 @@ EduAloca/
 
 - Java 21, Spring Boot 4.1.1, Maven
 - Arquitetura MVC
+- PostgreSQL — ver justificativa em [DOCS/arquitetura.md](DOCS/arquitetura.md#11-decisão-de-banco-de-dados-postgresql)
 
 ## Roadmap
 

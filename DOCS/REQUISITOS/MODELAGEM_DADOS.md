@@ -115,8 +115,10 @@ validar sobreposição por recurso individualmente (RF-15, RF-16).
 consultável eficientemente para checagem de sobreposição — ver RNF-01/RNF-08.
 
 **Constraint de não-sobreposição:** implementada via `EXCLUDE USING gist` (PostgreSQL,
-tsrange) ou lock + revalidação na camada de serviço, garantindo RF-15/RF-17 mesmo sob
-concorrência.
+`tsrange`, extensão `btree_gist`) combinada a lock otimista (`versao`, ver `Reserva`) e
+revalidação na camada de serviço, garantindo RF-15/RF-17 mesmo sob concorrência. PostgreSQL
+é o SGBD adotado pelo projeto — ver decisão e justificativa completa em
+[docs/arquitetura.md §11](../../docs/arquitetura.md#11-decisão-de-banco-de-dados-postgresql).
 
 ### Manutencao
 Período de bloqueio de um recurso. (Suporta RF-21, RF-22, RF-23)
@@ -214,7 +216,10 @@ Sala / Professor / Material (1) ──< AuditoriaEvento (entidade correspondente
   a trilha auditável exigida (RF-27, RF-28, RF-29).
 - **Campo `versao` em Reserva**: suporta controle de concorrência otimista (`@Version` em
   JPA), peça-chave para a proteção contra dupla reserva validada por teste (RF-17,
-  RNF-08).
+  RNF-08). Atua em conjunto com a constraint de exclusão do PostgreSQL em
+  `ReservaRecurso` (ver acima e [docs/arquitetura.md §11](../../docs/arquitetura.md#11-decisão-de-banco-de-dados-postgresql)):
+  o lock otimista protege no nível da aplicação, a constraint de banco protege mesmo que a
+  aplicação falhe em revalidar.
 - **`exigeAprovacao` derivado e persistido na Reserva**: evita recalcular a cada leitura se
   algum `ReservaRecurso` vinculado é restrito; simplifica a consulta de fila de pendências
   do Responsável (RF-19).

@@ -1,0 +1,55 @@
+package com.edualoca.domain.recurso;
+
+import java.util.UUID;
+
+public class Sala {
+
+    private final UUID id;
+    private final String nome;
+    private final String tipo;
+    private final int capacidade;
+    private final String localizacao;
+    private final boolean restrito;
+    private boolean ativo = true;
+
+    public Sala(UUID id, String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
+        this.id = id;
+        this.nome = nome;
+        this.tipo = tipo;
+        this.capacidade = capacidade;
+        this.localizacao = localizacao;
+        this.restrito = restrito;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public int getCapacidade() {
+        return capacidade;
+    }
+
+    public String getLocalizacao() {
+        return localizacao;
+    }
+
+    public boolean isRestrito() {
+        return restrito;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void inativar() {
+        this.ativo = false;
+    }
+}

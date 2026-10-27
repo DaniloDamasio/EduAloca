@@ -3,15 +3,23 @@ package com.edualoca;
 import com.edualoca.domain.auditoria.AuditoriaEvento;
 import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
+import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuditoriaTest {
 
@@ -93,5 +101,44 @@ class AuditoriaTest {
 
         // assert
         assertEquals(405, ex.getStatusHttp());
+    }
+
+    @Test
+    @DisplayName("RF-27 [risco]: criacao real de reserva deve gerar evento de auditoria com acao CRIACAO e autor correto (nao o fallback fabricado)")
+    void rf27_criacaoDeReservaReal_deveGerarEventoDeAuditoriaReal() {
+        // arrange
+        ReservaService reservaService = new ReservaService();
+        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
+        Sala sala = new Sala(UUID.randomUUID(), "Sala Y", "aula", 10, "Bloco B", false);
+
+        // act
+        Reserva reserva = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula auditada", List.of(new ReservaRecurso(sala, 1)));
+        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", reserva.getId());
+
+        // assert
+        assertTrue(eventos.stream().anyMatch(e ->
+                "CRIACAO".equals(e.getAcao()) && solicitante.getId().equals(e.getAutorId())));
+    }
+
+    @Test
+    @DisplayName("RF-27/RF-28 [risco]: auditoria de uma entidade nao deve misturar eventos registrados para outra entidade/id")
+    void rf27_auditoriaDeEntidadesDiferentes_naoDeveSeMisturar() {
+        // arrange
+        ReservaService reservaService = new ReservaService();
+        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno2@example.com", "hash", Perfil.SOLICITANTE);
+        Sala salaA = new Sala(UUID.randomUUID(), "Sala A", "aula", 10, "Bloco B", false);
+        Sala salaB = new Sala(UUID.randomUUID(), "Sala B", "aula", 10, "Bloco B", false);
+        Reserva reservaA = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula A", List.of(new ReservaRecurso(salaA, 1)));
+        Reserva reservaB = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 14, 0),
+                LocalDateTime.of(2026, 3, 10, 16, 0), "Aula B", List.of(new ReservaRecurso(salaB, 1)));
+
+        // act
+        List<AuditoriaEvento> eventosDeA = auditoriaService.consultarPorEntidade("Reserva", reservaA.getId());
+
+        // assert
+        assertTrue(eventosDeA.stream().allMatch(e -> reservaA.getId().equals(e.getEntidadeId())));
+        assertFalse(eventosDeA.stream().anyMatch(e -> reservaB.getId().equals(e.getEntidadeId())));
     }
 }

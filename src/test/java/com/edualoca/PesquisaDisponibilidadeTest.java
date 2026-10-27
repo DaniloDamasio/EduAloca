@@ -5,11 +5,18 @@ import com.edualoca.domain.recurso.Material;
 import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.recurso.Professor;
 import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
+import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -19,6 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PesquisaDisponibilidadeTest {
 
     private final PesquisaRecursoService pesquisaRecursoService = new PesquisaRecursoService();
+    private final ReservaService reservaService = new ReservaService();
+
+    private Usuario solicitante() {
+        return new Usuario(UUID.randomUUID(), "solicitante@example.com", "hash", Perfil.SOLICITANTE);
+    }
 
     @Test
     @DisplayName("RF-08-T1: busca de salas por tipo, capacidade minima, localizacao e disponibilidade deve retornar apenas as compativeis")
@@ -146,5 +158,66 @@ class PesquisaDisponibilidadeTest {
 
         // assert
         assertFalse(salas.isEmpty());
+    }
+
+    @Test
+    @DisplayName("RF-11/RC-02 [risco]: sala com reserva ATIVA sobreposta (nao em manutencao) deve ser excluida da busca")
+    void rf11_salaComReservaAtivaSobreposta_deveSerExcluidaDaBusca() {
+        // arrange
+        Sala salaOcupada = new Sala(UUID.randomUUID(), "Sala Ocupada", "oficina", 15, "Bloco C", false);
+        com.edualoca.domain.comum.Banco.salas.put(salaOcupada.getId(), salaOcupada);
+        LocalDateTime inicio = LocalDateTime.of(2026, 4, 1, 10, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 4, 1, 12, 0);
+        reservaService.criar(solicitante(), inicio, fim, "Aula que ocupa a sala",
+                List.of(new ReservaRecurso(salaOcupada, 1)));
+
+        // act
+        List<Sala> salasNoMesmoHorario = pesquisaRecursoService.buscarSalas("oficina", 1, "Bloco C", inicio, fim);
+        List<Sala> salasEmHorarioLivre = pesquisaRecursoService.buscarSalas("oficina", 1, "Bloco C",
+                fim.plusHours(1), fim.plusHours(2));
+
+        // assert
+        assertTrue(salasNoMesmoHorario.stream().noneMatch(s -> s.getId().equals(salaOcupada.getId())));
+        assertTrue(salasEmHorarioLivre.stream().anyMatch(s -> s.getId().equals(salaOcupada.getId())));
+    }
+
+    @Test
+    @DisplayName("RF-11/RC-02 [risco]: sala com reserva EM_USO sobreposta tambem deve ser excluida da busca")
+    void rf11_salaComReservaEmUsoSobreposta_deveSerExcluidaDaBusca() {
+        // arrange
+        Sala salaOcupada = new Sala(UUID.randomUUID(), "Sala Em Uso", "oficina", 15, "Bloco D", false);
+        com.edualoca.domain.comum.Banco.salas.put(salaOcupada.getId(), salaOcupada);
+        LocalDateTime inicio = LocalDateTime.of(2026, 4, 2, 10, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 4, 2, 12, 0);
+        Reserva reserva = reservaService.criar(solicitante(), inicio, fim, "Aula em andamento",
+                List.of(new ReservaRecurso(salaOcupada, 1)));
+        reserva.setEstado(EstadoReserva.EM_USO);
+
+        // act
+        List<Sala> salas = pesquisaRecursoService.buscarSalas("oficina", 1, "Bloco D", inicio, fim);
+
+        // assert
+        assertTrue(salas.stream().noneMatch(s -> s.getId().equals(salaOcupada.getId())));
+    }
+
+    @Test
+    @DisplayName("RF-10/RC-02 [risco]: material totalmente reservado por reserva ativa no intervalo deve ficar indisponivel na busca")
+    void rf10_materialTotalmenteReservado_deveFicarIndisponivelNaBusca() {
+        // arrange
+        Material material = new Material(UUID.randomUUID(), "Projetor Exclusivo", "projetor-exclusivo", 2, false);
+        com.edualoca.domain.comum.Banco.materiais.put(material.getId(), material);
+        LocalDateTime inicio = LocalDateTime.of(2026, 4, 3, 10, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 4, 3, 12, 0);
+        reservaService.criar(solicitante(), inicio, fim, "Aula com todos os projetores",
+                List.of(new ReservaRecurso(material, 2)));
+
+        // act
+        List<Material> materiaisOcupados = pesquisaRecursoService.buscarMateriais("projetor-exclusivo", 1, inicio, fim);
+        List<Material> materiaisLivres = pesquisaRecursoService.buscarMateriais("projetor-exclusivo", 1,
+                fim.plusHours(1), fim.plusHours(2));
+
+        // assert
+        assertTrue(materiaisOcupados.stream().noneMatch(m -> m.getId().equals(material.getId())));
+        assertTrue(materiaisLivres.stream().anyMatch(m -> m.getId().equals(material.getId())));
     }
 }

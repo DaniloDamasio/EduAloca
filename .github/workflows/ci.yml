@@ -42,3 +42,14 @@ jobs:
             target/failsafe-reports/
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Publicar relatório de cobertura JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: |
+            target/site/jacoco/
+            target/jacoco.exec
+          retention-days: 7
+          if-no-files-found: ignore

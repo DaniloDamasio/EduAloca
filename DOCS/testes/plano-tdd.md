@@ -585,3 +585,83 @@ completado com dados reais. Correções aplicadas:
 
 Resultado: `mvn verify` executado em 2026-10-27 após as correções — **123 testes, 123 verdes, 0
 falhas, BUILD SUCCESS**.
+
+---
+
+## 8. Ciclo de cobertura JaCoCo (2026-10-27) — gate de 80% linhas / 70% branches
+
+Configurado `jacoco-maven-plugin` no `pom.xml` com três execuções: `prepare-agent` (instrumentação),
+`report` (fase `test`, formatos HTML e XML em `target/site/jacoco/`) e `check` (fase `verify`, regra
+de bundle exigindo `LINE COVEREDRATIO >= 0.80` e `BRANCH COVEREDRATIO >= 0.70`). O relatório é
+publicado como artifact `jacoco-report` em `.github/workflows/ci.yml`.
+
+**Validação do gate (RED→GREEN):** elevar temporariamente o mínimo de `BRANCH` para `0.95` (acima
+da cobertura real, então em 79,4%) fez `mvn verify` falhar com `BUILD FAILURE` e a mensagem
+`Rule violated for bundle edualoca: branches covered ratio is 0.79, but expected minimum is 0.95`;
+restaurado o valor para `0.70`, o build voltou a `BUILD SUCCESS`. Baseline antes dos testes novos
+desta seção: **68% branches** (abaixo da meta, `BUILD FAILURE`); após os testes de risco abaixo:
+**79,4% branches / 95,5% linhas** (`BUILD SUCCESS`).
+
+### 8.1 Lacunas identificadas no relatório por classe, classificadas
+
+Lido o relatório HTML/XML por classe (`target/site/jacoco/<pacote>/<Classe>.java.html`), cada
+linha/branch não coberto foi classificado como **lacuna de risco** (exercita regra de negócio real
+e pode esconder um defeito) ou **cosmética** (getter não usado em asserção, guarda defensiva
+inalcançável pela API pública, branch redundante já garantido por outra checagem explícita, ou
+código de framework/boilerplate).
+
+| Classe | Linha/branch | Classificação | Observação |
+|---|---|---|---|
+| `AuditoriaService.consultarPorEntidade` | linha 21 (`return eventos;`, ramo "encontrado") nunca executada | **Risco (crítico)** | `RF-27-T1`/`RF-28-T1`/`RF-28-T2` chamavam o método com um `UUID.randomUUID()` nunca registrado, caindo sempre no *fallback* que fabrica um evento sintético (linha 24). O caminho real de correspondência de auditoria nunca era exercitado. |
+| `RelatorioService.gerarRelatorioUtilizacao` | linhas 18-19 (filtros de estado/intervalo) com 100% dos branches sem cobertura | **Risco (crítico)** | `RF-34-T1` não criava nenhuma reserva e afirmava `size() >= 0` (sempre verdadeiro, independente da implementação). `RF-35-T1` afirmava `contagem >= 0` pela mesma razão. |
+| `RetiradaMaterialService.sinalizarPendencias` | linha 55 (`setPendenciaSinalizada(true)`) nunca executada | **Risco (crítico)** | `RF-26-T1` chamava `sinalizarPendencias` **antes** de registrar a retirada (banco vazio no momento do job) e só depois criava o registro — a asserção `pendenciaSinalizada == false` era trivial, nunca exercitando o ramo positivo do job. |
+| `PesquisaRecursoService.disponivel`/`quantidadeLivre`/`ehAtiva`/`envolveRecurso` | linhas 72, 79, 83 | **Risco (alto)** | `RF-11-T1`/`RF-10-T2` dependiam apenas do dado de *seed* (`manutenção`), nunca de uma reserva ativa real sobrepondo um recurso pesquisado — a exclusão por sobreposição de reserva (RC-02/RF-11) nunca era exercitada na camada de busca. |
+| `ReservaService.consultar` | linhas 137-140 (reserva encontrada/não encontrada para perfil não-SOLICITANTE) nunca executadas | **Risco (médio)** | Único teste existente (`RF-03-T3`) só cobre o ramo de 403 para SOLICITANTE; o caminho feliz de consulta nunca era verificado. |
+| `CadastroRecursoService.cadastrarManutencao`/`ehAtiva` ramo `SOLICITADA` | branch de `ehAtiva` isolado da checagem explícita de `APROVADA`/`EM_USO` | **Cosmética** | O resultado já é determinado pela comparação explícita de enum nas linhas seguintes (testada via `RC-04-T4/T5/T6`); o branch de `ehAtiva` incluindo `SOLICITADA` é redundante e não muda o comportamento observável. |
+| `AutenticacaoService.autorizar` ramo `usuario == null` | nunca chamado com `null` | **Cosmética** | Não há camada de controller nesta fase; todos os chamadores atuais sempre passam um `Usuario` autenticado não nulo. |
+| `RetiradaMaterialService.sinalizarPendencias` linha 52 (`reserva == null -> continue`) | nunca executado | **Cosmética** | Reservas nunca são removidas do `Banco` (sem DELETE exposto — RF-30/D-decisão de modelagem); um registro de retirada órfão não ocorre pela API pública atual. |
+| `Banco.seedSeNecessario` early-return do double-checked locking | nunca executado | **Cosmética** | Guarda de concorrência para a corrida de inicialização; exercitá-la exigiria um teste de concorrência real (fora do escopo desta fase, mesma limitação já registrada para RC-03/RNF-08). |
+| `SenhaHasher` catch de `NoSuchAlgorithmException` | nunca executado | **Cosmética** | Inalcançável em condições normais — `"SHA-256"` é um algoritmo JCA garantido por todo JRE compatível. |
+| Getters não usados em nenhuma asserção (`NotificacaoEnviada.getMensagem`, `Usuario.getEmail`, `RegistroRetirada.getAutorId/getDataRetirada`, `AuditoriaEvento.getId/getEntidade/getAutorId/getDataHora`, `Reserva.getFinalidade`, `ReservaRecurso.getQuantidade`, `Sala/Material/Professor.getNome`) | nunca executados | **Cosmética** | Código boilerplate de acesso a campo, sem lógica de negócio; não exercitado porque nenhum teste precisou ler esses campos especificamente. |
+| `EduAlocaApplication.main` | nunca executado | **Cosmética** | Bootstrap padrão do Spring Boot, fora do escopo de teste unitário de regra de negócio. |
+| `Professor.inativar`/`Material.inativar` | nunca executados | **Cosmética** | Métodos existem no modelo mas nenhum serviço de domínio os invoca ainda (apenas `CadastroRecursoService.inativarSala` usa `Sala.inativar`); não há regra de negócio associada a exercitar nesta fase. |
+
+### 8.2 Testes novos para as lacunas de risco (sem alterar comportamento de produção)
+
+Nenhuma classe de produção foi alterada nesta etapa. Todos os testes abaixo usam instantes
+explícitos (`LocalDateTime` passado por parâmetro) — nenhum usa `Thread.sleep`, pois os serviços de
+domínio já recebem o instante corrente como argumento explícito (não há `LocalDateTime.now()`
+implícito a mockar nos pontos testados).
+
+| Classe de teste | Método novo | Regra/lacuna coberta |
+|---|---|---|
+| `AuditoriaTest` | `rf27_criacaoDeReservaReal_deveGerarEventoDeAuditoriaReal` | RF-27: cria reserva real via `ReservaService.criar` e verifica que `consultarPorEntidade` retorna o evento `CRIACAO` real (não o *fallback*). |
+| `AuditoriaTest` | `rf27_auditoriaDeEntidadesDiferentes_naoDeveSeMisturar` | RF-27/RF-28: duas reservas reais distintas — garante que a auditoria de uma não vaza para a outra (branches `equals && equals` do filtro). |
+| `AutenticacaoAutorizacaoTest` | `rf03T4_solicitanteConsultaPropriaReserva_deveRetornarAReserva` | RF-03: caminho feliz de `ReservaService.consultar` (nunca antes exercitado). |
+| `AutenticacaoAutorizacaoTest` | `rf03T5_administradorConsultaReservaInexistente_deveRetornar409` | RF-03: perfil não-SOLICITANTE chamando `consultar` para reserva inexistente → 409 real. |
+| `PesquisaDisponibilidadeTest` | `rf11_salaComReservaAtivaSobreposta_deveSerExcluidaDaBusca` | RF-11/RC-02: sala com reserva `APROVADA` real sobreposta é excluída da busca; mesma sala aparece fora do horário ocupado. |
+| `PesquisaDisponibilidadeTest` | `rf11_salaComReservaEmUsoSobreposta_deveSerExcluidaDaBusca` | RF-11/RC-02: reserva em `EM_USO` (não só `APROVADA`) também exclui o recurso da busca. |
+| `PesquisaDisponibilidadeTest` | `rf10_materialTotalmenteReservado_deveFicarIndisponivelNaBusca` | RF-10/RC-02: material com toda a quantidade reservada por reserva ativa fica indisponível; disponível fora do intervalo. |
+| `RetiradaDevolucaoMaterialTest` | `rf26T5_jobNoLimiteDoFimDaReserva_devePropagarEstadoCorretoDaTrinca` | RF-26, **limite em trinca** `@ParameterizedTest` com `-1min/0/+1min` relativos ao fim da reserva: pendência só é sinalizada estritamente após o fim (ramo verdadeiro de `sinalizarPendencias` nunca antes coberto). |
+| `RelatoriosTest` | `rf34_relatorioComReservasReais_deveFiltrarPorEstadoEPeriodo` | RF-34: reservas reais `CONCLUIDA`/`EM_USO` dentro do período são incluídas; `SOLICITADA` e reserva fora do período são excluídas. |
+| `RelatoriosTest` | `rf35_contagemDeRejeicoesReais_deveRespeitarAcaoEPeriodo` | RF-35: conta apenas eventos de auditoria `Reserva`/`REJEICAO_SOBREPOSICAO`, ignorando outra ação e outra entidade. |
+
+Resultado após os testes novos: `mvn verify` executado em 2026-10-27 — **135 testes, 135 verdes, 0
+falhas, BUILD SUCCESS**, cobertura de bundle **95,5% linhas / 79,4% branches** (gate 80%/70%
+satisfeito). Validação RED→GREEN do gate descrita no início desta seção.
+
+### 8.3 Risco residual não coberto nesta fase (fora do escopo de "lacuna de risco" testável sem mudar produção)
+
+- `AuditoriaService.registrar` usa `LocalDateTime.now()` diretamente (não injetável), diferente de
+  `RetiradaMaterialService.sinalizarPendencias` (que já recebe o instante como parâmetro). Isso
+  impede testar o filtro de intervalo de `RelatorioService.contarRejeicoesPorSobreposicao`
+  (linha 31) no limite exato de borda sem introduzir um `Clock`/parâmetro de tempo injetável em
+  `AuditoriaService` — mudança de produção fora do escopo autorizado nesta etapa (ver precedente já
+  registrado em §7 para `NotificacaoService.NotificadorExterno`, que seguiu o mesmo princípio mas
+  exigiu aprovação explícita do responsável). Recomenda-se essa alteração pontual em um próximo
+  ciclo, com a mesma autorização.
+- `Banco.consultarPorEntidade`-fallback (linha 24 de `AuditoriaService`) continua sendo invocado
+  sempre que não há evento real para a entidade consultada — esse comportamento (fabricar um evento
+  sintético em vez de retornar lista vazia) é um *code smell* pré-existente, não uma regra de
+  negócio documentada em nenhum artefato; mantido inalterado por estar fora do escopo desta tarefa
+  (apenas cobertura de teste), mas sinalizado aqui como risco de produção a revisar.

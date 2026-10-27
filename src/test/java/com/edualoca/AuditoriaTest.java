@@ -12,7 +12,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuditoriaTest {
 
@@ -28,7 +27,7 @@ class AuditoriaTest {
         List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", reservaId);
 
         // assert
-        assertTrue(eventos.isEmpty());
+        assertFalse(eventos.isEmpty());
     }
 
     @Test

@@ -90,14 +90,30 @@ EduAloca/
 - Arquitetura MVC
 - PostgreSQL — ver justificativa em [DOCS/arquitetura.md](DOCS/arquitetura.md#11-decisão-de-banco-de-dados-postgresql)
 
+## Integração Contínua
+
+Pipeline em [.github/workflows/ci.yml](.github/workflows/ci.yml), disparado em `pull_request`
+e em `push` na `main`: Java 21 (Temurin), `./mvnw -B verify` e publicação dos relatórios de
+Surefire e Failsafe como artifact. O check `Build e Testes` é obrigatório na branch `main`
+(configurado em Settings → Branches → Branch protection rules).
+
+Runs de validação do pipeline (PR [#4](https://github.com/DaniloDamasio/EduAloca/pull/4)):
+
+| Run | Resultado | Descrição |
+|---|---|---|
+| [40528622858](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528622858) | ✅ verde | Primeira execução do pipeline, 123 testes passando |
+| [40528813431](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528813431) | ❌ vermelho | Asserção quebrada de propósito para validar falha do CI |
+| [40528932207](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528932207) | ✅ verde | Após reverter a quebra, pipeline volta a passar |
+
 ## Roadmap
 
 - [x] Definição de personas e objetivos
 - [x] Requisitos funcionais e não funcionais
 - [x] Modelagem de dados
 - [x] Jornadas de usuário
-- [ ] Desenvolvimento
-- [ ] Testes automatizados (unitários, integração, concorrência, e2e)
-- [ ] CI/CD e análise estática (SonarCloud, JaCoCo)
+- [x] Fase RED/GREEN do TDD (123 testes unitários)
+- [x] CI/CD (GitHub Actions: build, testes, relatórios Surefire/Failsafe)
+- [ ] Testes de integração, concorrência, e2e
+- [ ] Análise estática (SonarCloud, JaCoCo)
 - [ ] Teste de carga (JMeter)
 - [ ] RTM (Requirements Traceability Matrix)

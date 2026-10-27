@@ -1,6 +1,9 @@
 package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.usuario.AutenticacaoService;
 import com.edualoca.domain.usuario.Perfil;
@@ -8,6 +11,8 @@ import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -106,10 +111,12 @@ class AutenticacaoAutorizacaoTest {
     void rf03T1_solicitanteAlteraPropriaReserva_devePermitir() {
         // arrange
         Usuario solicitanteA = new Usuario(UUID.randomUUID(), "a@example.com", "hash", Perfil.SOLICITANTE);
-        UUID reservaId = UUID.randomUUID();
+        Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Reserva reservaPropria = reservaService.criar(solicitanteA, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula propria", List.of(new ReservaRecurso(sala, 1)));
 
         // act
-        reservaService.cancelar(solicitanteA, reservaId, "Mudanca de planos");
+        reservaService.cancelar(solicitanteA, reservaPropria.getId(), "Mudanca de planos");
 
         // assert — nao deve lancar excecao de autorizacao (comportamento validado via ausencia de excecao 403)
     }
@@ -118,12 +125,15 @@ class AutenticacaoAutorizacaoTest {
     @DisplayName("RF-03-T2: solicitante A tentando alterar/cancelar reserva de solicitante B deve receber HTTP 403")
     void rf03T2_solicitanteAlterandoReservaDeOutroSolicitante_deveRetornar403() {
         // arrange
+        Usuario solicitanteA = new Usuario(UUID.randomUUID(), "a@example.com", "hash", Perfil.SOLICITANTE);
         Usuario solicitanteB = new Usuario(UUID.randomUUID(), "b@example.com", "hash", Perfil.SOLICITANTE);
-        UUID reservaDeOutroSolicitante = UUID.randomUUID();
+        Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Reserva reservaDeOutroSolicitante = reservaService.criar(solicitanteA, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula de A", List.of(new ReservaRecurso(sala, 1)));
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.cancelar(solicitanteB, reservaDeOutroSolicitante, "Tentativa indevida"));
+                () -> reservaService.cancelar(solicitanteB, reservaDeOutroSolicitante.getId(), "Tentativa indevida"));
 
         // assert
         assertEquals(403, ex.getStatusHttp());
@@ -133,12 +143,15 @@ class AutenticacaoAutorizacaoTest {
     @DisplayName("RF-03-T3 [gap Q7, assumindo que GET de reserva alheia tambem e 403]: solicitante consultando reserva de outro solicitante deve receber HTTP 403")
     void rf03T3_solicitanteConsultaReservaDeOutro_deveRetornar403() {
         // arrange
+        Usuario solicitanteA = new Usuario(UUID.randomUUID(), "a@example.com", "hash", Perfil.SOLICITANTE);
         Usuario solicitanteB = new Usuario(UUID.randomUUID(), "b@example.com", "hash", Perfil.SOLICITANTE);
-        UUID reservaDeOutroSolicitante = UUID.randomUUID();
+        Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Reserva reservaDeOutroSolicitante = reservaService.criar(solicitanteA, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula de A", List.of(new ReservaRecurso(sala, 1)));
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.consultar(solicitanteB, reservaDeOutroSolicitante));
+                () -> reservaService.consultar(solicitanteB, reservaDeOutroSolicitante.getId()));
 
         // assert
         assertEquals(403, ex.getStatusHttp());

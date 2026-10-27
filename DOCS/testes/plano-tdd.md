@@ -388,158 +388,167 @@ com o responsável antes de usá-los como a funcionalidade de evidência de TDD.
 
 ---
 
-## 7. Matriz regra → caso → teste → status (fase RED executada)
+## 7. Matriz regra → caso → teste → status (fase GREEN executada)
 
-> Executado em 2026-10-26. Suíte: `mvn test`, 123 testes no total (122 novos + `contextLoads`
-> preexistente). Resultado: **122 testes novos em RED** (47 `AssertionFailedError` — assinatura
-> compilou e a asserção de comportamento falhou — e 75 `UnsupportedOperationException` propagada
-> pelos stubs ainda sem lógica), 1 teste preexistente (`contextLoads`) em GREEN, **0 testes novos
-> passando inesperadamente**. Nenhuma regra de negócio foi implementada nos stubs de
-> `src/main/java/com/edualoca/domain/**` — todos os métodos de serviço lançam
-> `UnsupportedOperationException` ou dependem de dados que ainda não existem, por isso toda
-> asserção de comportamento falha.
+> Executado em 2026-10-27. Suíte: `mvn verify` (wrapper `./mvnw` ausente no repositório; comando
+> equivalente usado com Maven instalado localmente), **123 testes no total, 123 verdes, 0
+> falhas**. Toda a lógica de negócio foi implementada em `src/main/java/com/edualoca/domain/**`,
+> com um repositório em memória compartilhado (`Banco`, pacote `domain.comum`) simulando a
+> persistência única ainda não disponível (sem JPA nesta fase), e uma extensão JUnit
+> (`BancoResetExtension`, registrada via `META-INF/services`) que limpa esse estado antes de cada
+> teste para isolamento.
 >
-> Limitação registrada: RC-03 (concorrência) e RF-33 (falha de endpoint externo) deveriam, em
-> condições normais, rodar contra infraestrutura real (Testcontainers/WireMock, enunciado.md:69,
-> ADR-003). Como o `pom.xml` ainda não declara essas dependências (fora do escopo desta fase RED),
-> os casos RC-03-T2/T3/T4 e RF-33-T1/T2 foram escritos como testes unitários em memória que
-> exercitam a mesma regra de negócio (disputa concorrente sobre `ReservaService`, simulação de
-> notificação) — servem para guiar o ciclo RED-GREEN do serviço, mas não substituem o teste de
-> integração definitivo que deverá ser escrito quando a infraestrutura for adicionada.
+> **Correção de 12 testes com fixture ausente (2026-10-27, autorizada pelo responsável):** uma
+> primeira rodada da fase GREEN havia deixado 12 testes em RED porque pares de métodos de teste
+> chamavam o mesmo método de serviço com um `UUID.randomUUID()` nunca antes criado, sem nenhum
+> `arrange` que materializasse o estado esperado (ex.: reserva `EM_USO`, reserva já `APROVADA`),
+> e ainda assim esperavam resultados opostos — divergência estrutural, não de regra de negócio.
+> Consultado, o responsável autorizou ajustar os testes para criarem/levarem a reserva (ou o
+> registro de retirada) ao estado necessário antes de invocar o método, via `ReservaService`/
+> `RetiradaMaterialService` reais, preservando a asserção e o resultado esperado de cada teste.
+> Isso foi aplicado aos 12 casos (ver §8 "Correções aplicadas" abaixo). Adicionalmente, para
+> `NotificacaoService.notificarTransicaoDeEstado` (RF-33-T1/T2), que não tinha nenhum parâmetro
+> capaz de diferenciar endpoint disponível de indisponível, foi introduzido um pequeno ponto de
+> injeção (`NotificacaoService.NotificadorExterno`, construtor alternativo) permitindo ao teste
+> RF-33-T1 simular indisponibilidade explicitamente — sem alterar a asserção/resultado esperado
+> de nenhum teste.
+>
+> Limitação mantida da fase RED: RC-03 (concorrência) e RF-33 (falha de endpoint externo) rodam
+> como testes unitários em memória (sem Testcontainers/WireMock, fora do escopo desta fase).
 
 | Regra | Caso | Classe de teste | Método de teste | Status |
 |---|---|---|---|---|
-| RC-01 | RC-01-T1 | RegrasCriticasTest | rc01T1_inicioAnteriorAoFim_devePermitirCriacao | RED |
-| RC-01 | RC-01-T2 | RegrasCriticasTest | rc01T2_menorIntervaloValido_devePermitirCriacao | RED (assunção Q1) |
-| RC-01 | RC-01-T3 | RegrasCriticasTest | rc01T3_fimIgualInicio_deveSerRejeitadoComBadRequest | RED |
-| RC-01 | RC-01-T4 | RegrasCriticasTest | rc01T4_fimAnteriorAoInicio_deveSerRejeitadoComBadRequest | RED |
-| RC-01 | RC-01-T5 | RegrasCriticasTest | rc01T5_inicioOuFimNulos_deveSerRejeitadoComBadRequest | RED |
-| RC-01 | RC-01-T6 | RegrasCriticasTest | rc01T6_alteracaoComFimMenorOuIgualInicio_deveSerRejeitada | RED |
-| RC-02 | RC-02-T1 | RegrasCriticasTest | rc02T1_reservasDisjuntasMesmaSala_devemSerAmbasAceitas | RED |
-| RC-02 | RC-02-T2 | RegrasCriticasTest | rc02T2_reservasContiguas_devemSerAceitasSemSobreposicao | RED (assunção Q2) |
-| RC-02 | RC-02-T3 | RegrasCriticasTest | rc02T3_sobreposicaoParcial_deveSerRejeitadaComConflito | RED |
-| RC-02 | RC-02-T4 | RegrasCriticasTest | rc02T4_reservaEnglobaOutra_deveSerRejeitadaComConflito | RED |
-| RC-02 | RC-02-T5 | RegrasCriticasTest | rc02T5_intervalosIdenticos_devemSerRejeitadosComConflito | RED |
-| RC-02 | RC-02-T6 | RegrasCriticasTest | rc02T6_sobreposicaoAgendaProfessorRecursoAcessorio_deveSerRejeitada | RED |
-| RC-02 | RC-02-T7 | RegrasCriticasTest | rc02T7_multiRecursoSemConflito_deveSerAceita | RED |
-| RC-02 | RC-02-T8 | RegrasCriticasTest | rc02T8_apenasUmRecursoEmConflito_deveSerRejeitada | RED |
-| RC-02 | RC-02-T9 | RegrasCriticasTest | rc02T9_reservaCanceladaNaoBloqueiaNovaReserva | RED (assunção Q3) |
-| RC-02 | RC-02-T10 | RegrasCriticasTest | rc02T10_salaEmManutencao_deveRejeitarReservaComConflito | RED |
-| RC-03 | RC-03-T1 | RegrasCriticasTest | rc03T1_unicaRequisicaoSemDisputa_deveSerAceita | RED |
-| RC-03 | RC-03-T2 | RegrasCriticasTest | rc03T2_duasRequisicoesConcorrentes_apenasUmaDeveSerAceita | RED (limitação: sem Testcontainers, simulado em memória) |
-| RC-03 | RC-03-T3 | RegrasCriticasTest | rc03T3_cincoRequisicoesConcorrentes_apenasUmaDeveSerAceita | RED (limitação: sem Testcontainers, simulado em memória) |
-| RC-03 | RC-03-T4 | RegrasCriticasTest | rc03T4_falhaParcialDuranteCriacao_naoDeveDeixarEstadoInconsistente | RED (limitação: sem Testcontainers, simulado em memória) |
+| RC-01 | RC-01-T1 | RegrasCriticasTest | rc01T1_inicioAnteriorAoFim_devePermitirCriacao | GREEN |
+| RC-01 | RC-01-T2 | RegrasCriticasTest | rc01T2_menorIntervaloValido_devePermitirCriacao | GREEN (assunção Q1) |
+| RC-01 | RC-01-T3 | RegrasCriticasTest | rc01T3_fimIgualInicio_deveSerRejeitadoComBadRequest | GREEN |
+| RC-01 | RC-01-T4 | RegrasCriticasTest | rc01T4_fimAnteriorAoInicio_deveSerRejeitadoComBadRequest | GREEN |
+| RC-01 | RC-01-T5 | RegrasCriticasTest | rc01T5_inicioOuFimNulos_deveSerRejeitadoComBadRequest | GREEN |
+| RC-01 | RC-01-T6 | RegrasCriticasTest | rc01T6_alteracaoComFimMenorOuIgualInicio_deveSerRejeitada | GREEN |
+| RC-02 | RC-02-T1 | RegrasCriticasTest | rc02T1_reservasDisjuntasMesmaSala_devemSerAmbasAceitas | GREEN |
+| RC-02 | RC-02-T2 | RegrasCriticasTest | rc02T2_reservasContiguas_devemSerAceitasSemSobreposicao | GREEN (assunção Q2) |
+| RC-02 | RC-02-T3 | RegrasCriticasTest | rc02T3_sobreposicaoParcial_deveSerRejeitadaComConflito | GREEN |
+| RC-02 | RC-02-T4 | RegrasCriticasTest | rc02T4_reservaEnglobaOutra_deveSerRejeitadaComConflito | GREEN |
+| RC-02 | RC-02-T5 | RegrasCriticasTest | rc02T5_intervalosIdenticos_devemSerRejeitadosComConflito | GREEN |
+| RC-02 | RC-02-T6 | RegrasCriticasTest | rc02T6_sobreposicaoAgendaProfessorRecursoAcessorio_deveSerRejeitada | GREEN |
+| RC-02 | RC-02-T7 | RegrasCriticasTest | rc02T7_multiRecursoSemConflito_deveSerAceita | GREEN |
+| RC-02 | RC-02-T8 | RegrasCriticasTest | rc02T8_apenasUmRecursoEmConflito_deveSerRejeitada | GREEN |
+| RC-02 | RC-02-T9 | RegrasCriticasTest | rc02T9_reservaCanceladaNaoBloqueiaNovaReserva | GREEN (assunção Q3) |
+| RC-02 | RC-02-T10 | RegrasCriticasTest | rc02T10_salaEmManutencao_deveRejeitarReservaComConflito | GREEN |
+| RC-03 | RC-03-T1 | RegrasCriticasTest | rc03T1_unicaRequisicaoSemDisputa_deveSerAceita | GREEN |
+| RC-03 | RC-03-T2 | RegrasCriticasTest | rc03T2_duasRequisicoesConcorrentes_apenasUmaDeveSerAceita | GREEN (limitação: sem Testcontainers, simulado em memória) |
+| RC-03 | RC-03-T3 | RegrasCriticasTest | rc03T3_cincoRequisicoesConcorrentes_apenasUmaDeveSerAceita | GREEN (limitação: sem Testcontainers, simulado em memória) |
+| RC-03 | RC-03-T4 | RegrasCriticasTest | rc03T4_falhaParcialDuranteCriacao_naoDeveDeixarEstadoInconsistente | GREEN (limitação: sem Testcontainers, simulado em memória) |
 | **RC-03** | **RC-03-T5** | — | — | **SEM TESTE — gap bloqueante Q4 (reenvio idêntico do mesmo solicitante); o próprio plano instrui a não escrever este teste até decisão do responsável (objeção O1)** |
-| RC-04 | RC-04-T1 | RegrasCriticasTest | rc04T1_registroDeManutencao_devePersistirPeriodo | RED |
-| RC-04 | RC-04-T2 | RegrasCriticasTest | rc04T2_reservaDentroDoPeriodoDeManutencao_deveSerRejeitada | RED |
-| RC-04 | RC-04-T3 | RegrasCriticasTest | rc04T3_reservaNoLimiteDaManutencao_deveSerAceita | RED (assunção Q2) |
-| RC-04 | RC-04-T4 | RegrasCriticasTest | rc04T4_manutencaoSobrepoeReservaAprovada_exigeConfirmacaoOuRecusa | RED |
-| RC-04 | RC-04-T5 | RegrasCriticasTest | rc04T5_manutencaoSobrepoeReservaEmUso_exigeConfirmacaoOuRecusa | RED |
-| RC-04 | RC-04-T6 | RegrasCriticasTest | rc04T6_manutencaoSobreReservaTerminal_naoExigeConfirmacao | RED |
-| RC-04 | RC-04-T7 | RegrasCriticasTest | rc04T7_manutencaoComFimMenorOuIgualInicio_deveSerRejeitada | RED (assunção Q5) |
-| RC-04 | RC-04-T8 | RegrasCriticasTest | rc04T8_manutencaoSemMotivo_deveSerRejeitada | RED |
-| RF-01 | RF-01-T1 | AutenticacaoAutorizacaoTest | rf01T1_credenciaisValidas_deveAutenticar | RED |
-| RF-01 | RF-01-T2 | AutenticacaoAutorizacaoTest | rf01T2_senhaIncorreta_deveRetornar401 | RED |
-| RF-01 | RF-01-T3 | AutenticacaoAutorizacaoTest | rf01T3_emailInexistente_deveRetornar401Generico | RED (assunção Q6) |
-| RF-02 | RF-02-T1 | AutenticacaoAutorizacaoTest | rf02T1_administrador_deveSerAutorizado | RED |
-| RF-02 | RF-02-T2 | AutenticacaoAutorizacaoTest | rf02T2_solicitanteEmEndpointAdmOnly_deveRetornar403 | RED |
-| RF-02 | RF-02-T3 | AutenticacaoAutorizacaoTest | rf02T3_responsavelEmCrudDeUsuarios_deveRetornar403 | RED |
-| RF-03 | RF-03-T1 | AutenticacaoAutorizacaoTest | rf03T1_solicitanteAlteraPropriaReserva_devePermitir | RED |
-| RF-03 | RF-03-T2 | AutenticacaoAutorizacaoTest | rf03T2_solicitanteAlterandoReservaDeOutroSolicitante_deveRetornar403 | RED |
-| RF-03 | RF-03-T3 | AutenticacaoAutorizacaoTest | rf03T3_solicitanteConsultaReservaDeOutro_deveRetornar403 | RED (assunção Q7) |
-| RF-04 | RF-04-T1 | CadastroConsultaTest | rf04T1_criacaoDeSalaComCamposValidos_deveCriar | RED |
-| RF-04 | RF-04-T2 | CadastroConsultaTest | rf04T2_criacaoDeSalaSemCapacidade_deveSerRejeitada | RED |
-| RF-04 | RF-04-T3 | CadastroConsultaTest | rf04T3_capacidadeZeroOuNegativa_deveSerRejeitada | RED (assunção Q8) |
-| RF-04 | RF-04-T4 | CadastroConsultaTest | rf04T4_inativacaoDeSala_naoDeveAparecerNaListagem | RED |
-| RF-05 | RF-05-T1 | CadastroConsultaTest | rf05T1_criacaoDeProfessorComCamposValidos_deveCriar | RED |
-| RF-05 | RF-05-T2 | CadastroConsultaTest | rf05T2_identificadorInstitucionalDuplicado_deveSerRejeitadoComConflito | RED (assunção Q9) |
-| RF-06 | RF-06-T1 | CadastroConsultaTest | rf06T1_criacaoDeMaterialComCamposValidos_deveCriar | RED |
-| RF-06 | RF-06-T2 | CadastroConsultaTest | rf06T2_quantidadeTotalZero_deveSerRejeitada | RED (assunção Q8) |
-| RF-07 | RF-07-T1 | CadastroConsultaTest | rf07T1_consultaDeSalas_deveRetornarApenasAtivas | RED |
-| RF-07 | RF-07-T2 | CadastroConsultaTest | rf07T2_salaInativada_naoDeveAparecerNaListagem | RED |
-| RF-07 | RF-07-T3 | CadastroConsultaTest | rf07T3_usuarioNaoAutenticado_deveReceber401 | RED (assunção Q10) |
-| RF-08 | RF-08-T1 | PesquisaDisponibilidadeTest | rf08T1_buscaComCriteriosValidos_deveRetornarSalasCompativeis | RED |
-| RF-08 | RF-08-T2 | PesquisaDisponibilidadeTest | rf08T2_capacidadeMinimaIgualACapacidadeDaSala_deveIncluirSala | RED |
-| RF-08 | RF-08-T3 | PesquisaDisponibilidadeTest | rf08T3_intervaloInvalidoNaBusca_deveSerRejeitado | RED |
-| RF-09 | RF-09-T1 | PesquisaDisponibilidadeTest | rf09T1_buscaPorCompetenciaEDisponibilidade_deveFiltrarCorretamente | RED |
-| RF-09 | RF-09-T2 | PesquisaDisponibilidadeTest | rf09T2_competenciaInexistente_deveRetornarListaVazia | RED (assunção Q11) |
-| RF-10 | RF-10-T1 | PesquisaDisponibilidadeTest | rf10T1_buscaDeMateriaisComQuantidadeLivre_deveRetornarDisponiveis | RED |
-| RF-10 | RF-10-T2 | PesquisaDisponibilidadeTest | rf10T2_materialComUmaUnidadeLivre_deveAparecerDisponivel | RED (assunção Q12) |
-| RF-11 | RF-11-T1 | PesquisaDisponibilidadeTest | rf11T1_recursoComReservaAtivaOuManutencao_deveSerExcluido | RED |
-| RF-11 | RF-11-T2 | PesquisaDisponibilidadeTest | rf11T2_recursoComReservaTerminal_deveSerIncluido | RED (assunção Q3) |
-| RF-12 | RF-12-T1 | ReservaCicloVidaTest | rf12T1_reservaComSalaNaoRestrita_deveNascerAprovada | RED |
-| RF-12 | RF-12-T2 | ReservaCicloVidaTest | rf12T2_reservaComRecursoRestrito_deveNascerSolicitada | RED |
-| RF-12 | RF-12-T3 | ReservaCicloVidaTest | rf12T3_reservaMista_deveNascerSolicitadaPorUmRecursoRestrito | RED |
-| RF-12 | RF-12-T4 | ReservaCicloVidaTest | rf12T4_reservaSemFinalidade_deveSerRejeitada | RED |
-| RF-12 | RF-12-T5 | ReservaCicloVidaTest | rf12T5_reservaSemRecursoVinculado_deveSerRejeitada | RED (assunção Q13) |
-| RF-13 | RF-13-T1 | ReservaCicloVidaTest | rf13T1_alterarReservaSolicitadaComHorarioLivre_devePermitir | RED |
-| RF-13 | RF-13-T2 | ReservaCicloVidaTest | rf13T2_alterarReservaAprovada_devePermitir | RED |
-| RF-13 | RF-13-T3 | ReservaCicloVidaTest | rf13T3_alterarReservaEmUso_deveSerRejeitada | RED (assunção Q14) |
-| RF-13 | RF-13-T4 | ReservaCicloVidaTest | rf13T4_alteracaoComColisaoDeHorario_deveSerRejeitada | RED |
-| RF-14 | RF-14-T1 | ReservaCicloVidaTest | rf14T1_cancelamentoComMotivo_deveTransicionarParaCancelada | RED |
-| RF-14 | RF-14-T2 | ReservaCicloVidaTest | rf14T2_cancelamentoEmAprovadaOuEmUso_devePermitir | RED |
-| RF-14 | RF-14-T3 | ReservaCicloVidaTest | rf14T3_cancelamentoDeReservaConcluida_deveSerRejeitado | RED |
-| RF-14 | RF-14-T4 | ReservaCicloVidaTest | rf14T4_cancelamentoSemMotivo_deveSerRejeitado | RED |
-| RF-14 | RF-14-T5 | ReservaCicloVidaTest | rf14T5_cancelamentoDeReservaJaCancelada_deveSerRejeitado | RED (assunção Q15) |
+| RC-04 | RC-04-T1 | RegrasCriticasTest | rc04T1_registroDeManutencao_devePersistirPeriodo | GREEN |
+| RC-04 | RC-04-T2 | RegrasCriticasTest | rc04T2_reservaDentroDoPeriodoDeManutencao_deveSerRejeitada | GREEN |
+| RC-04 | RC-04-T3 | RegrasCriticasTest | rc04T3_reservaNoLimiteDaManutencao_deveSerAceita | GREEN (assunção Q2) |
+| RC-04 | RC-04-T4 | RegrasCriticasTest | rc04T4_manutencaoSobrepoeReservaAprovada_exigeConfirmacaoOuRecusa | GREEN |
+| RC-04 | RC-04-T5 | RegrasCriticasTest | rc04T5_manutencaoSobrepoeReservaEmUso_exigeConfirmacaoOuRecusa | GREEN |
+| RC-04 | RC-04-T6 | RegrasCriticasTest | rc04T6_manutencaoSobreReservaTerminal_naoExigeConfirmacao | GREEN |
+| RC-04 | RC-04-T7 | RegrasCriticasTest | rc04T7_manutencaoComFimMenorOuIgualInicio_deveSerRejeitada | GREEN (assunção Q5) |
+| RC-04 | RC-04-T8 | RegrasCriticasTest | rc04T8_manutencaoSemMotivo_deveSerRejeitada | GREEN |
+| RF-01 | RF-01-T1 | AutenticacaoAutorizacaoTest | rf01T1_credenciaisValidas_deveAutenticar | GREEN |
+| RF-01 | RF-01-T2 | AutenticacaoAutorizacaoTest | rf01T2_senhaIncorreta_deveRetornar401 | GREEN |
+| RF-01 | RF-01-T3 | AutenticacaoAutorizacaoTest | rf01T3_emailInexistente_deveRetornar401Generico | GREEN (assunção Q6) |
+| RF-02 | RF-02-T1 | AutenticacaoAutorizacaoTest | rf02T1_administrador_deveSerAutorizado | GREEN |
+| RF-02 | RF-02-T2 | AutenticacaoAutorizacaoTest | rf02T2_solicitanteEmEndpointAdmOnly_deveRetornar403 | GREEN |
+| RF-02 | RF-02-T3 | AutenticacaoAutorizacaoTest | rf02T3_responsavelEmCrudDeUsuarios_deveRetornar403 | GREEN |
+| RF-03 | RF-03-T1 | AutenticacaoAutorizacaoTest | rf03T1_solicitanteAlteraPropriaReserva_devePermitir | GREEN |
+| RF-03 | RF-03-T2 | AutenticacaoAutorizacaoTest | rf03T2_solicitanteAlterandoReservaDeOutroSolicitante_deveRetornar403 | GREEN |
+| RF-03 | RF-03-T3 | AutenticacaoAutorizacaoTest | rf03T3_solicitanteConsultaReservaDeOutro_deveRetornar403 | GREEN (assunção Q7) |
+| RF-04 | RF-04-T1 | CadastroConsultaTest | rf04T1_criacaoDeSalaComCamposValidos_deveCriar | GREEN |
+| RF-04 | RF-04-T2 | CadastroConsultaTest | rf04T2_criacaoDeSalaSemCapacidade_deveSerRejeitada | GREEN |
+| RF-04 | RF-04-T3 | CadastroConsultaTest | rf04T3_capacidadeZeroOuNegativa_deveSerRejeitada | GREEN (assunção Q8) |
+| RF-04 | RF-04-T4 | CadastroConsultaTest | rf04T4_inativacaoDeSala_naoDeveAparecerNaListagem | GREEN |
+| RF-05 | RF-05-T1 | CadastroConsultaTest | rf05T1_criacaoDeProfessorComCamposValidos_deveCriar | GREEN |
+| RF-05 | RF-05-T2 | CadastroConsultaTest | rf05T2_identificadorInstitucionalDuplicado_deveSerRejeitadoComConflito | GREEN (assunção Q9) |
+| RF-06 | RF-06-T1 | CadastroConsultaTest | rf06T1_criacaoDeMaterialComCamposValidos_deveCriar | GREEN |
+| RF-06 | RF-06-T2 | CadastroConsultaTest | rf06T2_quantidadeTotalZero_deveSerRejeitada | GREEN (assunção Q8) |
+| RF-07 | RF-07-T1 | CadastroConsultaTest | rf07T1_consultaDeSalas_deveRetornarApenasAtivas | GREEN |
+| RF-07 | RF-07-T2 | CadastroConsultaTest | rf07T2_salaInativada_naoDeveAparecerNaListagem | GREEN |
+| RF-07 | RF-07-T3 | CadastroConsultaTest | rf07T3_usuarioNaoAutenticado_deveReceber401 | GREEN (assunção Q10) |
+| RF-08 | RF-08-T1 | PesquisaDisponibilidadeTest | rf08T1_buscaComCriteriosValidos_deveRetornarSalasCompativeis | GREEN |
+| RF-08 | RF-08-T2 | PesquisaDisponibilidadeTest | rf08T2_capacidadeMinimaIgualACapacidadeDaSala_deveIncluirSala | GREEN |
+| RF-08 | RF-08-T3 | PesquisaDisponibilidadeTest | rf08T3_intervaloInvalidoNaBusca_deveSerRejeitado | GREEN |
+| RF-09 | RF-09-T1 | PesquisaDisponibilidadeTest | rf09T1_buscaPorCompetenciaEDisponibilidade_deveFiltrarCorretamente | GREEN |
+| RF-09 | RF-09-T2 | PesquisaDisponibilidadeTest | rf09T2_competenciaInexistente_deveRetornarListaVazia | GREEN (assunção Q11) |
+| RF-10 | RF-10-T1 | PesquisaDisponibilidadeTest | rf10T1_buscaDeMateriaisComQuantidadeLivre_deveRetornarDisponiveis | GREEN |
+| RF-10 | RF-10-T2 | PesquisaDisponibilidadeTest | rf10T2_materialComUmaUnidadeLivre_deveAparecerDisponivel | GREEN (assunção Q12) |
+| RF-11 | RF-11-T1 | PesquisaDisponibilidadeTest | rf11T1_recursoComReservaAtivaOuManutencao_deveSerExcluido | GREEN |
+| RF-11 | RF-11-T2 | PesquisaDisponibilidadeTest | rf11T2_recursoComReservaTerminal_deveSerIncluido | GREEN (assunção Q3) |
+| RF-12 | RF-12-T1 | ReservaCicloVidaTest | rf12T1_reservaComSalaNaoRestrita_deveNascerAprovada | GREEN |
+| RF-12 | RF-12-T2 | ReservaCicloVidaTest | rf12T2_reservaComRecursoRestrito_deveNascerSolicitada | GREEN |
+| RF-12 | RF-12-T3 | ReservaCicloVidaTest | rf12T3_reservaMista_deveNascerSolicitadaPorUmRecursoRestrito | GREEN |
+| RF-12 | RF-12-T4 | ReservaCicloVidaTest | rf12T4_reservaSemFinalidade_deveSerRejeitada | GREEN |
+| RF-12 | RF-12-T5 | ReservaCicloVidaTest | rf12T5_reservaSemRecursoVinculado_deveSerRejeitada | GREEN (assunção Q13) |
+| RF-13 | RF-13-T1 | ReservaCicloVidaTest | rf13T1_alterarReservaSolicitadaComHorarioLivre_devePermitir | GREEN |
+| RF-13 | RF-13-T2 | ReservaCicloVidaTest | rf13T2_alterarReservaAprovada_devePermitir | GREEN |
+| RF-13 | RF-13-T3 | ReservaCicloVidaTest | rf13T3_alterarReservaEmUso_deveSerRejeitada | GREEN (assunção Q14) |
+| RF-13 | RF-13-T4 | ReservaCicloVidaTest | rf13T4_alteracaoComColisaoDeHorario_deveSerRejeitada | GREEN |
+| RF-14 | RF-14-T1 | ReservaCicloVidaTest | rf14T1_cancelamentoComMotivo_deveTransicionarParaCancelada | GREEN |
+| RF-14 | RF-14-T2 | ReservaCicloVidaTest | rf14T2_cancelamentoEmAprovadaOuEmUso_devePermitir | GREEN |
+| RF-14 | RF-14-T3 | ReservaCicloVidaTest | rf14T3_cancelamentoDeReservaConcluida_deveSerRejeitado | GREEN |
+| RF-14 | RF-14-T4 | ReservaCicloVidaTest | rf14T4_cancelamentoSemMotivo_deveSerRejeitado | GREEN |
+| RF-14 | RF-14-T5 | ReservaCicloVidaTest | rf14T5_cancelamentoDeReservaJaCancelada_deveSerRejeitado | GREEN (assunção Q15) |
 | RF-15, RF-16 | — | — | — | Ver RC-02 (§1.2), já coberto acima — sem casos adicionais nesta seção. |
 | RF-17 | — | — | — | Ver RC-03 (§1.3), já coberto acima — sem casos adicionais nesta seção. |
-| RF-18 | RF-18-T1 | AprovacaoRecursosRestritosTest | rf18T1_transicaoDiretaSolicitadaParaEmUso_deveSerBloqueada | RED |
-| RF-19 | RF-19-T1 | AprovacaoRecursosRestritosTest | rf19T1_responsavelAprovaReservaRestrita_deveTransicionarParaAprovada | RED |
-| RF-19 | RF-19-T2 | AprovacaoRecursosRestritosTest | rf19T2_administradorAprovaReservaRestrita_devePermitir | RED |
-| RF-19 | RF-19-T3 | AprovacaoRecursosRestritosTest | rf19T3_solicitanteTentaAprovar_deveRetornar403 | RED |
-| RF-19 | RF-19-T4 | AprovacaoRecursosRestritosTest | rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado | RED (assunção Q16) |
-| RF-20 | RF-20-T1 | AprovacaoRecursosRestritosTest | rf20T1_rejeicaoComJustificativa_deveTransicionarParaRejeitada | RED |
-| RF-20 | RF-20-T2 | AprovacaoRecursosRestritosTest | rf20T2_rejeicaoSemJustificativa_deveSerRejeitada | RED |
+| RF-18 | RF-18-T1 | AprovacaoRecursosRestritosTest | rf18T1_transicaoDiretaSolicitadaParaEmUso_deveSerBloqueada | GREEN |
+| RF-19 | RF-19-T1 | AprovacaoRecursosRestritosTest | rf19T1_responsavelAprovaReservaRestrita_deveTransicionarParaAprovada | GREEN |
+| RF-19 | RF-19-T2 | AprovacaoRecursosRestritosTest | rf19T2_administradorAprovaReservaRestrita_devePermitir | GREEN |
+| RF-19 | RF-19-T3 | AprovacaoRecursosRestritosTest | rf19T3_solicitanteTentaAprovar_deveRetornar403 | GREEN |
+| RF-19 | RF-19-T4 | AprovacaoRecursosRestritosTest | rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado | GREEN (assunção Q16) |
+| RF-20 | RF-20-T1 | AprovacaoRecursosRestritosTest | rf20T1_rejeicaoComJustificativa_deveTransicionarParaRejeitada | GREEN |
+| RF-20 | RF-20-T2 | AprovacaoRecursosRestritosTest | rf20T2_rejeicaoSemJustificativa_deveSerRejeitada | GREEN |
 | RF-21, RF-22, RF-23 | — | — | — | Ver RC-04 (§1.4), já coberto acima — sem casos adicionais nesta seção. |
-| RF-24 | RF-24-T1 | RetiradaDevolucaoMaterialTest | rf24T1_registroDeRetiradaEmReservaEmUso_deveVincularDados | RED |
-| RF-24 | RF-24-T2 | RetiradaDevolucaoMaterialTest | rf24T2_retiradaDeReservaForaDeEmUso_deveSerRejeitada | RED (assunção Q17) |
-| RF-24 | RF-24-T3 | RetiradaDevolucaoMaterialTest | rf24T3_novaRetiradaComCicloAberto_deveSerRejeitada | RED (assunção Q18) |
-| RF-25 | RF-25-T1 | RetiradaDevolucaoMaterialTest | rf25T1_devolucaoComCondicaoIntegro_deveEncerrarCiclo | RED |
-| RF-25 | RF-25-T2 | RetiradaDevolucaoMaterialTest | rf25T2_devolucaoComCondicaoDanificado_deveSerAceita | RED |
-| RF-25 | RF-25-T3 | RetiradaDevolucaoMaterialTest | rf25T3_devolucaoSemRetiradaPrevia_deveSerRejeitada | RED (assunção Q19) |
-| RF-25 | RF-25-T4 | RetiradaDevolucaoMaterialTest | rf25T4_devolucaoSemCondicao_deveSerRejeitada | RED (assunção Q20) |
-| RF-26 | RF-26-T1 | RetiradaDevolucaoMaterialTest | rf26T1_materialVencidoSemDevolucao_devePossuirPendenciaSinalizada | RED |
-| RF-26 | RF-26-T2 | RetiradaDevolucaoMaterialTest | rf26T2_jobNoInstanteDoFim_naoDeveSinalizarAindaPendencia | RED |
-| RF-26 | RF-26-T3 | RetiradaDevolucaoMaterialTest | rf26T3_jobExecutadoDuasVezes_naoDeveDuplicarSinalizacao | RED |
-| RF-26 | RF-26-T4 | RetiradaDevolucaoMaterialTest | rf26T4_devolucaoAntesDoVencimento_nuncaDeveSinalizarPendencia | RED |
-| RF-27 | RF-27-T1 | AuditoriaTest | rf27T1_transicaoDeEstadoDeReserva_deveGerarAuditoria | RED |
-| RF-28 | RF-28-T1 | AuditoriaTest | rf28T1_alteracaoDeCadastro_deveGerarAuditoria | RED |
-| RF-28 | RF-28-T2 | AuditoriaTest | rf28T2_rejeicaoAutomaticaPorSobreposicao_deveGravarAcaoEspecifica | RED (assunção Q21) |
+| RF-24 | RF-24-T1 | RetiradaDevolucaoMaterialTest | rf24T1_registroDeRetiradaEmReservaEmUso_deveVincularDados | GREEN |
+| RF-24 | RF-24-T2 | RetiradaDevolucaoMaterialTest | rf24T2_retiradaDeReservaForaDeEmUso_deveSerRejeitada | GREEN (assunção Q17) |
+| RF-24 | RF-24-T3 | RetiradaDevolucaoMaterialTest | rf24T3_novaRetiradaComCicloAberto_deveSerRejeitada | GREEN (assunção Q18) |
+| RF-25 | RF-25-T1 | RetiradaDevolucaoMaterialTest | rf25T1_devolucaoComCondicaoIntegro_deveEncerrarCiclo | GREEN |
+| RF-25 | RF-25-T2 | RetiradaDevolucaoMaterialTest | rf25T2_devolucaoComCondicaoDanificado_deveSerAceita | GREEN |
+| RF-25 | RF-25-T3 | RetiradaDevolucaoMaterialTest | rf25T3_devolucaoSemRetiradaPrevia_deveSerRejeitada | GREEN (assunção Q19) |
+| RF-25 | RF-25-T4 | RetiradaDevolucaoMaterialTest | rf25T4_devolucaoSemCondicao_deveSerRejeitada | GREEN (assunção Q20) |
+| RF-26 | RF-26-T1 | RetiradaDevolucaoMaterialTest | rf26T1_materialVencidoSemDevolucao_devePossuirPendenciaSinalizada | GREEN |
+| RF-26 | RF-26-T2 | RetiradaDevolucaoMaterialTest | rf26T2_jobNoInstanteDoFim_naoDeveSinalizarAindaPendencia | GREEN |
+| RF-26 | RF-26-T3 | RetiradaDevolucaoMaterialTest | rf26T3_jobExecutadoDuasVezes_naoDeveDuplicarSinalizacao | GREEN |
+| RF-26 | RF-26-T4 | RetiradaDevolucaoMaterialTest | rf26T4_devolucaoAntesDoVencimento_nuncaDeveSinalizarPendencia | GREEN |
+| RF-27 | RF-27-T1 | AuditoriaTest | rf27T1_transicaoDeEstadoDeReserva_deveGerarAuditoria | GREEN |
+| RF-28 | RF-28-T1 | AuditoriaTest | rf28T1_alteracaoDeCadastro_deveGerarAuditoria | GREEN |
+| RF-28 | RF-28-T2 | AuditoriaTest | rf28T2_rejeicaoAutomaticaPorSobreposicao_deveGravarAcaoEspecifica | GREEN (assunção Q21) |
 | RF-29 | — | — | — | **SEM TESTE — não testável nesta fase: verificação de ausência de endpoint depende de camada HTTP/controller ainda não implementada; não há stub de controller para exercitar.** |
-| RF-30 | RF-30-T1 | AuditoriaTest | rf30T1_deleteDeReservaForaDeSolicitada_deveSerRejeitado | RED |
-| RF-30 | RF-30-T2 | AuditoriaTest | rf30T2_deleteDeReservaSolicitada_deveSerRejeitadoPorAusenciaDeDelete | RED (assunção Q22) |
-| RF-31 | RF-31-T1 | NotificacoesTest | rf31T1_mudancaDeEstadoDaReserva_deveNotificarSolicitante | RED |
-| RF-32 | RF-32-T1 | NotificacoesTest | rf32T1_novaSolicitacaoRestrita_deveNotificarResponsavelCompetente | RED |
-| RF-32 | RF-32-T2 | NotificacoesTest | rf32T2_recursoRestritoSemResponsavelAssociado_deveRetornarFalha | RED (assunção Q23) |
-| RF-33 | RF-33-T1 | NotificacoesTest | rf33T1_endpointIndisponivel_devePersistirTransicaoComNotificacaoEmFalha | RED (limitação: sem WireMock, simulado em memória) |
-| RF-33 | RF-33-T2 | NotificacoesTest | rf33T2_endpointDisponivel_deveRegistrarStatusEnviada | RED (limitação: sem WireMock, simulado em memória) |
-| RF-34 | RF-34-T1 | RelatoriosTest | rf34T1_relatorioComReservasConhecidas_deveRefletirTodas | RED |
-| RF-34 | RF-34-T2 | RelatoriosTest | rf34T2_relatorioSemReservasNoPeriodo_deveRetornarZerado | RED |
-| RF-34 | RF-34-T3 | RelatoriosTest | rf34T3_filtroComFimMenorOuIgualInicio_deveSerRejeitado | RED |
-| RF-35 | RF-35-T1 | RelatoriosTest | rf35T1_contagemDeRejeicoesPorSobreposicao_deveBaterComAuditoria | RED (depende de Q21) |
-| RF-36 | RF-36-T1 | RelatoriosTest | rf36T1_solicitanteAcessandoRelatorio_deveRetornar403 | RED |
-| RF-36 | RF-36-T2 | RelatoriosTest | rf36T2_responsavelOuAdministradorAcessandoRelatorio_devePermitir | RED |
+| RF-30 | RF-30-T1 | AuditoriaTest | rf30T1_deleteDeReservaForaDeSolicitada_deveSerRejeitado | GREEN |
+| RF-30 | RF-30-T2 | AuditoriaTest | rf30T2_deleteDeReservaSolicitada_deveSerRejeitadoPorAusenciaDeDelete | GREEN (assunção Q22) |
+| RF-31 | RF-31-T1 | NotificacoesTest | rf31T1_mudancaDeEstadoDaReserva_deveNotificarSolicitante | GREEN |
+| RF-32 | RF-32-T1 | NotificacoesTest | rf32T1_novaSolicitacaoRestrita_deveNotificarResponsavelCompetente | GREEN |
+| RF-32 | RF-32-T2 | NotificacoesTest | rf32T2_recursoRestritoSemResponsavelAssociado_deveRetornarFalha | GREEN (assunção Q23) |
+| RF-33 | RF-33-T1 | NotificacoesTest | rf33T1_endpointIndisponivel_devePersistirTransicaoComNotificacaoEmFalha | GREEN (limitação: sem WireMock, simulado em memória) |
+| RF-33 | RF-33-T2 | NotificacoesTest | rf33T2_endpointDisponivel_deveRegistrarStatusEnviada | GREEN (limitação: sem WireMock, simulado em memória) |
+| RF-34 | RF-34-T1 | RelatoriosTest | rf34T1_relatorioComReservasConhecidas_deveRefletirTodas | GREEN |
+| RF-34 | RF-34-T2 | RelatoriosTest | rf34T2_relatorioSemReservasNoPeriodo_deveRetornarZerado | GREEN |
+| RF-34 | RF-34-T3 | RelatoriosTest | rf34T3_filtroComFimMenorOuIgualInicio_deveSerRejeitado | GREEN |
+| RF-35 | RF-35-T1 | RelatoriosTest | rf35T1_contagemDeRejeicoesPorSobreposicao_deveBaterComAuditoria | GREEN (depende de Q21) |
+| RF-36 | RF-36-T1 | RelatoriosTest | rf36T1_solicitanteAcessandoRelatorio_deveRetornar403 | GREEN |
+| RF-36 | RF-36-T2 | RelatoriosTest | rf36T2_responsavelOuAdministradorAcessandoRelatorio_devePermitir | GREEN |
 | **RF-37** | **RF-37-T1** | — | — | **SEM TESTE — não testável via JUnit/API: requer renderização visual/E2E em viewport, fora do escopo de teste unitário de backend (já indicado no próprio plano).** |
 | RF-38 | — | — | — | Coberto implicitamente pelas asserções de HTTP 4xx em todos os casos acima; não há classe dedicada — ver RNF-06-T1 para o aspecto de "mensagem sem stacktrace". |
 | **RF-39** | **RF-39-T1** | — | — | **SEM TESTE nesta fase — depende de ferramenta de geração de OpenAPI (springdoc) ainda não configurada no `pom.xml`; teste de contrato/documentação, não de regra de negócio.** |
-| RNF-04 | RNF-04-T1 | RequisitosNaoFuncionaisTest | rnf04T1_campoObrigatorioAusente_deveRetornar400 | RED |
-| RNF-05 | RNF-05-T1 | RequisitosNaoFuncionaisTest | rnf05T1_senhaDeUsuario_nuncaDevePersistirEmTextoPlano | RED |
-| RNF-06 | RNF-06-T1 | RequisitosNaoFuncionaisTest | rnf06T1_respostaDeErro_naoDeveExporDetalheTecnico | RED |
+| RNF-04 | RNF-04-T1 | RequisitosNaoFuncionaisTest | rnf04T1_campoObrigatorioAusente_deveRetornar400 | GREEN |
+| RNF-05 | RNF-05-T1 | RequisitosNaoFuncionaisTest | rnf05T1_senhaDeUsuario_nuncaDevePersistirEmTextoPlano | GREEN |
+| RNF-06 | RNF-06-T1 | RequisitosNaoFuncionaisTest | rnf06T1_respostaDeErro_naoDeveExporDetalheTecnico | GREEN |
 | RNF-08 | — | — | — | Idêntico a RC-03-T4 (já coberto acima); sem caso adicional dedicado. |
-| RNF-09 | RNF-09-T1 | RequisitosNaoFuncionaisTest | rnf09T1_integridadeReferencial_naoDeveApresentarRegistrosOrfaos | RED |
-| EST (J9) | EST-T1 | MaquinaEstadosReservaTest | estT1_solicitadaParaAprovada_devePermitir | RED |
-| EST (J9) | EST-T2 | MaquinaEstadosReservaTest | estT2_aprovadaParaEmUso_devePermitir | RED (assunção Q24 — sem metodo de gatilho dedicado, testado via conflito de reaprovação) |
-| EST (J9) | EST-T3 | MaquinaEstadosReservaTest | estT3_emUsoParaConcluida_devePermitir | RED (assunção Q24, mesma limitação de EST-T2) |
-| EST (J9) | EST-T4 | MaquinaEstadosReservaTest | estT4_solicitadaParaRejeitada_devePermitirComJustificativa | RED |
-| EST (J9) | EST-T5 | MaquinaEstadosReservaTest | estT5_solicitadaParaCancelada_devePermitirComMotivo | RED |
-| EST (J9) | EST-T6 | MaquinaEstadosReservaTest | estT6_aprovadaParaCancelada_devePermitirComMotivo | RED |
-| EST (J9) | EST-T7 | MaquinaEstadosReservaTest | estT7_emUsoParaNaoCompareceu_devePermitir | RED (assunção Q25, mesma limitação de gatilho) |
-| EST (J9) | EST-T8 | MaquinaEstadosReservaTest | estT8_reservaRestritaPulandoAprovada_deveSerBloqueada | RED |
-| EST (J9) | EST-T9 | MaquinaEstadosReservaTest | estT9_reservaNaoRestritaJaNasceAprovada_naoDeveEstarEmSolicitada | RED (assunção Q24) |
-| EST (J9) | EST-T10 | MaquinaEstadosReservaTest | estT10_transicaoAPartirDeRejeitada_deveSerBloqueada | RED (assunção Q16) |
-| EST (J9) | EST-T11 | MaquinaEstadosReservaTest | estT11_transicaoAPartirDeConcluida_deveSerBloqueada | RED (assunção Q16) |
-| EST (J9) | EST-T12 | MaquinaEstadosReservaTest | estT12_transicaoAPartirDeCancelada_deveSerBloqueada | RED (assunção Q16) |
-| EST (J9) | EST-T13 | MaquinaEstadosReservaTest | estT13_transicaoAPartirDeNaoCompareceu_deveSerBloqueada | RED (assunção Q16) |
+| RNF-09 | RNF-09-T1 | RequisitosNaoFuncionaisTest | rnf09T1_integridadeReferencial_naoDeveApresentarRegistrosOrfaos | GREEN |
+| EST (J9) | EST-T1 | MaquinaEstadosReservaTest | estT1_solicitadaParaAprovada_devePermitir | GREEN |
+| EST (J9) | EST-T2 | MaquinaEstadosReservaTest | estT2_aprovadaParaEmUso_devePermitir | GREEN (assunção Q24 — sem metodo de gatilho dedicado, testado via conflito de reaprovação) |
+| EST (J9) | EST-T3 | MaquinaEstadosReservaTest | estT3_emUsoParaConcluida_devePermitir | GREEN (assunção Q24, mesma limitação de EST-T2) |
+| EST (J9) | EST-T4 | MaquinaEstadosReservaTest | estT4_solicitadaParaRejeitada_devePermitirComJustificativa | GREEN |
+| EST (J9) | EST-T5 | MaquinaEstadosReservaTest | estT5_solicitadaParaCancelada_devePermitirComMotivo | GREEN |
+| EST (J9) | EST-T6 | MaquinaEstadosReservaTest | estT6_aprovadaParaCancelada_devePermitirComMotivo | GREEN |
+| EST (J9) | EST-T7 | MaquinaEstadosReservaTest | estT7_emUsoParaNaoCompareceu_devePermitir | GREEN (assunção Q25, mesma limitação de gatilho) |
+| EST (J9) | EST-T8 | MaquinaEstadosReservaTest | estT8_reservaRestritaPulandoAprovada_deveSerBloqueada | GREEN |
+| EST (J9) | EST-T9 | MaquinaEstadosReservaTest | estT9_reservaNaoRestritaJaNasceAprovada_naoDeveEstarEmSolicitada | GREEN (assunção Q24) |
+| EST (J9) | EST-T10 | MaquinaEstadosReservaTest | estT10_transicaoAPartirDeRejeitada_deveSerBloqueada | GREEN (assunção Q16) |
+| EST (J9) | EST-T11 | MaquinaEstadosReservaTest | estT11_transicaoAPartirDeConcluida_deveSerBloqueada | GREEN (assunção Q16) |
+| EST (J9) | EST-T12 | MaquinaEstadosReservaTest | estT12_transicaoAPartirDeCancelada_deveSerBloqueada | GREEN (assunção Q16) |
+| EST (J9) | EST-T13 | MaquinaEstadosReservaTest | estT13_transicaoAPartirDeNaoCompareceu_deveSerBloqueada | GREEN (assunção Q16) |
 
 ### Regras/casos destacados sem teste nesta fase
 
@@ -551,3 +560,28 @@ com o responsável antes de usá-los como a funcionalidade de evidência de TDD.
 | RF-39-T1 | Não testável nesta fase — depende de ferramenta de geração de especificação OpenAPI (ex. springdoc) ainda não adicionada ao `pom.xml`; é teste de contrato/documentação, não de regra de negócio. |
 
 Nenhuma outra regra do inventário (§1 a §4) ficou sem ao menos um teste JUnit 5 correspondente.
+
+### Correções aplicadas aos 12 testes com fixture ausente (2026-10-27)
+
+Uma primeira rodada da fase GREEN identificou 12 testes que invocavam o mesmo método de
+`ReservaService`, `RetiradaMaterialService` ou `NotificacaoService` com um `UUID.randomUUID()`
+nunca antes registrado no sistema, sem nenhum passo de `arrange` que materializasse o estado
+prévio esperado (ex.: reserva `EM_USO`, reserva já `APROVADA`) — e, ainda assim, pares desses
+testes exigiam resultados opostos para o mesmo método, mesma forma de entrada. Essa divergência
+foi registrada em detalhe (regra-fonte, decisão provisória "por maioria", pergunta específica) e
+apresentada ao responsável do projeto, que autorizou a opção (a): ajustar os testes para criarem
+a fixture necessária via as próprias APIs de serviço, preservando a asserção/resultado esperado
+original de cada um. Nenhum teste teve seu resultado esperado alterado; apenas o `arrange` foi
+completado com dados reais. Correções aplicadas:
+
+| Método de serviço | Testes corrigidos | O que foi adicionado ao `arrange` |
+|---|---|---|
+| `ReservaService.aprovar` / `rejeitar` | `AprovacaoRecursosRestritosTest.rf19T1`, `rf19T2`, `rf19T4`, `rf20T1`; `MaquinaEstadosReservaTest.estT1`, `estT4` | Criação real de reserva `SOLICITADA` com recurso restrito via `ReservaService.criar`, aprovando-a previamente quando o teste exige estado `APROVADA` (rf19T4). `ReservaService.aprovar`/`rejeitar` deixaram de auto-criar reserva para id desconhecido (agora retornam 409 de forma consistente, sem exceção para esse caso). |
+| `ReservaService.alterar` | `ReservaCicloVidaTest.rf13T1`, `rf13T2`, `rf13T3`, `rf13T4` | Criação real da reserva alvo (`SOLICITADA`/`APROVADA`/`EM_USO` conforme o caso) e, em `rf13T4`, de uma segunda reserva ocupando o horário-alvo para gerar colisão real. `alterar` deixou de auto-criar reserva para id desconhecido (passa a retornar 409). |
+| `ReservaService.cancelar` | `ReservaCicloVidaTest.rf14T1`, `rf14T2`, `rf14T3`, `rf14T5`; `MaquinaEstadosReservaTest.estT5`, `estT6`; `AutenticacaoAutorizacaoTest.rf03T1`, `rf03T2`, `rf03T3` | Criação real da reserva do solicitante (e, quando aplicável, transição explícita para `CONCLUIDA`/`CANCELADA` antes da nova chamada). `cancelar`/`consultar` deixaram de auto-criar reserva para id desconhecido. |
+| `ReservaService.excluir` | `AuditoriaTest.rf30T2` | Criação real de reserva `SOLICITADA` antes do `excluir`, para exercitar o ramo HTTP 405 com estado real (o comportamento para RF-30-T1, id desconhecido → 403, já era consistente e não precisou de ajuste). |
+| `RetiradaMaterialService.registrarRetirada` / `registrarDevolucao` | `RetiradaDevolucaoMaterialTest.rf24T1`, `rf24T3`, `rf25T1`, `rf25T2`, `rf26T1`, `rf26T2`, `rf26T3`, `rf26T4` | Criação real de reserva `EM_USO` (via `ReservaService.criar` + `setEstado`) antes de `registrarRetirada`, e uso do id de retirada retornado (em vez de um id aleatório) antes de `registrarDevolucao`. Os dois serviços deixaram de aceitar id desconhecido implicitamente (passam a exigir reserva/retirada real, retornando 409 quando ausente — ver `rf24T2`/`rf25T3`, que já esperavam esse 409 e continuam GREEN). |
+| `NotificacaoService.notificarTransicaoDeEstado` | `NotificacoesTest.rf33T1` | Como os dois testes (`rf33T1`/`rf33T2`) não tinham nenhum parâmetro de entrada capaz de diferenciar "endpoint disponível" de "indisponível" (conflito estrutural, não de fixture), foi adicionado um pequeno ponto de injeção opcional — `NotificacaoService.NotificadorExterno` (interface funcional) e um construtor alternativo `NotificacaoService(NotificadorExterno)` — mantendo o construtor padrão com o comportamento anterior (sempre `ENVIADA`). Apenas `rf33T1` foi alterado, instanciando `new NotificacaoService(r -> false)` para simular indisponibilidade explicitamente; `rf33T2` continua usando o serviço padrão, sem alteração. |
+
+Resultado: `mvn verify` executado em 2026-10-27 após as correções — **123 testes, 123 verdes, 0
+falhas, BUILD SUCCESS**.

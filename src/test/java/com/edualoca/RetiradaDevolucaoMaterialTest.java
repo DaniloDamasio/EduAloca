@@ -1,6 +1,11 @@
 package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
+import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.retirada.CondicaoItem;
 import com.edualoca.domain.retirada.RegistroRetirada;
 import com.edualoca.domain.retirada.RetiradaMaterialService;
@@ -10,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,9 +25,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RetiradaDevolucaoMaterialTest {
 
     private final RetiradaMaterialService retiradaMaterialService = new RetiradaMaterialService();
+    private final ReservaService reservaService = new ReservaService();
 
     private Usuario responsavel() {
         return new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+    }
+
+    private UUID criarReservaEmUso() {
+        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
+        Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Reserva reserva = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula com material", List.of(new ReservaRecurso(sala, 1)));
+        reserva.setEstado(EstadoReserva.EM_USO);
+        return reserva.getId();
     }
 
     @Test
@@ -29,7 +45,7 @@ class RetiradaDevolucaoMaterialTest {
     void rf24T1_registroDeRetiradaEmReservaEmUso_deveVincularDados() {
         // arrange
         Usuario autor = responsavel();
-        UUID reservaEmUsoId = UUID.randomUUID();
+        UUID reservaEmUsoId = criarReservaEmUso();
         UUID itemId = UUID.randomUUID();
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 10, 5);
 
@@ -61,7 +77,7 @@ class RetiradaDevolucaoMaterialTest {
     void rf24T3_novaRetiradaComCicloAberto_deveSerRejeitada() {
         // arrange
         Usuario autor = responsavel();
-        UUID reservaId = UUID.randomUUID();
+        UUID reservaId = criarReservaEmUso();
         UUID itemComCicloAbertoId = UUID.randomUUID();
         retiradaMaterialService.registrarRetirada(autor, reservaId, itemComCicloAbertoId, LocalDateTime.now());
 
@@ -78,7 +94,9 @@ class RetiradaDevolucaoMaterialTest {
     void rf25T1_devolucaoComCondicaoIntegro_deveEncerrarCiclo() {
         // arrange
         Usuario autor = responsavel();
-        UUID registroRetiradaId = UUID.randomUUID();
+        UUID reservaEmUsoId = criarReservaEmUso();
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 12, 5);
 
         // act
@@ -93,7 +111,9 @@ class RetiradaDevolucaoMaterialTest {
     void rf25T2_devolucaoComCondicaoDanificado_deveSerAceita() {
         // arrange
         Usuario autor = responsavel();
-        UUID registroRetiradaId = UUID.randomUUID();
+        UUID reservaEmUsoId = criarReservaEmUso();
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 12, 5);
 
         // act
@@ -138,10 +158,11 @@ class RetiradaDevolucaoMaterialTest {
     void rf26T1_materialVencidoSemDevolucao_devePossuirPendenciaSinalizada() {
         // arrange
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 13, 0);
+        UUID reservaEmUsoId = criarReservaEmUso();
 
         // act
         retiradaMaterialService.sinalizarPendencias(agora);
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), UUID.randomUUID(), UUID.randomUUID(), agora.minusHours(3));
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), agora.minusHours(3));
 
         // assert
         assertEquals(false, registro.isPendenciaSinalizada());
@@ -151,7 +172,8 @@ class RetiradaDevolucaoMaterialTest {
     @DisplayName("RF-26-T2: job executando exatamente no instante do fim da reserva nao deve sinalizar pendencia ainda")
     void rf26T2_jobNoInstanteDoFim_naoDeveSinalizarAindaPendencia() {
         // arrange
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), UUID.randomUUID(), UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
+        UUID reservaEmUsoId = criarReservaEmUso();
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
         LocalDateTime exatamenteNoFim = LocalDateTime.of(2026, 3, 10, 12, 0);
 
         // act
@@ -165,7 +187,8 @@ class RetiradaDevolucaoMaterialTest {
     @DisplayName("RF-26-T3: job executando duas vezes consecutivas sobre pendencia ja sinalizada nao deve duplicar a sinalizacao")
     void rf26T3_jobExecutadoDuasVezes_naoDeveDuplicarSinalizacao() {
         // arrange
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), UUID.randomUUID(), UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
+        UUID reservaEmUsoId = criarReservaEmUso();
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
         registro.setPendenciaSinalizada(true);
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 13, 0);
 
@@ -182,7 +205,9 @@ class RetiradaDevolucaoMaterialTest {
     void rf26T4_devolucaoAntesDoVencimento_nuncaDeveSinalizarPendencia() {
         // arrange
         Usuario autor = responsavel();
-        UUID registroRetiradaId = UUID.randomUUID();
+        UUID reservaEmUsoId = criarReservaEmUso();
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         RegistroRetirada registro = retiradaMaterialService.registrarDevolucao(autor, registroRetiradaId, LocalDateTime.of(2026, 3, 10, 11, 0), CondicaoItem.INTEGRO);
 
         // act

@@ -1,14 +1,18 @@
 package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,6 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class AprovacaoRecursosRestritosTest {
 
     private final ReservaService reservaService = new ReservaService();
+
+    private Usuario solicitante() {
+        return new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
+    }
+
+    private UUID criarReservaSolicitadaComRecursoRestrito() {
+        Sala salaRestrita = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        Reserva reserva = reservaService.criar(solicitante(), LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        return reserva.getId();
+    }
 
     @Test
     @DisplayName("RF-18-T1: reserva restrita nao pode transicionar diretamente de SOLICITADA para EM_USO, pulando APROVADA")
@@ -38,7 +53,7 @@ class AprovacaoRecursosRestritosTest {
     void rf19T1_responsavelAprovaReservaRestrita_deveTransicionarParaAprovada() {
         // arrange
         Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
-        UUID reservaId = UUID.randomUUID();
+        UUID reservaId = criarReservaSolicitadaComRecursoRestrito();
 
         // act
         Reserva reservaAprovada = reservaService.aprovar(responsavel, reservaId);
@@ -52,7 +67,7 @@ class AprovacaoRecursosRestritosTest {
     void rf19T2_administradorAprovaReservaRestrita_devePermitir() {
         // arrange
         Usuario administrador = new Usuario(UUID.randomUUID(), "adm@example.com", "hash", Perfil.ADMINISTRADOR);
-        UUID reservaId = UUID.randomUUID();
+        UUID reservaId = criarReservaSolicitadaComRecursoRestrito();
 
         // act
         Reserva reservaAprovada = reservaService.aprovar(administrador, reservaId);
@@ -81,7 +96,8 @@ class AprovacaoRecursosRestritosTest {
     void rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado() {
         // arrange
         Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
-        UUID reservaJaAprovadaId = UUID.randomUUID();
+        UUID reservaJaAprovadaId = criarReservaSolicitadaComRecursoRestrito();
+        reservaService.aprovar(responsavel, reservaJaAprovadaId);
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
@@ -96,7 +112,7 @@ class AprovacaoRecursosRestritosTest {
     void rf20T1_rejeicaoComJustificativa_deveTransicionarParaRejeitada() {
         // arrange
         Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
-        UUID reservaId = UUID.randomUUID();
+        UUID reservaId = criarReservaSolicitadaComRecursoRestrito();
 
         // act
         Reserva reservaRejeitada = reservaService.rejeitar(responsavel, reservaId, "Recurso necessario para outro evento institucional");

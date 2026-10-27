@@ -322,6 +322,50 @@ exatamente a alternativa que D-2 rejeitou explicitamente
 cadastro)" — `arquitetura.md` §7.1). Esta é uma divergência direta entre uma decisão de
 produto já registrada e o código — não uma lacuna, uma **contradição**.
 
+### TB-01 — Cobertura e análise estática refletem regra real, não um "estado fabricado" (atualização deste ciclo)
+
+Entre a primeira e a segunda passada deste ciclo, o pipeline passou a rodar `jacoco-maven-plugin`
+(gate `check` em `pom.xml`, LINE ≥80%/BRANCH ≥70%) e `sonar-maven-plugin` (SonarCloud,
+`organization=danilodamasio`, `projectKey=DaniloDamasio_EduAloca`), lendo o XML do JaCoCo via
+`sonar.coverage.jacoco.xmlReportPaths` ([pom.xml:20-25](../../pom.xml#L20-L25),
+[pom.xml:56-60](../../pom.xml#L56-L60), [.github/workflows/ci.yml:38-43](../../.github/workflows/ci.yml#L38-L43)).
+Isso muda D-E de "ausente" (§6) para "implementado" — ver evidência abaixo.
+
+**Resultado agregado (run local `./mvnw -B verify`, mesmo commit do PR #5):**
+
+| Métrica | Valor | Gate (`pom.xml`) |
+|---|---|---|
+| LINE (bundle) | 95,51% (532/557, 25 não cobertas) | ≥80% — **atende** |
+| BRANCH (bundle) | 79,41% (216/272, 56 não cobertas) | ≥70% — **atende** |
+
+**Resultado SonarCloud (PR #5, `https://sonarcloud.io/summary/overall?id=DaniloDamasio_EduAloca`):**
+Quality Gate do novo código = **OK** — `new_bugs=0`, `new_vulnerabilities=0`,
+`new_code_smells=0`, `new_duplicated_lines_density=0,0%`, `new_security_hotspots_reviewed=100%`,
+ratings de confiabilidade/segurança/manutenibilidade = A. Cobertura geral do projeto (SonarCloud) =
+90,0%. **0 issues abertas, 0 security hotspots** — nada para corrigir, aceitar com justificativa
+ou marcar como falso positivo nesta rodada (consultado via `api/qualitygates/project_status` e
+`api/issues/search` em 2026-10-27).
+
+**Achado deste ciclo (confirma e quantifica o tema "evidência fabricada vs. evidência real", §5.5):**
+cobertura de linha por classe, lida do mesmo `jacoco.xml`:
+
+| Classe | LINE | BRANCH | Risco já identificado neste ciclo |
+|---|---|---|---|
+| `AuditoriaService` | **100%** (11/11) | 87,5% (7/8) | RC-1 — `consultarPorEntidade` fabrica evento quando a lista é vazia (§4 AU-01) |
+| `AutenticacaoService` | **100%** (10/10) | 87,5% (7/8) | RC-3/RC-5 — senha em texto plano no armazenamento; perfil sempre `SOLICITANTE` (§4 SG-01/SG-02) |
+| `ReservaService` | 95,1% (117/123) | 82,7% (91/110) | RC-2 — `rc03T4` não injeta falha real (§4 CN-02) |
+| `CadastroRecursoService` | 98,1% (52/53) | 73,9% (34/46) | RC-4 — bloqueia manutenção sem confirmação (contradiz D-2, §4 MN-02) |
+
+As duas classes com os riscos mais graves deste ciclo (`AuditoriaService`, `AutenticacaoService`)
+têm **100% de cobertura de linha** e passaram no Quality Gate do SonarCloud sem nenhuma issue —
+confirmação direta, com números, do Risco R5 do enunciado ("cobertura alta não garante
+qualidade"): nem o gate de cobertura do `pom.xml` nem as regras padrão do SonarCloud detectam
+fabricação de dado de auditoria (RC-1) ou perfil hard-coded (RC-5), porque essas são falhas de
+**lógica de negócio exercida por um teste complacente**, não padrões de código capturáveis por
+análise estática genérica ou por contagem de linhas executadas. **Ferramenta de qualidade
+instalada corretamente ≠ requisito cumprido** — a correção de RC-1 a RC-5 continua pendente
+(§8) e não deve ser presumida resolvida pelo Quality Gate verde.
+
 ---
 
 ## 5. Pontos de sensibilidade, trade-offs, riscos, não-riscos e temas de risco
@@ -333,6 +377,7 @@ produto já registrada e o código — não uma lacuna, uma **contradição**.
 | S-C1 | O comportamento de `AuditoriaService.consultarPorEntidade` sob "nenhum evento encontrado" é o fator que decide se RF-27/RNF-09 passam ou falham nos testes atuais — mudar de "fabricar evento" para "retornar lista vazia" quebraria 2 testes hoje verdes. | [AuditoriaService.java:20-24](../../src/main/java/com/edualoca/domain/auditoria/AuditoriaService.java#L20-L24) | Auditabilidade |
 | S-C2 | A granularidade do lock em `LOCKS_POR_RECURSO` (por `UUID` de recurso, mapa estático nunca limpo) é sensível ao volume de recursos distintos ao longo do tempo — cresce sem bound, sem remoção, para cada recurso novo cadastrado. | [ReservaService.java:19,194-196](../../src/main/java/com/edualoca/domain/reserva/ReservaService.java#L19) | Desempenho/Memória sob concorrência |
 | S-C3 | O ponto em que o hash é calculado (na resposta de `autenticar`, não no armazenamento) é o que decide se RNF-05 "parece" cumprido pelo teste atual — mover o hash para o momento do cadastro, sem mudar `Banco.credenciais`, já mudaria o resultado do teste sem mudar a falha real. | [AutenticacaoService.java:12-17](../../src/main/java/com/edualoca/domain/usuario/AutenticacaoService.java#L12-L17) | Segurança |
+| S-C4 | O limiar do gate de cobertura (`pom.xml`, LINE≥80%/BRANCH≥70%, agregado em `BUNDLE`) é calculado sobre o projeto inteiro — uma classe com 100% de cobertura (`AuditoriaService`, `AutenticacaoService`) pode conter exatamente o comportamento que RC-1/RC-5 apontam como incorreto, sem que o gate numérico detecte isso. Subir o limiar não fecha essa lacuna; só a correção dos testes (ação 1 e 2 de §8) fecha. | §4 TB-01; [pom.xml:85-104](../../pom.xml#L85-L104) | Testabilidade/Processo |
 
 ### 5.2 Trade-offs
 
@@ -352,6 +397,7 @@ produto já registrada e o código — não uma lacuna, uma **contradição**.
 | **RC-5** | `AutenticacaoService.autenticar` sempre devolve `Perfil.SOLICITANTE` — não há caminho de autenticação real que produza RESPONSAVEL/ADMINISTRADOR; testes de autorização contornam esse serviço. | [AutenticacaoService.java:16-17](../../src/main/java/com/edualoca/domain/usuario/AutenticacaoService.java#L16-L17) | **Novo — bloqueia RF-02 fim-a-fim via o único ponto de entrada de autenticação implementado.** |
 | R8, R9, R11 (de `arquitetura.md` §19.8) | Reconfirmados sem nova evidência de código (ainda não há scheduler nem infraestrutura implementada). | — | Herdados, sem mudança de status. |
 | R3 (`arquitetura.md` §10) | "Auditoria incompleta ou editável" — a parte de **escrita** está coberta (ver AU-01); a parte de **consulta/fabricação** é um risco **pior** que o originalmente formulado (não é ausência de cobertura, é fabricação ativa). | Ver RC-1 acima. | Reclassificado — RC-1 substitui R3 como o risco de maior severidade deste tema. |
+| **RC-6 (novo, de processo)** | O Quality Gate do SonarCloud (novo código) e o gate de cobertura do `pom.xml` passaram "limpos" (0 issues, 0 hotspots, LINE/BRANCH acima do limiar) na mesma revisão em que RC-1 a RC-5 continuam sem correção — risco de a equipe (ou um avaliador externo) ler "pipeline verde" como "sem dívida de qualidade", quando na verdade o gate numérico não tem alcance semântico para capturar fabricação de evidência (RC-1) ou autorização que não nasce do login real (RC-5). | §4 TB-01; `api/qualitygates/project_status?projectKey=DaniloDamasio_EduAloca&pullRequest=5` consultado em 2026-10-27 | **Novo — risco de interpretação do próprio tooling de qualidade, não do código.** |
 
 ### 5.4 Não-riscos (confirmados por evidência de código, não apenas de design)
 
@@ -360,6 +406,7 @@ produto já registrada e o código — não uma lacuna, uma **contradição**.
 | **NR-C1** | Mutual exclusion entre 2 threads disputando o mesmo recurso (par simples). | `RegrasCriticasTest.rc03T2` usa `ExecutorService` real com 2 threads e assevera 1 sucesso/1 conflito — passou com concorrência real, não só lógica sequencial ([RegrasCriticasTest.java:338-363](../../src/test/java/com/edualoca/RegrasCriticasTest.java#L338-L363)). |
 | **NR-C2** | Gravação (write-path) de auditoria em toda transição de `ReservaService`. | Toda mutação (`criar`, `aprovar`, `rejeitar`, `cancelar`, `alterar`) chama `AuditoriaService.registrar` antes de retornar — confirmado por leitura completa de `ReservaService.java`. O problema está só na consulta (RC-1), não na escrita. |
 | **NR-C3** | Checagem de sobreposição considerando o professor como recurso acessório (RF-16). | `validarRecursoDisponivel` em `ReservaService` e `disponivel`/`envolveRecurso` em `PesquisaRecursoService` operam sobre qualquer `ReservaRecurso`, sem distinguir "titular" de "acessório" — qualquer recurso vinculado é checado igualmente ([ReservaService.java:169-183](../../src/main/java/com/edualoca/domain/reserva/ReservaService.java#L169-L183); [PesquisaRecursoService.java:61-65](../../src/main/java/com/edualoca/domain/recurso/PesquisaRecursoService.java#L61-L65)). |
+| **NR-C4 (novo deste ciclo)** | Cumprimento mecânico do gate de cobertura agregado e ausência de bugs/vulnerabilidades/code smells detectáveis por análise estática genérica. | Gate `BUNDLE` do `pom.xml` (LINE≥80%/BRANCH≥70%) passa com folga (95,51%/79,41%); Quality Gate do SonarCloud no PR #5 retorna `status: OK` com `new_bugs=0`, `new_vulnerabilities=0`, `new_code_smells=0`, 0 security hotspots (§4 TB-01). É não-risco **apenas para o que essas ferramentas medem** — não deve ser lido como "sem dívida de qualidade" (ver RC-6). |
 
 ### 5.5 Temas de risco (ligados aos direcionadores de negócio, §1)
 
@@ -401,7 +448,7 @@ que já existe.
 | D-B | Camada de Apresentação (Controllers Spring MVC) autenticando/autorizando por perfil e traduzindo exceções sem stacktrace (§13, §16). | Nenhum `@RestController` existe; `RegraNegocioException` carrega um `statusHttp` mas não há camada HTTP real que o traduza em resposta. | `find src -iname "*controller*"` sem resultado. |
 | D-C | `NotificacaoPort` com adaptadores Simulado/API externa, isolável via WireMock (§13, §16, ADR-003). | `NotificacaoService.NotificadorExterno` é uma interface funcional simples, usada apenas com uma lambda (`reserva -> true`) — sem adaptador HTTP real nem WireMock configurado. | [NotificacaoService.java:12-24](../../src/main/java/com/edualoca/domain/notificacao/NotificacaoService.java#L12-L24); nenhuma dependência WireMock no `pom.xml`. |
 | D-D | Job agendado (`@Scheduled`) a cada 30s (D-6) para sinalizar pendência de devolução (RF-26). | `RetiradaMaterialService.sinalizarPendencias` existe como método comum, chamado manualmente — não há `@Scheduled`, nenhum agendador configurado. | [RetiradaMaterialService.java:44-58](../../src/main/java/com/edualoca/domain/retirada/RetiradaMaterialService.java#L44-L58); nenhuma anotação `@Scheduled` em todo `src/`. |
-| D-E | SonarCloud + JaCoCo com metas de 0 crítico e ≥80%/≥70% de cobertura (§4, Drivers #8). | Nenhum plugin JaCoCo nem integração SonarCloud no `pom.xml`/CI; README confirma como item **não concluído** do roadmap. | `pom.xml`; [README.md:117](../../README.md#L117); `.github/workflows/ci.yml` roda apenas `./mvnw -B verify`. |
+| D-E (**atendida nesta revisão — ver §4 TB-01**) | SonarCloud + JaCoCo com metas de 0 crítico e ≥80%/≥70% de cobertura (§4, Drivers #8). | `jacoco-maven-plugin` com gate `check` (≥80%/≥70%, `BUNDLE`) e `sonar-maven-plugin` (SonarCloud, `organization=danilodamasio`) integrados ao `pom.xml` e ao `ci.yml`; PR #5 passou no Quality Gate do novo código com 0 issues/0 hotspots. README ainda não foi atualizado para remover este item do roadmap de pendências. | [pom.xml:20-25,56-60,85-104](../../pom.xml#L20-L25); [.github/workflows/ci.yml:38-43](../../.github/workflows/ci.yml#L38-L43); `sonarcloud.io/summary/overall?id=DaniloDamasio_EduAloca`; [README.md:117](../../README.md#L117) (desatualizado). |
 | D-F | JMeter com metas de p95 (RNF-01/02/03). | Nenhum plano ou artefato JMeter no repositório. | `find . -iname "*.jmx"` sem resultado; README roadmap item não concluído. |
 | D-G | Documentação OpenAPI de 100% dos endpoints públicos (RF-39). | Sem endpoints HTTP implementados, não há especificação OpenAPI a gerar ainda. | Consequência direta de D-B. |
 | D-H | "Responsável competente" por recurso restrito determinado por relação de domínio ainda não modelada (gap Q23 já registrado em `REVISAO_ATAM.md`/plano-tdd). | O código já resolveu Q23 **silenciosamente**, por conta própria: `Banco.responsavelPorLocalizacao` associa um `UUID` de responsável a uma `String` de localização de sala — um mecanismo não documentado em nenhum ADR/decisão, e que não cobre Professor/Material restritos (só funciona via `Sala.getLocalizacao()`). | [NotificacaoService.java:45-54](../../src/main/java/com/edualoca/domain/notificacao/NotificacaoService.java#L45-L54); [Banco.java:36,92](../../src/main/java/com/edualoca/domain/comum/Banco.java#L92) |
@@ -433,54 +480,75 @@ relatórios como artefato — cumpre o requisito mínimo de RNF-12 ("CI executa 
 PR, bloqueando merge em falha"), e o próprio histórico de runs documenta uma validação
 deliberada do gate vermelho/verde (commits `c902021`→`e1ff6e8`), o que é uma boa prática de
 processo pouco comum em projetos acadêmicos — vale reconhecer como ponto forte, não só
-listar riscos. O que falta nesse pipeline (JaCoCo, SonarCloud) já está coberto em D-E (§6).
+listar riscos.
+
+**Atualização deste ciclo — runs do PR #5 (`qs-jacoco-junit-sonarcloud` → `main`):**
+
+| run id | conclusão | duração | observação |
+|---|---|---|---|
+| 40598780137 | success | 38s | primeiro run com `sonar-maven-plugin` no `pom.xml`; passo do Sonar pulado (secret `SONAR_TOKEN` ainda não cadastrado) |
+| 40604064104 | **failure** | 32s | secret cadastrado, mas Sonar recusa análise: "You are running CI analysis while Automatic Analysis is enabled" (Automatic Analysis do SonarCloud ainda ativo, não lê o XML do JaCoCo) |
+| 40604509524 | success | 1m7s | Automatic Analysis desativado no SonarCloud; `mvn sonar:sonar` roda e publica o Quality Gate do PR com sucesso |
+
+O item D-E (§6) está **atendido** a partir deste run: JaCoCo gera `target/site/jacoco/jacoco.xml`
+a cada build e o SonarCloud lê esse XML via `sonar.coverage.jacoco.xmlReportPaths`, cumprindo o
+requisito de "projeto integrado ao SonarCloud, cobertura por JaCoCo" (enunciado.md:78). O detalhe
+do run `40604064104` é um achado de processo relevante por si: o SonarCloud oferece "Automatic
+Analysis" por padrão ao importar um repositório, e essa opção é **incompatível** com análise via
+CI/Maven — qualquer reprodução deste pipeline em outro projeto precisa desativá-la explicitamente
+(Project Settings → Analysis Method), senão a cobertura reportada seria sempre 0% (a Automatic
+Analysis não lê `jacoco.xml`).
 
 ---
 
 ## 8. Ações priorizadas para o próximo ciclo
 
 Ordenadas por impacto nos direcionadores de negócio (§1) e por serem bloqueadoras de outras
-ações:
+ações. Status atualizado após a integração de JaCoCo/SonarCloud ao CI (PR #5, ver §4 TB-01 e
+§7):
 
-1. **(Direcionador #4 — evidência objetiva) Corrigir `AuditoriaService.consultarPorEntidade`
-   para nunca fabricar evento** — deve devolver lista vazia quando não há evento real, e os
-   dois testes que dependem da fabricação (`AuditoriaTest.rf27T1`,
-   `RequisitosNaoFuncionaisTest.rnf09T1`) devem ser reescritos para criar uma reserva real,
-   executar uma transição real, e então consultar a auditoria dela. **Prioridade máxima**:
-   sem isso, nenhuma alegação de conformidade com RF-27/RF-29/RNF-09 é confiável.
-2. **(Direcionador #4) Reescrever `RegrasCriticasTest.rc03T4`** para efetivamente simular
-   falha parcial (ex.: lançar exceção após adquirir lock e antes do `put`, verificar que o
-   recurso permanece disponível) — hoje RNF-08 não tem nenhuma evidência real.
-3. **(Direcionador #3 — segurança) Corrigir armazenamento de senha**: `Banco.credenciais`
-   não deve guardar texto plano; `SenhaHasher` deve migrar de SHA-256 puro para uma função
-   com sal/fator de custo (BCrypt, como já citado em RNF-05) antes de qualquer avanço para
-   persistência real.
-4. **(Direcionador #3) Decidir e corrigir `AutenticacaoService.autenticar`**: hoje não há
-   caminho de autenticação real capaz de produzir um perfil diferente de SOLICITANTE —
-   definir como o perfil é determinado no login antes de implementar a camada de
-   apresentação (Controllers), para não arrastar esse atalho adiante.
-5. **(Direcionador #3) Alinhar `CadastroRecursoService.cadastrarManutencao` à decisão D-2**
-   — introduzir o parâmetro de confirmação explícita já citado na própria mensagem de erro
-   do método, ou reabrir D-2 formalmente se a decisão mudou.
-6. **(Direcionador #2/#4) Atualizar `arquitetura.md`** para distinguir claramente "arquitetura
-   alvo" de "estado atual implementado" — ao menos uma nota por componente descrito em
-   §13–§16 indicando se ele existe hoje (nenhum existe, exceto como serviço de domínio em
-   memória) evita que o próximo avaliador/revisor leia o documento como descrição do sistema
-   atual.
-7. **(Direcionador #1/#4) Planejar a transição de concorrência**: antes de introduzir
-   PostgreSQL, decidir explicitamente se o lock em memória (`LOCKS_POR_RECURSO`) será
-   substituído pela constraint de banco ou mantido como camada adicional — e, de qualquer
-   forma, adicionar o teste de concorrência real contra Testcontainers já exigido
-   literalmente pelo enunciado (enunciado.md:69,72), hoje ausente (`RC-03-T3`/`T4` rodam só
-   em memória, como os próprios `@DisplayName` admitem).
-8. **(Direcionador #4 — entregáveis) Fechar os itens já listados como pendentes no roadmap**
-   do próprio README (JaCoCo/SonarCloud, RTM, JMeter) — sem RTM nenhum requisito crítico tem
-   rastreabilidade formal ainda, apesar de RNF-11 ser Crítico.
-9. **(Direcionador #3, item D-H) Formalizar "responsável competente" por recurso restrito**
-   — a solução atual (`responsavelPorLocalizacao`, por string de localização) resolve o
-   caso de Sala mas não cobre Professor/Material restritos; decidir o modelo correto antes
-   de modelar a entidade `Usuario`/relacionamento em JPA, para não herdar esse atalho na
-   migração.
+1. ❌ **Não atendida.** (Direcionador #4 — evidência objetiva) Corrigir
+   `AuditoriaService.consultarPorEntidade` para nunca fabricar evento — deve devolver lista
+   vazia quando não há evento real, e os dois testes que dependem da fabricação
+   (`AuditoriaTest.rf27T1`, `RequisitosNaoFuncionaisTest.rnf09T1`) devem ser reescritos para
+   criar uma reserva real, executar uma transição real, e então consultar a auditoria dela.
+   **Confirmado neste ciclo que o SonarCloud não detecta esta falha** (`AuditoriaService` com
+   100% de cobertura e 0 issues — §4 TB-01): continua prioridade máxima, sem relação com o
+   tooling agora instalado.
+2. ❌ **Não atendida.** (Direcionador #4) Reescrever `RegrasCriticasTest.rc03T4` para
+   efetivamente simular falha parcial — hoje RNF-08 não tem nenhuma evidência real.
+3. ❌ **Não atendida.** (Direcionador #3 — segurança) Corrigir armazenamento de senha:
+   `Banco.credenciais` não deve guardar texto plano; `SenhaHasher` deve migrar de SHA-256
+   puro para uma função com sal/fator de custo (BCrypt).
+4. ❌ **Não atendida.** (Direcionador #3) Decidir e corrigir `AutenticacaoService.autenticar`
+   — hoje não há caminho de autenticação real capaz de produzir um perfil diferente de
+   SOLICITANTE.
+5. ❌ **Não atendida.** (Direcionador #3) Alinhar `CadastroRecursoService.cadastrarManutencao`
+   à decisão D-2 — introduzir o parâmetro de confirmação explícita, ou reabrir D-2
+   formalmente.
+6. ❌ **Não atendida.** (Direcionador #2/#4) Atualizar `arquitetura.md` para distinguir
+   "arquitetura alvo" de "estado atual implementado".
+7. ❌ **Não atendida.** (Direcionador #1/#4) Planejar a transição de concorrência
+   (`LOCKS_POR_RECURSO` vs. constraint de banco) e adicionar teste de concorrência real
+   contra Testcontainers, hoje ausente.
+8. ✅ **Atendida parcialmente neste ciclo** (Direcionador #4 — entregáveis). JaCoCo e
+   SonarCloud foram integrados ao `pom.xml`/`ci.yml` (PR #5): gate de cobertura
+   LINE≥80%/BRANCH≥70% ativo (`mvn verify` falha se não cumprido), análise SonarCloud roda a
+   cada PR com `fetch-depth: 0`, token lido só de `secrets.SONAR_TOKEN` (nunca em arquivo,
+   log ou commit), Quality Gate do novo código = OK, 0 issues/0 hotspots (ver §4 TB-01). O
+   que falta deste item: **RTM** (matriz de rastreabilidade de requisitos, RNF-11 Crítico) e
+   **JMeter** continuam pendentes — não fazem parte do escopo desta integração.
+9. ❌ **Não atendida.** (Direcionador #3, item D-H) Formalizar "responsável competente" por
+   recurso restrito — a solução atual (`responsavelPorLocalizacao`) não cobre
+   Professor/Material restritos.
+
+**Nova ação decorrente deste ciclo:**
+
+10. **(Direcionador #4 — entregáveis) Atualizar o roadmap do `README.md`** para remover
+    "SonarCloud, JaCoCo" da lista de pendências ([README.md:117](../../README.md#L117)), já
+    que o item 8 acima foi atendido — o documento hoje está desatualizado em relação ao que
+    o CI já faz, o mesmo tipo de divergência documento-vs-código já identificado em D-A a D-G
+    (§6).
 
 ---
 
@@ -490,3 +558,13 @@ ações:
 `.github/workflows/ci.yml`, `README.md` e os runs reais do GitHub Actions via `gh run list`
 na branch `testes-e-ci`. Nenhum requisito foi alterado; nenhum código foi modificado como
 parte desta avaliação.*
+
+*Atualização de 2026-10-27 (seções 4 TB-01, 5.1 S-C4, 5.3 RC-6, 5.4 NR-C4, 6 D-E, 7 e 8):
+integração de JaCoCo/SonarCloud ao `pom.xml`/`ci.yml` no PR #5
+(`qs-jacoco-junit-sonarcloud` → `main`), relatório de cobertura lido de
+`target/site/jacoco/jacoco.xml` (run local `./mvnw -B verify`) e Quality Gate/issues lidos da
+API pública do SonarCloud (`api/qualitygates/project_status`, `api/issues/search`,
+`api/hotspots/search`, `api/measures/component`, todos com `projectKey=DaniloDamasio_EduAloca`
+e `pullRequest=5`). Nenhum requisito foi alterado; os únicos arquivos de
+código modificados nesta atualização foram `pom.xml` e `.github/workflows/ci.yml` (integração
+do plugin/CI), sem mudança em `src/main/java` ou `src/test/java`.*

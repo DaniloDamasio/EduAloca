@@ -1,14 +1,18 @@
 package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +31,11 @@ class MaquinaEstadosReservaTest {
     void estT1_solicitadaParaAprovada_devePermitir() {
         // arrange
         Usuario responsavel = responsavel();
-        UUID reservaSolicitadaId = UUID.randomUUID();
+        Sala salaRestrita = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        Reserva reservaSolicitada = reservaService.criar(new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE),
+                LocalDateTime.of(2026, 3, 10, 10, 0), LocalDateTime.of(2026, 3, 10, 12, 0),
+                "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        UUID reservaSolicitadaId = reservaSolicitada.getId();
 
         // act
         Reserva reserva = reservaService.aprovar(responsavel, reservaSolicitadaId);
@@ -71,7 +79,11 @@ class MaquinaEstadosReservaTest {
     void estT4_solicitadaParaRejeitada_devePermitirComJustificativa() {
         // arrange
         Usuario responsavel = responsavel();
-        UUID reservaSolicitadaId = UUID.randomUUID();
+        Sala salaRestrita = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        Reserva reservaSolicitada = reservaService.criar(new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE),
+                LocalDateTime.of(2026, 3, 10, 10, 0), LocalDateTime.of(2026, 3, 10, 12, 0),
+                "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        UUID reservaSolicitadaId = reservaSolicitada.getId();
 
         // act
         Reserva reserva = reservaService.rejeitar(responsavel, reservaSolicitadaId, "Conflito com evento institucional");
@@ -85,7 +97,10 @@ class MaquinaEstadosReservaTest {
     void estT5_solicitadaParaCancelada_devePermitirComMotivo() {
         // arrange
         Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
-        UUID reservaSolicitadaId = UUID.randomUUID();
+        Sala salaRestrita = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        Reserva reservaSolicitada = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        UUID reservaSolicitadaId = reservaSolicitada.getId();
 
         // act
         Reserva reserva = reservaService.cancelar(solicitante, reservaSolicitadaId, "Desistencia");
@@ -99,7 +114,10 @@ class MaquinaEstadosReservaTest {
     void estT6_aprovadaParaCancelada_devePermitirComMotivo() {
         // arrange
         Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
-        UUID reservaAprovadaId = UUID.randomUUID();
+        Sala salaNaoRestrita = new Sala(UUID.randomUUID(), "Sala livre", "aula", 20, "Bloco A", false);
+        Reserva reservaAprovada = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula regular", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        UUID reservaAprovadaId = reservaAprovada.getId();
 
         // act
         Reserva reserva = reservaService.cancelar(solicitante, reservaAprovadaId, "Imprevisto");

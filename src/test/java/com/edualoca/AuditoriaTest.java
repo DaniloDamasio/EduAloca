@@ -80,7 +80,12 @@ class AuditoriaTest {
         com.edualoca.domain.reserva.ReservaService reservaService = new com.edualoca.domain.reserva.ReservaService();
         com.edualoca.domain.usuario.Usuario autor = new com.edualoca.domain.usuario.Usuario(
                 UUID.randomUUID(), "aluno@example.com", "hash", com.edualoca.domain.usuario.Perfil.SOLICITANTE);
-        UUID reservaSolicitadaId = UUID.randomUUID();
+        com.edualoca.domain.recurso.Sala salaRestrita = new com.edualoca.domain.recurso.Sala(
+                UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        com.edualoca.domain.reserva.Reserva reservaSolicitada = reservaService.criar(autor,
+                java.time.LocalDateTime.of(2026, 3, 10, 10, 0), java.time.LocalDateTime.of(2026, 3, 10, 12, 0),
+                "Aula especial", List.of(new com.edualoca.domain.reserva.ReservaRecurso(salaRestrita, 1)));
+        UUID reservaSolicitadaId = reservaSolicitada.getId();
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,

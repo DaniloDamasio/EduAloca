@@ -74,10 +74,11 @@ class NotificacoesTest {
     @DisplayName("RF-33-T1: endpoint de notificacao externa indisponivel deve persistir a transicao e registrar notificacao como FALHA (limitacao: sem WireMock nesta fase, simulado)")
     void rf33T1_endpointIndisponivel_devePersistirTransicaoComNotificacaoEmFalha() {
         // arrange
+        NotificacaoService notificacaoServiceComEndpointIndisponivel = new NotificacaoService(r -> false);
         Reserva reserva = reservaDeExemplo(EstadoReserva.APROVADA);
 
         // act
-        NotificacaoEnviada notificacao = notificacaoService.notificarTransicaoDeEstado(reserva);
+        NotificacaoEnviada notificacao = notificacaoServiceComEndpointIndisponivel.notificarTransicaoDeEstado(reserva);
 
         // assert
         assertEquals(StatusNotificacao.FALHA, notificacao.getStatus());

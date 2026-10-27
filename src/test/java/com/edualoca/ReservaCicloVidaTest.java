@@ -122,7 +122,10 @@ class ReservaCicloVidaTest {
     void rf13T1_alterarReservaSolicitadaComHorarioLivre_devePermitir() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaId = UUID.randomUUID();
+        Sala salaRestrita = sala(true);
+        Reserva reservaSolicitada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 9, 10, 0),
+                LocalDateTime.of(2026, 3, 9, 12, 0), "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        UUID reservaId = reservaSolicitada.getId();
         LocalDateTime novoInicio = LocalDateTime.of(2026, 3, 11, 10, 0);
         LocalDateTime novoFim = LocalDateTime.of(2026, 3, 11, 12, 0);
 
@@ -138,7 +141,10 @@ class ReservaCicloVidaTest {
     void rf13T2_alterarReservaAprovada_devePermitir() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaId = UUID.randomUUID();
+        Sala salaNaoRestrita = sala(false);
+        Reserva reservaAprovada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 9, 10, 0),
+                LocalDateTime.of(2026, 3, 9, 12, 0), "Aula regular", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        UUID reservaId = reservaAprovada.getId();
         LocalDateTime novoInicio = LocalDateTime.of(2026, 3, 12, 10, 0);
         LocalDateTime novoFim = LocalDateTime.of(2026, 3, 12, 12, 0);
 
@@ -154,7 +160,11 @@ class ReservaCicloVidaTest {
     void rf13T3_alterarReservaEmUso_deveSerRejeitada() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaEmUsoId = UUID.randomUUID();
+        Sala salaNaoRestrita = sala(false);
+        Reserva reservaEmUso = reservaService.criar(autor, LocalDateTime.of(2026, 3, 9, 10, 0),
+                LocalDateTime.of(2026, 3, 9, 12, 0), "Aula em uso", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        reservaEmUso.setEstado(EstadoReserva.EM_USO);
+        UUID reservaEmUsoId = reservaEmUso.getId();
         LocalDateTime novoInicio = LocalDateTime.of(2026, 3, 12, 10, 0);
         LocalDateTime novoFim = LocalDateTime.of(2026, 3, 12, 12, 0);
 
@@ -171,9 +181,14 @@ class ReservaCicloVidaTest {
     void rf13T4_alteracaoComColisaoDeHorario_deveSerRejeitada() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaId = UUID.randomUUID();
-        LocalDateTime novoInicioColidente = LocalDateTime.of(2026, 3, 10, 11, 0);
-        LocalDateTime novoFimColidente = LocalDateTime.of(2026, 3, 10, 13, 0);
+        Sala salaX = sala(false);
+        Reserva reservaOcupandoHorarioColidente = reservaService.criar(autor, LocalDateTime.of(2026, 3, 10, 11, 0),
+                LocalDateTime.of(2026, 3, 10, 13, 0), "Aula ocupando o horario alvo", List.of(new ReservaRecurso(salaX, 1)));
+        Reserva reservaASerAlterada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 20, 8, 0),
+                LocalDateTime.of(2026, 3, 20, 9, 0), "Aula a ser remarcada", List.of(new ReservaRecurso(salaX, 1)));
+        UUID reservaId = reservaASerAlterada.getId();
+        LocalDateTime novoInicioColidente = reservaOcupandoHorarioColidente.getInicio().plusMinutes(30);
+        LocalDateTime novoFimColidente = reservaOcupandoHorarioColidente.getFim();
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
@@ -188,7 +203,10 @@ class ReservaCicloVidaTest {
     void rf14T1_cancelamentoComMotivo_deveTransicionarParaCancelada() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaId = UUID.randomUUID();
+        Sala salaRestrita = sala(true);
+        Reserva reservaSolicitada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
+        UUID reservaId = reservaSolicitada.getId();
 
         // act
         Reserva reservaCancelada = reservaService.cancelar(autor, reservaId, "Mudanca de planos");
@@ -202,7 +220,10 @@ class ReservaCicloVidaTest {
     void rf14T2_cancelamentoEmAprovadaOuEmUso_devePermitir() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaAprovadaId = UUID.randomUUID();
+        Sala salaNaoRestrita = sala(false);
+        Reserva reservaAprovada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula regular", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        UUID reservaAprovadaId = reservaAprovada.getId();
 
         // act
         Reserva reservaCancelada = reservaService.cancelar(autor, reservaAprovadaId, "Imprevisto");
@@ -216,7 +237,11 @@ class ReservaCicloVidaTest {
     void rf14T3_cancelamentoDeReservaConcluida_deveSerRejeitado() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaConcluidaId = UUID.randomUUID();
+        Sala salaNaoRestrita = sala(false);
+        Reserva reservaConcluida = reservaService.criar(autor, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula ja concluida", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        reservaConcluida.setEstado(EstadoReserva.CONCLUIDA);
+        UUID reservaConcluidaId = reservaConcluida.getId();
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
@@ -246,7 +271,11 @@ class ReservaCicloVidaTest {
     void rf14T5_cancelamentoDeReservaJaCancelada_deveSerRejeitado() {
         // arrange
         Usuario autor = solicitante();
-        UUID reservaJaCanceladaId = UUID.randomUUID();
+        Sala salaNaoRestrita = sala(false);
+        Reserva reservaJaCancelada = reservaService.criar(autor, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula cancelada anteriormente", List.of(new ReservaRecurso(salaNaoRestrita, 1)));
+        reservaJaCancelada.setEstado(EstadoReserva.CANCELADA);
+        UUID reservaJaCanceladaId = reservaJaCancelada.getId();
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,

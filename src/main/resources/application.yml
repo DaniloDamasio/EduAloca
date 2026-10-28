@@ -1,3 +1,11 @@
 spring:
   application:
     name: edualoca
+
+edualoca:
+  notificacao:
+    externa:
+      url: http://localhost:8089
+      api-key: ""
+      timeout-conexao-ms: 1000
+      timeout-leitura-ms: 2000

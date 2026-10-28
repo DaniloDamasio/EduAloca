@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configurar JDK 21 (Temurin)
         uses: actions/setup-java@v4
@@ -32,6 +34,13 @@ jobs:
       - name: Build e testes (verify)
         run: ./mvnw -B verify
 
+      - name: Análise estática SonarCloud
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: env.SONAR_TOKEN != ''
+        run: ./mvnw -B sonar:sonar
+
       - name: Publicar relatórios Surefire e Failsafe
         if: always()
         uses: actions/upload-artifact@v4
@@ -40,5 +49,16 @@ jobs:
           path: |
             target/surefire-reports/
             target/failsafe-reports/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Publicar relatório de cobertura JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: |
+            target/site/jacoco/
+            target/jacoco.exec
           retention-days: 7
           if-no-files-found: ignore

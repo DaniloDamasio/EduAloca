@@ -156,4 +156,35 @@ class AutenticacaoAutorizacaoTest {
         // assert
         assertEquals(403, ex.getStatusHttp());
     }
+
+    @Test
+    @DisplayName("RF-03-T4: solicitante consultando a propria reserva deve recebe-la de volta")
+    void rf03T4_solicitanteConsultaPropriaReserva_deveRetornarAReserva() {
+        // arrange
+        Usuario solicitanteA = new Usuario(UUID.randomUUID(), "a@example.com", "hash", Perfil.SOLICITANTE);
+        Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Reserva reservaPropria = reservaService.criar(solicitanteA, LocalDateTime.of(2026, 3, 10, 10, 0),
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula propria", List.of(new ReservaRecurso(sala, 1)));
+
+        // act
+        Reserva consultada = reservaService.consultar(solicitanteA, reservaPropria.getId());
+
+        // assert
+        assertEquals(reservaPropria.getId(), consultada.getId());
+    }
+
+    @Test
+    @DisplayName("RF-03-T5: administrador consultando reserva inexistente deve receber HTTP 409 (reserva inexistente)")
+    void rf03T5_administradorConsultaReservaInexistente_deveRetornar409() {
+        // arrange
+        Usuario administrador = new Usuario(UUID.randomUUID(), "adm@example.com", "hash", Perfil.ADMINISTRADOR);
+        UUID reservaInexistenteId = UUID.randomUUID();
+
+        // act
+        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
+                () -> reservaService.consultar(administrador, reservaInexistenteId));
+
+        // assert
+        assertEquals(409, ex.getStatusHttp());
+    }
 }

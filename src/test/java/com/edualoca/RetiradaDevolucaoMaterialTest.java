@@ -13,6 +13,8 @@ import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -215,5 +217,27 @@ class RetiradaDevolucaoMaterialTest {
 
         // assert
         assertEquals(false, registro.isPendenciaSinalizada());
+    }
+
+    @ParameterizedTest(name = "offsetMinutos={0} -> pendenciaSinalizada={1}")
+    @DisplayName("RF-26 [limite em trinca]: pendencia so deve ser sinalizada estritamente apos o fim da reserva (-1min/0/+1min)")
+    @CsvSource({
+            "-1, false",
+            "0, false",
+            "1, true"
+    })
+    void rf26T5_jobNoLimiteDoFimDaReserva_devePropagarEstadoCorretoDaTrinca(long offsetMinutos, boolean pendenciaEsperada) {
+        // arrange
+        LocalDateTime fimDaReserva = LocalDateTime.of(2026, 3, 10, 12, 0);
+        UUID reservaEmUsoId = criarReservaEmUso();
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 10, 0));
+        LocalDateTime agora = fimDaReserva.plusMinutes(offsetMinutos);
+
+        // act
+        retiradaMaterialService.sinalizarPendencias(agora);
+
+        // assert
+        assertEquals(pendenciaEsperada, registro.isPendenciaSinalizada());
     }
 }

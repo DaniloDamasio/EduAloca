@@ -71,7 +71,7 @@ class NotificacoesTest {
     }
 
     @Test
-    @DisplayName("RF-33-T1: endpoint de notificacao externa indisponivel deve persistir a transicao e registrar notificacao como FALHA (limitacao: sem WireMock nesta fase, simulado)")
+    @DisplayName("RF-33-T1: endpoint de notificacao externa indisponivel deve persistir a transicao e registrar notificacao como FALHA (logica isolada do transporte; cobertura HTTP real via WireMock em IntegracaoNotificacaoExternaTest)")
     void rf33T1_endpointIndisponivel_devePersistirTransicaoComNotificacaoEmFalha() {
         // arrange
         NotificacaoService notificacaoServiceComEndpointIndisponivel = new NotificacaoService(r -> false);

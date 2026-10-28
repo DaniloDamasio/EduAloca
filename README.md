@@ -105,6 +105,18 @@ Runs de validação do pipeline (PR [#4](https://github.com/DaniloDamasio/EduAlo
 | [40528813431](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528813431) | ❌ vermelho | Asserção quebrada de propósito para validar falha do CI |
 | [40528932207](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528932207) | ✅ verde | Após reverter a quebra, pipeline volta a passar |
 
+## Executando a Suíte Localmente
+
+```
+./mvnw -B verify
+```
+
+Isso roda toda a suíte (unitária e de integração) e o gate de cobertura do JaCoCo
+(≥80% linha, ≥70% branch). Os testes de integração com o provedor de notificação externa
+([IntegracaoNotificacaoExternaTest](src/test/java/com/edualoca/IntegracaoNotificacaoExternaTest.java))
+sobem um servidor WireMock em porta dinâmica — não dependem de rede externa nem de
+nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
+
 ## Roadmap
 
 - [x] Definição de personas e objetivos
@@ -113,7 +125,8 @@ Runs de validação do pipeline (PR [#4](https://github.com/DaniloDamasio/EduAlo
 - [x] Jornadas de usuário
 - [x] Fase RED/GREEN do TDD (123 testes unitários)
 - [x] CI/CD (GitHub Actions: build, testes, relatórios Surefire/Failsafe)
-- [ ] Testes de integração, concorrência, e2e
-- [ ] Análise estática (SonarCloud, JaCoCo)
+- [x] Análise estática (SonarCloud, JaCoCo)
+- [x] Adapter HTTP de notificação externa isolado via WireMock (RF-31/32/33, RNF-16)
+- [ ] Testes de integração com persistência real, concorrência, e2e
 - [ ] Teste de carga (JMeter)
-- [ ] RTM (Requirements Traceability Matrix)
+- [x] RTM (Requirements Traceability Matrix) — cobertura inicial, ver [DOCS/RTM.md](DOCS/RTM.md)

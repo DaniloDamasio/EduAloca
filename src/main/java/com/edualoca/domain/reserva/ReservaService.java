@@ -84,9 +84,18 @@ public class ReservaService {
             for (ReservaRecurso rr : reserva.getRecursos()) {
                 validarRecursoDisponivel(rr.getRecurso(), novoInicio, novoFim, reservaId);
             }
+            LocalDateTime inicioAnterior = reserva.getInicio();
+            LocalDateTime fimAnterior = reserva.getFim();
             reserva.setInicio(novoInicio);
             reserva.setFim(novoFim);
-            repositorio.atualizar(reserva);
+            try {
+                repositorio.atualizar(reserva);
+            } catch (RuntimeException e) {
+                // A gravacao foi recusada (ex.: sobreposicao detectada pelo banco); desfaz a alteracao em memoria.
+                reserva.setInicio(inicioAnterior);
+                reserva.setFim(fimAnterior);
+                throw e;
+            }
             AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {

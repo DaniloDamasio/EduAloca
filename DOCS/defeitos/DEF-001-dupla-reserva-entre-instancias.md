@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 10/11/2026) |
 | Severidade | Alta: viola a regra crítica "duas solicitações simultâneas produzem uma única reserva aceita" (RF-17, RF-15, Driver #2) |
 | Prioridade | Alta |
 | Requisitos | RF-15, RF-16, RF-17, RNF-08 |
@@ -91,7 +91,27 @@ atômicas por causa do lock em memória do processo. O esquema não tem restriç
 contrário do decidido no ADR-001 e em arquitetura.md §11 (`EXCLUDE USING gist`), que não chegou a ser
 implementado. Entre processos nada impede que duas transações vejam "sem conflito" e gravem.
 
-## Correção proposta
+## Correção
 
-Constraint de exclusão no PostgreSQL (`EXCLUDE USING gist` sobre `tstzrange`) em `reserva_recurso`,
-com a violação (SQLSTATE `23P01`) traduzida para `409`.
+Constraint de exclusão no PostgreSQL em `reserva_recurso`:
+`EXCLUDE USING gist (tipo_recurso WITH =, recurso_id WITH =, periodo WITH &&) WHERE (ativa)`, com
+`periodo tstzrange` `[)`. A violação (SQLSTATE `23P01`) é traduzida para `409` em
+`ReservaRepositorioJdbc`. Decisão e alternativas no [ADR-009](../adr/ADR-009-exclusao-gist-tstzrange.md).
+Nenhum teste foi alterado para a correção.
+
+## Reteste
+
+Cinco execuções seguidas de `ConcorrenciaReservaMultiInstanciaIT` e `ConcorrenciaReservaIT`, sem
+alterar os testes:
+
+| Execução | Multi-instância (sala, professor) | Instância única (sala, professor) |
+|---|---|---|
+| 1 | 2/2 verdes | 2/2 verdes |
+| 2 | 2/2 verdes | 2/2 verdes |
+| 3 | 2/2 verdes | 2/2 verdes |
+| 4 | 2/2 verdes | 2/2 verdes |
+| 5 | 2/2 verdes | 2/2 verdes |
+
+Sonda de confirmação: com o `ReentrantLock` do `ReservaService` desligado (alteração temporária, não
+versionada), os dois testes ficaram verdes em 3 execuções. A garantia agora vem do banco, não do
+lock. `ReservaRepositorioJdbcIT` cobre a constraint diretamente (4 casos).

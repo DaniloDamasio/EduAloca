@@ -15,6 +15,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.time.ZoneId;
 
 /**
  * Liga a persistencia de reservas ao PostgreSQL quando {@code edualoca.persistencia.url} esta definido.
@@ -48,8 +49,9 @@ public class PersistenciaPostgresConfig {
     }
 
     @Bean
-    public ReservaRepositorio reservaRepositorioJdbc(DataSource dataSource, DataSourceInitializer esquemaReservas) {
+    public ReservaRepositorio reservaRepositorioJdbc(DataSource dataSource, DataSourceInitializer esquemaReservas,
+                                                     @Value("${edualoca.persistencia.fuso-horario:America/Sao_Paulo}") String fusoHorario) {
         return new ReservaRepositorioJdbc(new JdbcTemplate(dataSource),
-                new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
+                new TransactionTemplate(new DataSourceTransactionManager(dataSource)), ZoneId.of(fusoHorario));
     }
 }

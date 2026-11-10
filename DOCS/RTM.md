@@ -54,3 +54,10 @@ Os demais RFs/RNFs críticos listados em [REQUISITOS.md](REQUISITOS/REQUISITOS.m
 não têm linha nesta matriz. Cada nova entrega de feature deve adicionar aqui o
 requisito, o risco que o teste mitiga, o(s) teste(s) correspondente(s) e a forma de
 execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
+
+## Concorrência de reservas (PostgreSQL real via Testcontainers)
+
+| Requisito | Risco | Teste | Evidência / Execução |
+|---|---|---|---|
+| RF-17 / RNF-08 — Sob concorrência, exatamente uma reserva aceita para o mesmo recurso/intervalo | Duas reservas aceitas para a mesma sala ou o mesmo professor no mesmo horário. | `ConcorrenciaReservaIT` (20 requisições simultâneas, 1 instância); `ConcorrenciaReservaMultiInstanciaIT` (20 requisições divididas entre 2 JVMs). Exigem 1×201, 19×409 e 1 linha no banco, conferida por SQL. | 5 execuções seguidas verdes; [DEF-001](defeitos/DEF-001-dupla-reserva-entre-instancias.md) (falha antes da correção e reteste); [ADR-009](adr/ADR-009-exclusao-gist-tstzrange.md). |
+| RF-15 / RF-16 — Recusar sobreposição com reserva ativa do mesmo recurso (sala ou professor) | Sobreposição gravada por caminho que não passe pela checagem do serviço. | `ReservaRepositorioJdbcIT` (constraint `ex_reserva_recurso_sem_sobreposicao`: sobreposição → 409, professor, intervalos encostados permitidos, cancelada libera, reativação recusada). | `./mvnw -B verify` (Failsafe), executado no CI. |

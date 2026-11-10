@@ -53,6 +53,10 @@ public class Reserva {
         return estado;
     }
 
+    public String getJustificativaRejeicao() {
+        return null;
+    }
+
     public void setEstado(EstadoReserva estado) {
         this.estado = estado;
     }

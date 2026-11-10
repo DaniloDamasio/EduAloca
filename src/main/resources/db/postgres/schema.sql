@@ -28,3 +28,14 @@ CREATE TABLE IF NOT EXISTS reserva_recurso (
     CONSTRAINT ex_reserva_recurso_sem_sobreposicao
         EXCLUDE USING gist (tipo_recurso WITH =, recurso_id WITH =, periodo WITH &&) WHERE (ativa)
 );
+
+CREATE TABLE IF NOT EXISTS reserva_historico (
+    sequencia       bigint       GENERATED ALWAYS AS IDENTITY,
+    id              uuid         PRIMARY KEY,
+    reserva_id      uuid         NOT NULL,
+    usuario_id      uuid         NOT NULL,
+    instante        timestamptz  NOT NULL,
+    estado_anterior varchar(20),
+    estado_novo     varchar(20)  NOT NULL,
+    motivo          text         NOT NULL
+);

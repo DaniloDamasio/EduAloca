@@ -95,3 +95,29 @@ Funcionalidade: Aprovação, autoaprovação, bloqueio por manutenção e máqui
       Quando "ana" aprova a própria reserva
       Então a resposta de erro explica em linguagem natural que só Responsável ou Administrador aprovam
       E a resposta não contém stacktrace nem nome de classe interna
+
+  Regra: Regra 3 — Recurso em manutenção não pode ser reservado
+
+    Contexto:
+      Dado a sala "Lab 3" não restrita
+      E uma manutenção da "Lab 3" de 10/03/2026 08:00:00 até 10/03/2026 18:00:00, motivo "Troca de bancadas"
+      E o usuário "ana" com perfil SOLICITANTE
+
+    # BDD-R3-01 (RF-22)
+    Cenário: Reserva totalmente dentro da manutenção é recusada
+      Quando "ana" cria uma reserva da "Lab 3" de 10/03 10:00 a 12:00
+      Então a operação é recusada com HTTP 409
+      E a mensagem informa que o recurso está em manutenção no intervalo
+      E nenhuma reserva é persistida
+
+    # BDD-R3-04 (RF-11)
+    Cenário: Recurso em manutenção não aparece na busca de disponibilidade
+      Quando "ana" busca salas disponíveis de 10/03 10:00 a 12:00
+      Então "Lab 3" não aparece no resultado
+
+    # BDD-R3-06 (RF-23)
+    Cenário: Cadastrar manutenção sobre reserva APROVADA exige confirmação explícita
+      Dado uma reserva APROVADA da "Lab 3" em 12/03 10:00 a 12:00
+      Quando o Administrador cadastra manutenção da "Lab 3" de 12/03 09:00 a 13:00 sem confirmar
+      Então o cadastro é recusado
+      E a reserva continua APROVADA

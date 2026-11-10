@@ -1,9 +1,12 @@
 package com.edualoca;
 
+import com.edualoca.domain.auditoria.AuditoriaEvento;
+import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.CadastroRecursoService;
 import com.edualoca.domain.recurso.Competencia;
 import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
@@ -14,7 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -86,5 +92,46 @@ class BddAprovacaoBloqueioTest {
                         List.of(new ReservaRecurso(recurso, 1))));
 
         assertEquals(409, ex.getStatusHttp());
+    }
+
+    @ParameterizedTest(name = "{0} --{1}--> {2} gera um unico evento {3} com ator e instante do relogio")
+    @CsvSource({
+            "SOLICITADA, aprovar,  APROVADA,  APROVACAO",
+            "SOLICITADA, rejeitar, REJEITADA, REJEICAO",
+            "SOLICITADA, cancelar, CANCELADA, CANCELAMENTO",
+            "APROVADA,   cancelar, CANCELADA, CANCELAMENTO"
+    })
+    @DisplayName("BDD-R4-01: transicao permitida muda o estado e gera exatamente um evento de auditoria com ator e instante")
+    void transicaoPermitida_mudaEstadoEGeraUmEventoDeAuditoriaComAtorEInstante(
+            EstadoReserva origem, String acao, EstadoReserva destino, String acaoAuditoria) {
+        Clock relogio = Clock.fixed(Instant.parse("2026-03-09T14:30:00Z"), ZoneId.of("America/Sao_Paulo"));
+        ReservaService servico = new ReservaService(relogio);
+        Sala sala = new Sala(UUID.randomUUID(), "Sala", "aula", 20, "Bloco B", origem == EstadoReserva.SOLICITADA);
+        Reserva reserva = servico.criar(ana, DEZ_MARCO_10H, DEZ_MARCO_12H, "Aula", List.of(new ReservaRecurso(sala, 1)));
+        assertEquals(origem, reserva.getEstado());
+
+        Usuario ator = switch (acao) {
+            case "aprovar" -> rui;
+            case "rejeitar" -> rui;
+            case "cancelar" -> ana;
+            default -> throw new IllegalArgumentException(acao);
+        };
+        switch (acao) {
+            case "aprovar" -> servico.aprovar(ator, reserva.getId());
+            case "rejeitar" -> servico.rejeitar(ator, reserva.getId(), "Laboratorio reservado para banca");
+            case "cancelar" -> servico.cancelar(ator, reserva.getId(), "Aula remarcada");
+            default -> throw new IllegalArgumentException(acao);
+        }
+
+        assertEquals(destino, reserva.getEstado());
+        List<AuditoriaEvento> eventosDaTransicao = Banco.auditoria.stream()
+                .filter(e -> e.getEntidadeId().equals(reserva.getId()))
+                .filter(e -> !e.getAcao().equals("CRIACAO"))
+                .toList();
+        assertEquals(1, eventosDaTransicao.size());
+        AuditoriaEvento evento = eventosDaTransicao.get(0);
+        assertEquals(acaoAuditoria, evento.getAcao());
+        assertEquals(ator.getId(), evento.getAutorId());
+        assertEquals(LocalDateTime.of(2026, 3, 9, 11, 30), evento.getDataHora());
     }
 }

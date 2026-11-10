@@ -9,6 +9,7 @@ import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ReservaService {
 
     private static final ConcurrentHashMap<UUID, ReentrantLock> LOCKS_POR_RECURSO = new ConcurrentHashMap<>();
+
+    public ReservaService() {
+    }
+
+    public ReservaService(Clock clock) {
+    }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
                           String finalidade, List<ReservaRecurso> recursos) {

@@ -96,7 +96,7 @@ class ConcorrenciaReservaMultiInstanciaIT {
             instanciaB = InstanciaExterna.iniciar(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword(),
                     SALA_ID, PROFESSOR_ID, SOLICITACOES / 2, log);
         }
-        jdbc.execute("TRUNCATE reserva_recurso, reserva");
+        jdbc.execute("TRUNCATE reserva_historico, reserva_recurso, reserva");
 
         Banco.salas.put(SALA_ID, new Sala(SALA_ID, "Sala 101", "aula", 40, "Bloco B", false));
         Professor professor = new Professor(PROFESSOR_ID, "Prof. Concorrencia", "CONC-001", List.of(new Competencia("Matematica")));

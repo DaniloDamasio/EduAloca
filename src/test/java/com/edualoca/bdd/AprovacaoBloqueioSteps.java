@@ -85,6 +85,7 @@ public class AprovacaoBloqueioSteps {
     private String justificativaInformada;
     private Usuario atorDaTransicao;
     private int proximoDiaLivre;
+    private int manutencoesAntesDoCadastro;
 
     @Before
     public void prepararCenario() {
@@ -221,6 +222,7 @@ public class AprovacaoBloqueioSteps {
     @Quando("^o Administrador cadastra manutenção da \"([^\"]+)\" de (\\d{2}/\\d{2}) (\\d{2}:\\d{2}) a (\\d{2}:\\d{2}) sem confirmar$")
     public void administradorCadastraManutencaoSemConfirmar(String sala, String dia, String inicio, String fim) throws Exception {
         LocalDateTime[] horario = intervalo(dia, inicio, fim);
+        manutencoesAntesDoCadastro = Banco.manutencoes.size();
         ultimaResposta = cadastrarManutencao(sala, horario[0], horario[1], "Manutenção preventiva");
     }
 
@@ -270,9 +272,7 @@ public class AprovacaoBloqueioSteps {
     public void oCadastroERecusado() throws Exception {
         int status = ultimaResposta.getResponse().getStatus();
         assertTrue(status >= 400 && status < 500, "HTTP " + status + ": " + corpo(ultimaResposta));
-        Sala sala = salas.get("Lab 3");
-        assertTrue(Banco.manutencoes.values().stream()
-                .noneMatch(m -> m.getRecurso() == sala && m.getInicio().getDayOfMonth() == 12));
+        assertEquals(manutencoesAntesDoCadastro, Banco.manutencoes.size(), "a manutencao recusada foi persistida");
     }
 
     @Entao("^um evento de auditoria \"([A-Z_]+)\" é registrado com autor \"([^\"]+)\"$")

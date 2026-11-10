@@ -21,13 +21,19 @@ public class ReservaService {
     private static final ConcurrentHashMap<UUID, ReentrantLock> LOCKS_POR_RECURSO = new ConcurrentHashMap<>();
 
     private final Clock clock;
+    private final ReservaRepositorio repositorio;
 
     public ReservaService() {
         this(Clock.systemDefaultZone());
     }
 
     public ReservaService(Clock clock) {
+        this(clock, new ReservaRepositorioEmMemoria());
+    }
+
+    public ReservaService(Clock clock, ReservaRepositorio repositorio) {
         this.clock = clock;
+        this.repositorio = repositorio;
     }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
@@ -52,7 +58,7 @@ public class ReservaService {
 
             Reserva reserva = new Reserva(UUID.randomUUID(), solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
-            Banco.reservas.put(reserva.getId(), reserva);
+            repositorio.inserir(reserva);
             AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
@@ -63,7 +69,7 @@ public class ReservaService {
     public Reserva alterar(Usuario autor, UUID reservaId, LocalDateTime novoInicio, LocalDateTime novoFim) {
         Banco.seedSeNecessario();
         validarIntervalo(novoInicio, novoFim);
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null) {
             throw new RegraNegocioException(409, "Reserva inexistente");
         }
@@ -80,6 +86,7 @@ public class ReservaService {
             }
             reserva.setInicio(novoInicio);
             reserva.setFim(novoFim);
+            repositorio.atualizar(reserva);
             AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
@@ -92,7 +99,7 @@ public class ReservaService {
         if (motivo == null || motivo.isBlank()) {
             throw new RegraNegocioException(400, "Motivo do cancelamento e obrigatorio");
         }
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null) {
             throw new RegraNegocioException(409, "Reserva inexistente");
         }
@@ -104,6 +111,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva em estado terminal nao pode ser cancelada");
         }
         reserva.setEstado(EstadoReserva.CANCELADA);
+        repositorio.atualizar(reserva);
         AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -113,11 +121,12 @@ public class ReservaService {
         if (responsavel.getPerfil() != Perfil.RESPONSAVEL && responsavel.getPerfil() != Perfil.ADMINISTRADOR) {
             throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem aprovar reservas");
         }
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
         reserva.setEstado(EstadoReserva.APROVADA);
+        repositorio.atualizar(reserva);
         AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -130,18 +139,19 @@ public class ReservaService {
         if (justificativa == null || justificativa.isBlank()) {
             throw new RegraNegocioException(400, "Justificativa da rejeicao e obrigatoria");
         }
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
         reserva.rejeitar(justificativa);
+        repositorio.atualizar(reserva);
         AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
     public Reserva consultar(Usuario autor, UUID reservaId) {
         Banco.seedSeNecessario();
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (autor.getPerfil() == Perfil.SOLICITANTE
                 && (reserva == null || !reserva.getSolicitanteId().equals(autor.getId()))) {
             throw new RegraNegocioException(403, "Solicitante nao pode consultar reserva de outro solicitante");
@@ -154,7 +164,7 @@ public class ReservaService {
 
     public void excluir(Usuario autor, UUID reservaId) {
         Banco.seedSeNecessario();
-        Reserva reserva = Banco.reservas.get(reservaId);
+        Reserva reserva = repositorio.buscar(reservaId);
         if (reserva != null && reserva.getEstado() == EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(405, "Exclusao fisica de reserva nao e exposta pela API");
         }
@@ -184,12 +194,7 @@ public class ReservaService {
         if (emManutencao) {
             throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
         }
-        boolean conflito = Banco.reservas.values().stream()
-                .filter(r -> !r.getId().equals(reservaIgnorada))
-                .filter(r -> r.getEstado().isAtiva())
-                .filter(r -> r.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso))
-                .anyMatch(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
-        if (conflito) {
+        if (repositorio.existeConflito(recurso, inicio, fim, reservaIgnorada)) {
             throw new RegraNegocioException(409, "Recurso indisponivel: sobreposicao com reserva ativa");
         }
     }

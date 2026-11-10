@@ -62,3 +62,36 @@ Funcionalidade: Aprovação, autoaprovação, bloqueio por manutenção e máqui
         | (nula)        |
         | ""            |
         | "   "         |
+
+  Regra: Regra 2 — Solicitante não aprova a própria reserva
+
+    Contexto:
+      Dado a sala restrita "Lab Química"
+      E o usuário "ana" com perfil SOLICITANTE
+      E uma reserva de "ana" na "Lab Química" no estado SOLICITADA
+
+    # BDD-R2-01 (RF-19)
+    Cenário: Solicitante tenta aprovar a própria reserva
+      Quando "ana" aprova a própria reserva
+      Então a operação é recusada com HTTP 403
+      E a reserva permanece no estado SOLICITADA
+      E nenhum evento de auditoria "APROVACAO" é registrado
+
+    # BDD-R2-02 (RF-19)
+    Cenário: Solicitante tenta rejeitar a própria reserva
+      Quando "ana" rejeita a própria reserva com justificativa "Mudei de ideia"
+      Então a operação é recusada com HTTP 403
+      E a reserva permanece no estado SOLICITADA
+      # Desistir por iniciativa própria é cancelamento (RF-14), não rejeição.
+
+    # BDD-R2-03 (RF-19)
+    Cenário: Solicitante tenta aprovar reserva de outro solicitante
+      Dado uma reserva de "beto" (SOLICITANTE) na "Lab Química" no estado SOLICITADA
+      Quando "ana" aprova a reserva de "beto"
+      Então a operação é recusada com HTTP 403
+
+    # BDD-R2-04 (RF-38, RNF-06)
+    Cenário: Recusa por perfil traz mensagem compreensível
+      Quando "ana" aprova a própria reserva
+      Então a resposta de erro explica em linguagem natural que só Responsável ou Administrador aprovam
+      E a resposta não contém stacktrace nem nome de classe interna

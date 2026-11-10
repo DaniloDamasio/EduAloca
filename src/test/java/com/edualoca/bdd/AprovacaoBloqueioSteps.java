@@ -306,7 +306,7 @@ public class AprovacaoBloqueioSteps {
 
     @Entao("^a resposta de erro explica em linguagem natural que só Responsável ou Administrador aprovam$")
     public void aRespostaExplicaQuemAprova() throws Exception {
-        String mensagem = semAcento(JsonPath.read(corpo(ultimaResposta), "$.mensagem"));
+        String mensagem = mensagemDeErroNormalizada();
         assertTrue(mensagem.contains("responsavel") && mensagem.contains("administrador") && mensagem.contains("aprov"), mensagem);
     }
 
@@ -320,7 +320,7 @@ public class AprovacaoBloqueioSteps {
 
     @Entao("^a mensagem informa que o recurso está em manutenção no intervalo$")
     public void aMensagemInformaManutencao() throws Exception {
-        String mensagem = semAcento(JsonPath.read(corpo(ultimaResposta), "$.mensagem"));
+        String mensagem = mensagemDeErroNormalizada();
         assertTrue(mensagem.contains("manutencao") && mensagem.contains("intervalo"), mensagem);
     }
 
@@ -417,6 +417,15 @@ public class AprovacaoBloqueioSteps {
 
     private MvcResult executar(RequestBuilder requisicao) throws Exception {
         return api.perform(requisicao).andReturn();
+    }
+
+    /** Exige uma resposta de erro (4xx) com o campo "mensagem"; devolve o texto sem acentos e minusculo. */
+    private String mensagemDeErroNormalizada() throws Exception {
+        int status = ultimaResposta.getResponse().getStatus();
+        assertTrue(status >= 400 && status < 500, "esperava resposta de erro 4xx, veio HTTP " + status + ": " + corpo(ultimaResposta));
+        Object mensagem = JsonPath.parse(corpo(ultimaResposta)).read("$", Map.class).get("mensagem");
+        assertTrue(mensagem instanceof String, "resposta de erro sem campo 'mensagem': " + corpo(ultimaResposta));
+        return semAcento((String) mensagem);
     }
 
     private String estadoConsultadoNaApi() throws Exception {

@@ -122,8 +122,7 @@ public class ReservaService {
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
-        reserva.setEstado(EstadoReserva.REJEITADA);
-        reserva.setJustificativaRejeicao(justificativa);
+        reserva.rejeitar(justificativa);
         AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId());
         return reserva;
     }

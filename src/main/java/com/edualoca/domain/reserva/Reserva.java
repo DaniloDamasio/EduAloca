@@ -58,8 +58,9 @@ public class Reserva {
         return justificativaRejeicao;
     }
 
-    public void setJustificativaRejeicao(String justificativaRejeicao) {
-        this.justificativaRejeicao = justificativaRejeicao;
+    public void rejeitar(String justificativa) {
+        this.estado = EstadoReserva.REJEITADA;
+        this.justificativaRejeicao = justificativa;
     }
 
     public void setEstado(EstadoReserva estado) {

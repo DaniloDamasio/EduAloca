@@ -129,6 +129,9 @@ são resolvidas aqui** — ficam registradas na seção 5 (Matriz) como gaps e n
 - **Riscos:** reenvio idempotente de cliente não coberto (O1) — risco **não fechado**,
   candidato a novo ADR se confirmado como requisito.
 - **Requisitos:** RF-17, RF-15, RF-16, RNF-08, RNF-09.
+- **Implementação:** a constraint de exclusão foi implementada e refinada (`tstzrange` em
+  `reserva_recurso`) no [ADR-009](adr/ADR-009-exclusao-gist-tstzrange.md), após o
+  [DEF-001](defeitos/DEF-001-dupla-reserva-entre-instancias.md).
 
 ### ADR-002 — Auditoria síncrona na mesma transação da mutação de negócio
 - **Contexto:** RF-27/RF-28/RF-29 exigem que toda transição de estado e mutação de cadastro

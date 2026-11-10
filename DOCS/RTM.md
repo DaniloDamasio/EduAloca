@@ -54,3 +54,29 @@ Os demais RFs/RNFs críticos listados em [REQUISITOS.md](REQUISITOS/REQUISITOS.m
 não têm linha nesta matriz. Cada nova entrega de feature deve adicionar aqui o
 requisito, o risco que o teste mitiga, o(s) teste(s) correspondente(s) e a forma de
 execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
+
+## Concorrência de reservas (PostgreSQL real via Testcontainers)
+
+| Requisito | Risco | Teste | Evidência / Execução |
+|---|---|---|---|
+| RF-17 / RNF-08 — Sob concorrência, exatamente uma reserva aceita para o mesmo recurso/intervalo | Duas reservas aceitas para a mesma sala ou o mesmo professor no mesmo horário. | `ConcorrenciaReservaIT` (20 requisições simultâneas, 1 instância); `ConcorrenciaReservaMultiInstanciaIT` (20 requisições divididas entre 2 JVMs). Exigem 1×201, 19×409 e 1 linha no banco, conferida por SQL. | 5 execuções seguidas verdes; [DEF-001](defeitos/DEF-001-dupla-reserva-entre-instancias.md) (falha antes da correção e reteste); [ADR-009](adr/ADR-009-exclusao-gist-tstzrange.md). |
+| RF-15 / RF-16 — Recusar sobreposição com reserva ativa do mesmo recurso (sala ou professor) | Sobreposição gravada por caminho que não passe pela checagem do serviço. | `ReservaRepositorioJdbcIT` (constraint `ex_reserva_recurso_sem_sobreposicao`: sobreposição → 409, professor, intervalos encostados permitidos, cancelada libera, reativação recusada). | `./mvnw -B verify` (Failsafe), executado no CI. |
+
+## Desempenho sob carga (JMeter)
+
+Plano: [performance/rnf.md](performance/rnf.md) (requisitos propostos, modelo de carga e regras de
+execução) e `perf/reservas.jmx`. Execução: `jmeter -n -t perf/reservas.jmx -l
+perf/resultados/rodada-01.jtl -e -o perf/relatorio-01`, **somente local e manual** (não roda no CI).
+Os números valem só para a máquina local descrita no resultado e não dizem nada sobre produção.
+
+| Requisito | Risco | Plano | Resultado | Situação |
+|---|---|---|---|---|
+| RNF-01 (oficial: p95 ≤ 2 s) / RNF-01-P (proposta: p95 ≤ 300 ms, erro < 1 %) | Busca de disponibilidade lenta com 50 usuários. | [rnf.md §2–3](performance/rnf.md): `GET /salas/disponiveis`, 50 usuários, 5 min estáveis | [resultado-01.md](performance/resultado-01.md): p95 2 ms, 0 erros em 7.938 | Atende na rodada 01, com ressalvas* |
+| RNF-02 (oficial: p95 ≤ 3 s) / RNF-02-P (proposta: p95 ≤ 500 ms com 201 + 409) | Criação lenta sob disputa pelo mesmo recurso. | [rnf.md §2–3](performance/rnf.md): `POST /reservas`, sala única, ~10 tentativas por janela | [resultado-01.md](performance/resultado-01.md): p95 8 ms (201: 11 ms; 409: 6 ms), 0 erros reais em 1.987 | Atende na rodada 01, com ressalvas* |
+| RNF-03 / RNF-03-P: ≥ 100 criações/min, 0 × 5xx | Condição de corrida que gera 500 no pico. | [rnf.md §2](performance/rnf.md): asserções "somente 201 ou 409" e "nunca 5xx" | [resultado-01.md](performance/resultado-01.md): 397,4/min, 0 × 5xx | Atende na rodada 01, com ressalvas* |
+| RF-17 sob carga: no máximo uma reserva aceita por recurso e intervalo | Dupla reserva sob carga sustentada, e não só no teste de 20 requisições. | [rnf.md §3](performance/rnf.md): disputa por janela, asserção "Sem dupla reserva" | [resultado-01.md §3.1](performance/resultado-01.md): 217 janelas, cada uma com 1 × 201; no banco, 217 linhas, máx. 1 por (recurso, intervalo) e 0 pares sobrepostos | Atende na rodada 01 |
+
+\* Ressalvas (detalhes em [resultado-01.md §4](performance/resultado-01.md)): (1) jar gerado a
+partir de `0cf9518` **mais alterações não commitadas**, então a evidência não é reproduzível pelo
+git até a rodada 02; (2) as metas RNF-0x-P ainda são **proposta** não validada pelo grupo; (3) uma
+única rodada, com gerador, aplicação e banco na mesma máquina.

@@ -48,6 +48,15 @@ public class ReservaController {
         return ReservaResposta.de(reservaService.consultar(usuario, id));
     }
 
+    /**
+     * RF-27/RF-29: historico auditavel, so leitura. A autorizacao (Responsavel e Administrador) fica em
+     * {@link ReservaService#consultarHistorico}; sem rota de escrita, PUT/PATCH/DELETE/POST respondem 405.
+     */
+    @GetMapping("/{id}/historico")
+    public List<RegistroHistoricoResposta> historico(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return reservaService.consultarHistorico(usuario, id).stream().map(RegistroHistoricoResposta::de).toList();
+    }
+
     @PostMapping("/{id}/aprovacao")
     public ReservaResposta aprovar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         return ReservaResposta.de(reservaService.aprovar(usuario, id));

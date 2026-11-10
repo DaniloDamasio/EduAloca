@@ -142,9 +142,11 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+                    <!-- Relatorio no verify (depois do Failsafe): o mesmo jacoco.exec recebe unidade e integracao,
+                         entao o jacoco.xml lido pelo SonarCloud inclui o codigo coberto so pelos ITs (persistencia). -->
                     <execution>
                         <id>report</id>
-                        <phase>test</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>

@@ -143,6 +143,14 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - **Autorização (RF-02, RF-03, RF-19):** o ator é sempre o usuário do token, nunca um campo
   do corpo. Perfil e dono são checados no domínio (`ReservaService`). `POST /manutencoes`
   é exclusivo do Administrador.
+- **Histórico auditável das reservas (RF-27, RF-29, RF-30):** `GET /reservas/{id}/historico`
+  é só leitura e só atende Responsável e Administrador. O Solicitante recebe 403 mesmo sendo
+  o dono, e o perfil é checado antes da existência da reserva, para não revelar quais ids existem.
+  Não há rota de escrita (PUT/PATCH/DELETE/POST → 405). No PostgreSQL, a mudança de estado e o
+  registro de histórico são gravados na mesma transação, e um trigger recusa UPDATE/DELETE em
+  `reserva_historico`. O usuário e o instante do registro vêm do token e do `Clock` do servidor,
+  nunca do corpo da requisição. A recusa por trigger protege contra a aplicação, não contra um
+  DBA com privilégio para desabilitar o trigger.
 - **Entrada (RNF-04):** JSON malformado, data fora do formato ISO, tipo/id de recurso
   inexistente, quantidade < 1 ou mais de 50 recursos por reserva resultam em 400.
 - **Erros (RF-38, RNF-06):** corpo único `{"mensagem": ...}`, sem stacktrace, nome de classe

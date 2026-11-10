@@ -11,3 +11,6 @@ DOCS/PR_TEMPLATE.md
 perf/relatorio-*/
 perf/resultados/
 jmeter.log
+
+# Configuracao local do editor (VS Code)
+.vscode/

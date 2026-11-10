@@ -1,6 +1,8 @@
 package com.edualoca.api;
 
 import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
+import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.reserva.ReservaService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +30,16 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public ReservaService reservaService(Clock clock) {
         return new ReservaService(clock);
+    }
+
+    @Bean
+    public CadastroRecursoService cadastroRecursoService(Clock clock) {
+        return new CadastroRecursoService(clock);
+    }
+
+    @Bean
+    public PesquisaRecursoService pesquisaRecursoService() {
+        return new PesquisaRecursoService();
     }
 
     @Override

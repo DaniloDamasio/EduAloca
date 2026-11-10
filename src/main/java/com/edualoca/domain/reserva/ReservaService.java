@@ -168,7 +168,7 @@ public class ReservaService {
 
     private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada) {
         boolean emManutencao = Banco.manutencoes.values().stream()
-                .anyMatch(m -> m.getSala() == recurso && sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
+                .anyMatch(m -> m.getRecurso() == recurso && sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
         if (emManutencao) {
             throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
         }

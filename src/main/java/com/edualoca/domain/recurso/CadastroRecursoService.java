@@ -51,6 +51,10 @@ public class CadastroRecursoService {
     }
 
     public Manutencao cadastrarManutencao(Sala sala, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return registrarManutencao(sala, inicio, fim, motivo);
+    }
+
+    private Manutencao registrarManutencao(Object recurso, LocalDateTime inicio, LocalDateTime fim, String motivo) {
         Banco.seedSeNecessario();
         if (inicio == null || fim == null || !fim.isAfter(inicio)) {
             throw new RegraNegocioException(400, "Periodo de manutencao invalido: fim deve ser posterior ao inicio");
@@ -61,23 +65,23 @@ public class CadastroRecursoService {
         boolean colideComReservaAtivaNaoConfirmada = Banco.reservas.values().stream()
                 .anyMatch(r -> ehAtiva(r.getEstado())
                         && (r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)
-                        && envolveRecurso(r, sala)
+                        && envolveRecurso(r, recurso)
                         && sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
         if (colideComReservaAtivaNaoConfirmada) {
             throw new RegraNegocioException(409, "Manutencao colide com reserva ativa; confirmacao explicita necessaria");
         }
-        Manutencao manutencao = new Manutencao(UUID.randomUUID(), sala, inicio, fim, motivo);
+        Manutencao manutencao = new Manutencao(UUID.randomUUID(), recurso, inicio, fim, motivo);
         Banco.manutencoes.put(manutencao.getId(), manutencao);
         AuditoriaService.registrar("Manutencao", manutencao.getId(), "CRIACAO", null);
         return manutencao;
     }
 
     public Manutencao cadastrarManutencao(Material material, LocalDateTime inicio, LocalDateTime fim, String motivo) {
-        return null;
+        return registrarManutencao(material, inicio, fim, motivo);
     }
 
     public Manutencao cadastrarManutencao(Professor professor, LocalDateTime inicio, LocalDateTime fim, String motivo) {
-        return null;
+        return registrarManutencao(professor, inicio, fim, motivo);
     }
 
     public void inativarSala(Sala sala) {

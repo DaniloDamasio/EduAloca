@@ -6,14 +6,14 @@ import java.util.UUID;
 public class Manutencao {
 
     private final UUID id;
-    private final Sala sala;
+    private final Object recurso;
     private final LocalDateTime inicio;
     private final LocalDateTime fim;
     private final String motivo;
 
-    public Manutencao(UUID id, Sala sala, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+    public Manutencao(UUID id, Object recurso, LocalDateTime inicio, LocalDateTime fim, String motivo) {
         this.id = id;
-        this.sala = sala;
+        this.recurso = recurso;
         this.inicio = inicio;
         this.fim = fim;
         this.motivo = motivo;
@@ -24,7 +24,11 @@ public class Manutencao {
     }
 
     public Sala getSala() {
-        return sala;
+        return recurso instanceof Sala sala ? sala : null;
+    }
+
+    public Object getRecurso() {
+        return recurso;
     }
 
     public LocalDateTime getInicio() {

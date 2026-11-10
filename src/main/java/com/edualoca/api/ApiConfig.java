@@ -6,6 +6,7 @@ import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.reserva.ReservaRepositorio;
 import com.edualoca.domain.reserva.ReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.usuario.AutenticacaoService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +40,11 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public CadastroRecursoService cadastroRecursoService(Clock clock) {
         return new CadastroRecursoService(clock);
+    }
+
+    @Bean
+    public AutenticacaoService autenticacaoService() {
+        return new AutenticacaoService();
     }
 
     @Bean

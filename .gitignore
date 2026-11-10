@@ -6,3 +6,8 @@ target/
 
 DOCS/enunciado.md
 DOCS/PR_TEMPLATE.md
+
+# JMeter: plano e CSV versionados; relatorio HTML e resultados brutos nao
+perf/relatorio-*/
+perf/resultados/
+jmeter.log

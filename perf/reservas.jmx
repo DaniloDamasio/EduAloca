@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  EduAloca - teste de carga: consulta de disponibilidade + criacao de reserva disputando a mesma sala.
+  Requisitos: DOCS/performance/rnf.md (RNF-01-P, RNF-02-P, RNF-03-P - PROPOSTA).
+  Executar SOMENTE em modo CLI e SOMENTE contra a aplicacao local:
+    jmeter -n -t perf/reservas.jmx -l perf/resultados/rodada-01.jtl -e -o perf/relatorio-01
+  Parametros (-J): HOST, PORT, USUARIOS, RAMPUP, DURACAO, PENSAR_MS, PENSAR_VAR_MS,
+                   PCT_CRIACAO, DISPUTA_POR_JANELA, SALA_ID
+-->
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="EduAloca - Reservas sob disputa">
+      <stringProp name="TestPlan.comments">Proposta de RNF em DOCS/performance/rnf.md. Somente localhost, somente CLI.</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Parametros">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="HOST" elementType="Argument">
+            <stringProp name="Argument.name">HOST</stringProp>
+            <stringProp name="Argument.value">${__P(HOST,localhost)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="PORT" elementType="Argument">
+            <stringProp name="Argument.name">PORT</stringProp>
+            <stringProp name="Argument.value">${__P(PORT,8080)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="SALA_ID" elementType="Argument">
+            <stringProp name="Argument.name">SALA_ID</stringProp>
+            <stringProp name="Argument.value">${__P(SALA_ID,00000000-0000-0000-0000-000000000001)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="DISPUTA_POR_JANELA" elementType="Argument">
+            <stringProp name="Argument.name">DISPUTA_POR_JANELA</stringProp>
+            <stringProp name="Argument.value">${__P(DISPUTA_POR_JANELA,40)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="Padroes HTTP (aplicacao local)">
+        <stringProp name="HTTPSampler.domain">${HOST}</stringProp>
+        <stringProp name="HTTPSampler.port">${PORT}</stringProp>
+        <stringProp name="HTTPSampler.protocol">http</stringProp>
+        <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+        <stringProp name="HTTPSampler.connect_timeout">5000</stringProp>
+        <stringProp name="HTTPSampler.response_timeout">10000</stringProp>
+        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments">
+          <collectionProp name="Arguments.arguments"/>
+        </elementProp>
+      </ConfigTestElement>
+      <hashTree/>
+      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Cabecalhos JSON">
+        <collectionProp name="HeaderManager.headers">
+          <elementProp name="" elementType="Header">
+            <stringProp name="Header.name">Content-Type</stringProp>
+            <stringProp name="Header.value">application/json</stringProp>
+          </elementProp>
+          <elementProp name="" elementType="Header">
+            <stringProp name="Header.name">Accept</stringProp>
+            <stringProp name="Header.value">application/json</stringProp>
+          </elementProp>
+        </collectionProp>
+      </HeaderManager>
+      <hashTree/>
+
+      <!-- ===================== setUp: trava de seguranca + estado compartilhado ===================== -->
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="setUp - trava somente localhost">
+        <stringProp name="ThreadGroup.on_sample_error">stoptestnow</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </SetupThreadGroup>
+      <hashTree>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Trava: HOST deve ser local">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">// Nunca rodar contra ambiente compartilhado: aborta a rodada antes de qualquer requisicao.
+def host = vars.get('HOST')?.trim()?.toLowerCase()
+def permitidos = ['localhost', '127.0.0.1', '::1', '[::1]']
+if (!(host in permitidos)) {
+    log.error("ABORTADO: HOST='${host}' nao e local. Este plano so roda contra a aplicacao local.")
+    SampleResult.setSuccessful(false)
+    SampleResult.setResponseMessage("HOST nao local: ${host}")
+    props.put('TRAVA_LOCALHOST_OK', 'false')
+    return
+}
+props.put('TRAVA_LOCALHOST_OK', 'true')
+// Janelas de 1 h a partir de 30 dias depois do inicio da rodada (fora da manutencao de exemplo do seed).
+props.put('BASE_JANELA', java.time.LocalDate.now().plusDays(30).atStartOfDay())
+props.put('CONTADOR_ITERACOES', new java.util.concurrent.atomic.AtomicLong())
+props.put('VENCEDOR_POR_JANELA', new java.util.concurrent.ConcurrentHashMap())
+props.put('TOTAL_201', new java.util.concurrent.atomic.AtomicLong())
+props.put('TOTAL_409', new java.util.concurrent.atomic.AtomicLong())
+props.put('TOTAL_DUPLAS', new java.util.concurrent.atomic.AtomicLong())
+log.info("Trava OK: alvo http://${host}:${vars.get('PORT')}, base das janelas ${props.get('BASE_JANELA')}")
+SampleResult.setIgnore()</stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+
+      <!-- ===================== Carga principal ===================== -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Usuarios">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
+          <stringProp name="LoopController.loops">-1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(USUARIOS,50)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(RAMPUP,60)}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.duration">${__P(DURACAO,360)}</stringProp>
+        <stringProp name="ThreadGroup.delay">0</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Usuarios ficticios (perf/usuarios.csv)">
+          <stringProp name="filename">usuarios.csv</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="variableNames">email,senha</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <stringProp name="delimiter">,</stringProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+        <UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Tempo de pensamento">
+          <stringProp name="ConstantTimer.delay">${__P(PENSAR_MS,1000)}</stringProp>
+          <stringProp name="RandomTimer.range">${__P(PENSAR_VAR_MS,1000)}</stringProp>
+        </UniformRandomTimer>
+        <hashTree/>
+
+        <OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Login (1x por usuario)"/>
+        <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /auth/login">
+            <stringProp name="HTTPSampler.path">/auth/login</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{"email":"${email}","senha":"${senha}"}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Extrai token">
+              <stringProp name="JSONPostProcessor.referenceNames">TOKEN</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.token</stringProp>
+              <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+              <stringProp name="JSONPostProcessor.defaultValues">TOKEN_NAO_EXTRAIDO</stringProp>
+            </JSONPostProcessor>
+            <hashTree/>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Login responde 200">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Login deveria responder 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">8</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Token foi extraido">
+              <stringProp name="scriptLanguage">groovy</stringProp>
+              <stringProp name="parameters"></stringProp>
+              <stringProp name="filename"></stringProp>
+              <stringProp name="cacheKey">true</stringProp>
+              <stringProp name="script">if (vars.get('TOKEN') == null || vars.get('TOKEN') == 'TOKEN_NAO_EXTRAIDO') {
+    AssertionResult.setFailure(true)
+    AssertionResult.setFailureMessage("Token nao extraido do login de ${vars.get('email')}")
+}</stringProp>
+            </JSR223Assertion>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /salas/disponiveis">
+          <stringProp name="HTTPSampler.path">/salas/disponiveis</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="inicio" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                <stringProp name="Argument.name">inicio</stringProp>
+                <stringProp name="Argument.value">${INICIO}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+                <boolProp name="HTTPArgument.use_equals">true</boolProp>
+              </elementProp>
+              <elementProp name="fim" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                <stringProp name="Argument.name">fim</stringProp>
+                <stringProp name="Argument.value">${FIM}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+                <boolProp name="HTTPArgument.use_equals">true</boolProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Define janela disputada">
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">// Defesa extra: sem a trava do setUp, nao envia nada.
+if (props.get('TRAVA_LOCALHOST_OK') != 'true') {
+    log.error('Trava de localhost nao confirmada; parando a rodada.')
+    ctx.getEngine().stopTest(true)
+    return
+}
+// A cada DISPUTA_POR_JANELA iteracoes (somando todos os usuarios) avanca 1 janela de 1 h.
+long n = props.get('CONTADOR_ITERACOES').getAndIncrement()
+long janela = n.intdiv(vars.get('DISPUTA_POR_JANELA') as long)
+def inicio = props.get('BASE_JANELA').plusHours(janela)
+def fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+vars.put('JANELA', String.valueOf(janela))
+vars.put('INICIO', inicio.format(fmt))
+vars.put('FIM', inicio.plusHours(1).format(fmt))</stringProp>
+          </JSR223PreProcessor>
+          <hashTree/>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Authorization">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Authorization</stringProp>
+                <stringProp name="Header.value">Bearer ${TOKEN}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Consulta responde 200">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="49586">200</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.custom_message">Consulta de disponibilidade deveria responder 200</stringProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+        <ThroughputController guiclass="ThroughputControllerGui" testclass="ThroughputController" testname="Mistura: criacao em PCT_CRIACAO% das iteracoes">
+          <intProp name="ThroughputController.style">1</intProp>
+          <boolProp name="ThroughputController.perThread">false</boolProp>
+          <intProp name="ThroughputController.maxThroughput">1</intProp>
+          <stringProp name="ThroughputController.percentThroughput">${__P(PCT_CRIACAO,25)}</stringProp>
+        </ThroughputController>
+        <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /reservas">
+            <stringProp name="HTTPSampler.path">/reservas</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{"inicio":"${INICIO}","fim":"${FIM}","finalidade":"Teste de carga JMeter","recursos":[{"tipo":"SALA","id":"${SALA_ID}","quantidade":1}]}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Authorization">
+              <collectionProp name="HeaderManager.headers">
+                <elementProp name="" elementType="Header">
+                  <stringProp name="Header.name">Authorization</stringProp>
+                  <stringProp name="Header.value">Bearer ${TOKEN}</stringProp>
+                </elementProp>
+              </collectionProp>
+            </HeaderManager>
+            <hashTree/>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Criacao responde somente 201 ou 409">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="1">^(201|409)$</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Criacao so pode responder 201 (venceu) ou 409 (conflito)</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <!-- Ignore status: 409 e resultado correto da disputa; quem decide sucesso sao as assercoes. -->
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">1</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Criacao nunca responde 5xx">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="2">^5\d\d$</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Criacao respondeu 5xx: condicao de corrida ou erro nao tratado</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">5</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Sem dupla reserva na mesma janela">
+              <stringProp name="scriptLanguage">groovy</stringProp>
+              <stringProp name="parameters"></stringProp>
+              <stringProp name="filename"></stringProp>
+              <stringProp name="cacheKey">true</stringProp>
+              <stringProp name="script">def codigo = prev.getResponseCode()
+if (codigo == '409') {
+    props.get('TOTAL_409').incrementAndGet()
+} else if (codigo == '201') {
+    props.get('TOTAL_201').incrementAndGet()
+    def id = (prev.getResponseDataAsString() =~ /"id"\s*:\s*"([^"]+)"/).with { it.find() ? it.group(1) : '?' }
+    def anterior = props.get('VENCEDOR_POR_JANELA').putIfAbsent(vars.get('JANELA'), id)
+    if (anterior != null) {
+        props.get('TOTAL_DUPLAS').incrementAndGet()
+        AssertionResult.setFailure(true)
+        AssertionResult.setFailureMessage("Dupla reserva na janela ${vars.get('INICIO')}: ${anterior} e ${id}")
+    }
+}</stringProp>
+            </JSR223Assertion>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+      </hashTree>
+
+      <!-- ===================== tearDown: resumo da disputa no log ===================== -->
+      <PostThreadGroup guiclass="PostThreadGroupGui" testclass="PostThreadGroup" testname="tearDown - resumo da disputa">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </PostThreadGroup>
+      <hashTree>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Resumo">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">if (props.get('TRAVA_LOCALHOST_OK') == 'true') {
+    def resumo = "RESUMO DISPUTA: 201=${props.get('TOTAL_201')} 409=${props.get('TOTAL_409')} " +
+            "janelas_com_vencedor=${props.get('VENCEDOR_POR_JANELA').size()} duplas=${props.get('TOTAL_DUPLAS')}"
+    log.info(resumo)
+    println(resumo)
+}
+SampleResult.setIgnore()</stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

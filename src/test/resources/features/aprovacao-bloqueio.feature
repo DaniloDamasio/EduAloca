@@ -121,3 +121,47 @@ Funcionalidade: Aprovação, autoaprovação, bloqueio por manutenção e máqui
       Quando o Administrador cadastra manutenção da "Lab 3" de 12/03 09:00 a 13:00 sem confirmar
       Então o cadastro é recusado
       E a reserva continua APROVADA
+
+  Regra: Regra 4 — Reserva só muda de estado pelas transições permitidas
+
+    # BDD-R4-01 (enunciado, RF-19, RF-20, RF-14, RF-27)
+    Esquema do Cenário: Transição permitida muda o estado e gera auditoria
+      Dado uma reserva no estado <origem>
+      Quando <ator> executa "<acao>"
+      Então a reserva passa ao estado <destino>
+      E exatamente um evento de auditoria é registrado para essa transição, com o ator e o instante
+
+      Exemplos:
+        | origem     | ator        | acao                         | destino        | observação                   |
+        | SOLICITADA | Responsável | aprovar                      | APROVADA       | RF-19                        |
+        | SOLICITADA | Responsável | rejeitar (com justificativa) | REJEITADA      | RF-20                        |
+        | SOLICITADA | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
+        | APROVADA   | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
+
+      @bloqueado
+      Exemplos: aguardam decisão (P-05, P-07, P-08)
+        | origem     | ator        | acao                         | destino        | observação                   |
+        | APROVADA   | ❓ P-07     | iniciar uso                  | EM_USO         | gatilho indefinido           |
+        | EM_USO     | ❓ P-07     | concluir                     | CONCLUIDA      | gatilho indefinido           |
+        | ❓ P-05    | ❓ P-08     | registrar não comparecimento | NAO_COMPARECEU | origem e gatilho indefinidos |
+
+    # BDD-R4-03 (RF-14)
+    Cenário: Cancelamento sem motivo é recusado
+      Dado uma reserva APROVADA de "ana"
+      Quando "ana" cancela a reserva sem informar motivo
+      Então a operação é recusada com HTTP 400
+      E a reserva permanece APROVADA
+
+    # BDD-R4-04 (RF-03, RF-14)
+    Cenário: Solicitante não cancela reserva de terceiro
+      Dado uma reserva APROVADA de "beto"
+      Quando "ana" cancela a reserva de "beto" com motivo "engano"
+      Então a operação é recusada com HTTP 403
+      E a reserva permanece APROVADA
+
+    # BDD-R4-05 (RF-30)
+    Cenário: Reserva iniciada não pode ser apagada
+      Dado uma reserva no estado EM_USO
+      Quando qualquer usuário tenta excluí-la
+      Então a operação é recusada com HTTP 403 ou 405
+      E a reserva continua existindo

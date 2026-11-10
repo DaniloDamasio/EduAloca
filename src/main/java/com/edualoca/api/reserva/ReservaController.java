@@ -6,6 +6,7 @@ import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.usuario.Usuario;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,6 +57,18 @@ public class ReservaController {
     public ReservaResposta rejeitar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
                                     @RequestBody JustificativaRequisicao requisicao) {
         return ReservaResposta.de(reservaService.rejeitar(usuario, id, requisicao.justificativa()));
+    }
+
+    @PostMapping("/{id}/cancelamento")
+    public ReservaResposta cancelar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                    @RequestBody MotivoRequisicao requisicao) {
+        return ReservaResposta.de(reservaService.cancelar(usuario, id, requisicao.motivo()));
+    }
+
+    /** RF-30: a regra de dominio responde 403 para reserva iniciada e 405 para exclusao fisica nao exposta. */
+    @DeleteMapping("/{id}")
+    public void excluir(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        reservaService.excluir(usuario, id);
     }
 
     private List<ReservaRecurso> recursos(List<CriarReservaRequisicao.RecursoRequisicao> recursos) {

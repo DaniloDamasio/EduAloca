@@ -22,6 +22,8 @@ public class ReservaService {
 
     private final Clock clock;
     private final ReservaRepositorio repositorio;
+    private final HistoricoReservaRepositorio historico;
+    private final Transacao transacao;
 
     public ReservaService() {
         this(Clock.systemDefaultZone());
@@ -32,8 +34,15 @@ public class ReservaService {
     }
 
     public ReservaService(Clock clock, ReservaRepositorio repositorio) {
+        this(clock, repositorio, new HistoricoReservaRepositorioEmMemoria(), Transacao.direta());
+    }
+
+    public ReservaService(Clock clock, ReservaRepositorio repositorio, HistoricoReservaRepositorio historico,
+                          Transacao transacao) {
         this.clock = clock;
         this.repositorio = repositorio;
+        this.historico = historico;
+        this.transacao = transacao;
     }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
@@ -169,6 +178,10 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva inexistente");
         }
         return reserva;
+    }
+
+    public List<RegistroHistoricoReserva> consultarHistorico(Usuario autor, UUID reservaId) {
+        return historico.listarPorReserva(reservaId); // esqueleto: sem regra
     }
 
     public void excluir(Usuario autor, UUID reservaId) {

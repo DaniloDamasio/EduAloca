@@ -72,6 +72,14 @@ public class CadastroRecursoService {
         return manutencao;
     }
 
+    public Manutencao cadastrarManutencao(Material material, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return null;
+    }
+
+    public Manutencao cadastrarManutencao(Professor professor, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return null;
+    }
+
     public void inativarSala(Sala sala) {
         Banco.seedSeNecessario();
         sala.inativar();

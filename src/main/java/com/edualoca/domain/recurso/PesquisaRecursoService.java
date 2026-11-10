@@ -1,6 +1,7 @@
 package com.edualoca.domain.recurso;
 
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
@@ -53,21 +54,21 @@ public class PesquisaRecursoService {
     private boolean disponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim) {
         if (recurso instanceof Sala sala) {
             boolean emManutencao = Banco.manutencoes.values().stream()
-                    .anyMatch(m -> m.getSala() == sala && sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
+                    .anyMatch(m -> m.getRecurso() == sala && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
             if (emManutencao) {
                 return false;
             }
         }
         return Banco.reservas.values().stream()
-                .filter(r -> ehAtiva(r.getEstado()))
+                .filter(r -> r.getEstado().isAtiva())
                 .filter(r -> envolveRecurso(r, recurso))
-                .noneMatch(r -> sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+                .noneMatch(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
     }
 
     private int quantidadeLivre(Material material, LocalDateTime inicio, LocalDateTime fim) {
         int reservado = Banco.reservas.values().stream()
-                .filter(r -> ehAtiva(r.getEstado()))
-                .filter(r -> sobrepoe(inicio, fim, r.getInicio(), r.getFim()))
+                .filter(r -> r.getEstado().isAtiva())
+                .filter(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()))
                 .flatMap(r -> r.getRecursos().stream())
                 .filter(rr -> rr.getRecurso() == material)
                 .mapToInt(ReservaRecurso::getQuantidade)
@@ -77,13 +78,5 @@ public class PesquisaRecursoService {
 
     private static boolean envolveRecurso(Reserva reserva, Object recurso) {
         return reserva.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso);
-    }
-
-    private static boolean ehAtiva(EstadoReserva estado) {
-        return estado == EstadoReserva.SOLICITADA || estado == EstadoReserva.APROVADA || estado == EstadoReserva.EM_USO;
-    }
-
-    private static boolean sobrepoe(LocalDateTime inicioA, LocalDateTime fimA, LocalDateTime inicioB, LocalDateTime fimB) {
-        return inicioA.isBefore(fimB) && inicioB.isBefore(fimA);
     }
 }

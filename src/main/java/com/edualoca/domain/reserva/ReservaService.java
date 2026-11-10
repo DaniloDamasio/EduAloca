@@ -2,6 +2,7 @@ package com.edualoca.domain.reserva;
 
 import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Manutencao;
 import com.edualoca.domain.recurso.Sala;
@@ -168,26 +169,18 @@ public class ReservaService {
 
     private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada) {
         boolean emManutencao = Banco.manutencoes.values().stream()
-                .anyMatch(m -> m.getRecurso() == recurso && sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
+                .anyMatch(m -> m.getRecurso() == recurso && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
         if (emManutencao) {
             throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
         }
         boolean conflito = Banco.reservas.values().stream()
                 .filter(r -> !r.getId().equals(reservaIgnorada))
-                .filter(r -> ehAtiva(r.getEstado()))
+                .filter(r -> r.getEstado().isAtiva())
                 .filter(r -> r.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso))
-                .anyMatch(r -> sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+                .anyMatch(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
         if (conflito) {
             throw new RegraNegocioException(409, "Recurso indisponivel: sobreposicao com reserva ativa");
         }
-    }
-
-    private static boolean ehAtiva(EstadoReserva estado) {
-        return estado == EstadoReserva.SOLICITADA || estado == EstadoReserva.APROVADA || estado == EstadoReserva.EM_USO;
-    }
-
-    private static boolean sobrepoe(LocalDateTime inicioA, LocalDateTime fimA, LocalDateTime inicioB, LocalDateTime fimB) {
-        return inicioA.isBefore(fimB) && inicioB.isBefore(fimA);
     }
 
     private List<ReentrantLock> adquirirLocksOrdenados(List<ReservaRecurso> recursos) {

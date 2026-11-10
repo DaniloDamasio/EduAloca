@@ -28,6 +28,8 @@ class BddAprovacaoBloqueioTest {
 
     private static final LocalDateTime DEZ_MARCO_10H = LocalDateTime.of(2026, 3, 10, 10, 0);
     private static final LocalDateTime DEZ_MARCO_12H = LocalDateTime.of(2026, 3, 10, 12, 0);
+    private static final LocalDateTime INICIO_MANUTENCAO = LocalDateTime.of(2026, 3, 10, 8, 0, 0);
+    private static final LocalDateTime FIM_MANUTENCAO = LocalDateTime.of(2026, 3, 10, 18, 0, 0);
 
     private final ReservaService reservaService = new ReservaService();
 
@@ -60,22 +62,20 @@ class BddAprovacaoBloqueioTest {
     @DisplayName("BDD-R3-05: reserva de qualquer tipo de recurso durante manutencao e recusada com HTTP 409")
     void reservaDeRecursoDeQualquerTipoEmManutencao_eRecusadaCom409(String tipo, String nome) {
         CadastroRecursoService cadastro = new CadastroRecursoService();
-        LocalDateTime inicioManutencao = LocalDateTime.of(2026, 3, 10, 8, 0, 0);
-        LocalDateTime fimManutencao = LocalDateTime.of(2026, 3, 10, 18, 0, 0);
         Object recurso = switch (tipo) {
             case "SALA" -> {
                 Sala sala = cadastro.cadastrarSala(nome, "laboratorio", 30, "Bloco C", false);
-                cadastro.cadastrarManutencao(sala, inicioManutencao, fimManutencao, "Bloqueio");
+                cadastro.cadastrarManutencao(sala, INICIO_MANUTENCAO, FIM_MANUTENCAO, "Bloqueio");
                 yield sala;
             }
             case "MATERIAL" -> {
                 var material = cadastro.cadastrarMaterial(nome, "projetor", 1, false);
-                cadastro.cadastrarManutencao(material, inicioManutencao, fimManutencao, "Bloqueio");
+                cadastro.cadastrarManutencao(material, INICIO_MANUTENCAO, FIM_MANUTENCAO, "Bloqueio");
                 yield material;
             }
             case "PROFESSOR" -> {
                 var professor = cadastro.cadastrarProfessor(nome, "LIMA-001", List.of(new Competencia("Quimica")));
-                cadastro.cadastrarManutencao(professor, inicioManutencao, fimManutencao, "Bloqueio");
+                cadastro.cadastrarManutencao(professor, INICIO_MANUTENCAO, FIM_MANUTENCAO, "Bloqueio");
                 yield professor;
             }
             default -> throw new IllegalArgumentException(tipo);

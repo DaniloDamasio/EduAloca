@@ -2,6 +2,7 @@ package com.edualoca.domain.recurso;
 
 import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
@@ -63,10 +64,9 @@ public class CadastroRecursoService {
             throw new RegraNegocioException(400, "Motivo da manutencao e obrigatorio");
         }
         boolean colideComReservaAtivaNaoConfirmada = Banco.reservas.values().stream()
-                .anyMatch(r -> ehAtiva(r.getEstado())
-                        && (r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)
+                .anyMatch(r -> (r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)
                         && envolveRecurso(r, recurso)
-                        && sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+                        && Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
         if (colideComReservaAtivaNaoConfirmada) {
             throw new RegraNegocioException(409, "Manutencao colide com reserva ativa; confirmacao explicita necessaria");
         }
@@ -102,15 +102,7 @@ public class CadastroRecursoService {
         return listarSalasAtivas();
     }
 
-    private static boolean ehAtiva(EstadoReserva estado) {
-        return estado == EstadoReserva.SOLICITADA || estado == EstadoReserva.APROVADA || estado == EstadoReserva.EM_USO;
-    }
-
     private static boolean envolveRecurso(Reserva reserva, Object recurso) {
         return reserva.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso);
-    }
-
-    private static boolean sobrepoe(LocalDateTime inicioA, LocalDateTime fimA, LocalDateTime inicioB, LocalDateTime fimB) {
-        return inicioA.isBefore(fimB) && inicioB.isBefore(fimA);
     }
 }

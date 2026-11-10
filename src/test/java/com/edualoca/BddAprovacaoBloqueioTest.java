@@ -37,7 +37,11 @@ class BddAprovacaoBloqueioTest {
     private static final LocalDateTime INICIO_MANUTENCAO = LocalDateTime.of(2026, 3, 10, 8, 0, 0);
     private static final LocalDateTime FIM_MANUTENCAO = LocalDateTime.of(2026, 3, 10, 18, 0, 0);
 
-    private final ReservaService reservaService = new ReservaService();
+    /** 09/03/2026 11:30 em Sao Paulo; o teste nunca depende do relogio real. */
+    private static final Clock RELOGIO_FIXO =
+            Clock.fixed(Instant.parse("2026-03-09T14:30:00Z"), ZoneId.of("America/Sao_Paulo"));
+
+    private final ReservaService reservaService = new ReservaService(RELOGIO_FIXO);
 
     private final Usuario ana = new Usuario(UUID.randomUUID(), "ana@example.com", "hash", Perfil.SOLICITANTE);
     private final Usuario rui = new Usuario(UUID.randomUUID(), "rui@example.com", "hash", Perfil.RESPONSAVEL);
@@ -67,7 +71,7 @@ class BddAprovacaoBloqueioTest {
     })
     @DisplayName("BDD-R3-05: reserva de qualquer tipo de recurso durante manutencao e recusada com HTTP 409")
     void reservaDeRecursoDeQualquerTipoEmManutencao_eRecusadaCom409(String tipo, String nome) {
-        CadastroRecursoService cadastro = new CadastroRecursoService();
+        CadastroRecursoService cadastro = new CadastroRecursoService(RELOGIO_FIXO);
         Object recurso = switch (tipo) {
             case "SALA" -> {
                 Sala sala = cadastro.cadastrarSala(nome, "laboratorio", 30, "Bloco C", false);
@@ -104,24 +108,13 @@ class BddAprovacaoBloqueioTest {
     @DisplayName("BDD-R4-01: transicao permitida muda o estado e gera exatamente um evento de auditoria com ator e instante")
     void transicaoPermitida_mudaEstadoEGeraUmEventoDeAuditoriaComAtorEInstante(
             EstadoReserva origem, String acao, EstadoReserva destino, String acaoAuditoria) {
-        Clock relogio = Clock.fixed(Instant.parse("2026-03-09T14:30:00Z"), ZoneId.of("America/Sao_Paulo"));
-        ReservaService servico = new ReservaService(relogio);
+        ReservaService servico = new ReservaService(RELOGIO_FIXO);
         Sala sala = new Sala(UUID.randomUUID(), "Sala", "aula", 20, "Bloco B", origem == EstadoReserva.SOLICITADA);
         Reserva reserva = servico.criar(ana, DEZ_MARCO_10H, DEZ_MARCO_12H, "Aula", List.of(new ReservaRecurso(sala, 1)));
         assertEquals(origem, reserva.getEstado());
 
-        Usuario ator = switch (acao) {
-            case "aprovar" -> rui;
-            case "rejeitar" -> rui;
-            case "cancelar" -> ana;
-            default -> throw new IllegalArgumentException(acao);
-        };
-        switch (acao) {
-            case "aprovar" -> servico.aprovar(ator, reserva.getId());
-            case "rejeitar" -> servico.rejeitar(ator, reserva.getId(), "Laboratorio reservado para banca");
-            case "cancelar" -> servico.cancelar(ator, reserva.getId(), "Aula remarcada");
-            default -> throw new IllegalArgumentException(acao);
-        }
+        Usuario ator = acao.equals("cancelar") ? ana : rui;
+        executar(servico, acao, ator, reserva);
 
         assertEquals(destino, reserva.getEstado());
         List<AuditoriaEvento> eventosDaTransicao = Banco.auditoria.stream()
@@ -132,6 +125,15 @@ class BddAprovacaoBloqueioTest {
         AuditoriaEvento evento = eventosDaTransicao.get(0);
         assertEquals(acaoAuditoria, evento.getAcao());
         assertEquals(ator.getId(), evento.getAutorId());
-        assertEquals(LocalDateTime.of(2026, 3, 9, 11, 30), evento.getDataHora());
+        assertEquals(LocalDateTime.now(RELOGIO_FIXO), evento.getDataHora());
+    }
+
+    private static void executar(ReservaService servico, String acao, Usuario ator, Reserva reserva) {
+        switch (acao) {
+            case "aprovar" -> servico.aprovar(ator, reserva.getId());
+            case "rejeitar" -> servico.rejeitar(ator, reserva.getId(), "Laboratorio reservado para banca");
+            case "cancelar" -> servico.cancelar(ator, reserva.getId(), "Aula remarcada");
+            default -> throw new IllegalArgumentException(acao);
+        }
     }
 }

@@ -2,16 +2,28 @@ package com.edualoca.domain.recurso;
 
 import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.usuario.Usuario;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public class CadastroRecursoService {
+
+    private final Clock clock;
+
+    public CadastroRecursoService() {
+        this(Clock.systemDefaultZone());
+    }
+
+    public CadastroRecursoService(Clock clock) {
+        this.clock = clock;
+    }
 
     public Sala cadastrarSala(String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
         Banco.seedSeNecessario();
@@ -23,7 +35,7 @@ public class CadastroRecursoService {
         }
         Sala sala = new Sala(UUID.randomUUID(), nome, tipo, capacidade, localizacao, restrito);
         Banco.salas.put(sala.getId(), sala);
-        AuditoriaService.registrar("Sala", sala.getId(), "CRIACAO", null);
+        AuditoriaService.registrar("Sala", sala.getId(), "CRIACAO", null, LocalDateTime.now(clock));
         return sala;
     }
 
@@ -35,7 +47,7 @@ public class CadastroRecursoService {
         Professor professor = new Professor(UUID.randomUUID(), nome, identificadorInstitucional, competencias);
         Banco.professores.put(professor.getId(), professor);
         Banco.professorIdPorIdentificador.put(identificadorInstitucional, professor.getId());
-        AuditoriaService.registrar("Professor", professor.getId(), "CRIACAO", null);
+        AuditoriaService.registrar("Professor", professor.getId(), "CRIACAO", null, LocalDateTime.now(clock));
         return professor;
     }
 
@@ -46,11 +58,15 @@ public class CadastroRecursoService {
         }
         Material material = new Material(UUID.randomUUID(), nome, tipo, quantidadeTotal, restrito);
         Banco.materiais.put(material.getId(), material);
-        AuditoriaService.registrar("Material", material.getId(), "CRIACAO", null);
+        AuditoriaService.registrar("Material", material.getId(), "CRIACAO", null, LocalDateTime.now(clock));
         return material;
     }
 
     public Manutencao cadastrarManutencao(Sala sala, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return registrarManutencao(sala, inicio, fim, motivo);
+    }
+
+    private Manutencao registrarManutencao(Object recurso, LocalDateTime inicio, LocalDateTime fim, String motivo) {
         Banco.seedSeNecessario();
         if (inicio == null || fim == null || !fim.isAfter(inicio)) {
             throw new RegraNegocioException(400, "Periodo de manutencao invalido: fim deve ser posterior ao inicio");
@@ -59,23 +75,30 @@ public class CadastroRecursoService {
             throw new RegraNegocioException(400, "Motivo da manutencao e obrigatorio");
         }
         boolean colideComReservaAtivaNaoConfirmada = Banco.reservas.values().stream()
-                .anyMatch(r -> ehAtiva(r.getEstado())
-                        && (r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)
-                        && envolveRecurso(r, sala)
-                        && sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+                .anyMatch(r -> (r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)
+                        && envolveRecurso(r, recurso)
+                        && Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
         if (colideComReservaAtivaNaoConfirmada) {
             throw new RegraNegocioException(409, "Manutencao colide com reserva ativa; confirmacao explicita necessaria");
         }
-        Manutencao manutencao = new Manutencao(UUID.randomUUID(), sala, inicio, fim, motivo);
+        Manutencao manutencao = new Manutencao(UUID.randomUUID(), recurso, inicio, fim, motivo);
         Banco.manutencoes.put(manutencao.getId(), manutencao);
-        AuditoriaService.registrar("Manutencao", manutencao.getId(), "CRIACAO", null);
+        AuditoriaService.registrar("Manutencao", manutencao.getId(), "CRIACAO", null, LocalDateTime.now(clock));
         return manutencao;
+    }
+
+    public Manutencao cadastrarManutencao(Material material, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return registrarManutencao(material, inicio, fim, motivo);
+    }
+
+    public Manutencao cadastrarManutencao(Professor professor, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+        return registrarManutencao(professor, inicio, fim, motivo);
     }
 
     public void inativarSala(Sala sala) {
         Banco.seedSeNecessario();
         sala.inativar();
-        AuditoriaService.registrar("Sala", sala.getId(), "INATIVACAO", null);
+        AuditoriaService.registrar("Sala", sala.getId(), "INATIVACAO", null, LocalDateTime.now(clock));
     }
 
     public List<Sala> listarSalasAtivas() {
@@ -90,15 +113,7 @@ public class CadastroRecursoService {
         return listarSalasAtivas();
     }
 
-    private static boolean ehAtiva(EstadoReserva estado) {
-        return estado == EstadoReserva.SOLICITADA || estado == EstadoReserva.APROVADA || estado == EstadoReserva.EM_USO;
-    }
-
     private static boolean envolveRecurso(Reserva reserva, Object recurso) {
         return reserva.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso);
-    }
-
-    private static boolean sobrepoe(LocalDateTime inicioA, LocalDateTime fimA, LocalDateTime inicioB, LocalDateTime fimB) {
-        return inicioA.isBefore(fimB) && inicioB.isBefore(fimA);
     }
 }

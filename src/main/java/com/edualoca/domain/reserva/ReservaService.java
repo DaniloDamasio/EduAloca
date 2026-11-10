@@ -2,12 +2,14 @@ package com.edualoca.domain.reserva;
 
 import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Manutencao;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +19,16 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ReservaService {
 
     private static final ConcurrentHashMap<UUID, ReentrantLock> LOCKS_POR_RECURSO = new ConcurrentHashMap<>();
+
+    private final Clock clock;
+
+    public ReservaService() {
+        this(Clock.systemDefaultZone());
+    }
+
+    public ReservaService(Clock clock) {
+        this.clock = clock;
+    }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
                           String finalidade, List<ReservaRecurso> recursos) {
@@ -41,7 +53,7 @@ public class ReservaService {
             Reserva reserva = new Reserva(UUID.randomUUID(), solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
             Banco.reservas.put(reserva.getId(), reserva);
-            AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId());
+            AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
             liberarLocks(locksAdquiridos);
@@ -68,7 +80,7 @@ public class ReservaService {
             }
             reserva.setInicio(novoInicio);
             reserva.setFim(novoFim);
-            AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId());
+            AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
             liberarLocks(locksAdquiridos);
@@ -92,7 +104,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva em estado terminal nao pode ser cancelada");
         }
         reserva.setEstado(EstadoReserva.CANCELADA);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId());
+        AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
@@ -106,7 +118,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
         reserva.setEstado(EstadoReserva.APROVADA);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId());
+        AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
@@ -122,8 +134,8 @@ public class ReservaService {
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
-        reserva.setEstado(EstadoReserva.REJEITADA);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId());
+        reserva.rejeitar(justificativa);
+        AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
@@ -168,26 +180,18 @@ public class ReservaService {
 
     private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada) {
         boolean emManutencao = Banco.manutencoes.values().stream()
-                .anyMatch(m -> m.getSala() == recurso && sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
+                .anyMatch(m -> m.getRecurso() == recurso && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
         if (emManutencao) {
             throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
         }
         boolean conflito = Banco.reservas.values().stream()
                 .filter(r -> !r.getId().equals(reservaIgnorada))
-                .filter(r -> ehAtiva(r.getEstado()))
+                .filter(r -> r.getEstado().isAtiva())
                 .filter(r -> r.getRecursos().stream().anyMatch(rr -> rr.getRecurso() == recurso))
-                .anyMatch(r -> sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+                .anyMatch(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
         if (conflito) {
             throw new RegraNegocioException(409, "Recurso indisponivel: sobreposicao com reserva ativa");
         }
-    }
-
-    private static boolean ehAtiva(EstadoReserva estado) {
-        return estado == EstadoReserva.SOLICITADA || estado == EstadoReserva.APROVADA || estado == EstadoReserva.EM_USO;
-    }
-
-    private static boolean sobrepoe(LocalDateTime inicioA, LocalDateTime fimA, LocalDateTime inicioB, LocalDateTime fimB) {
-        return inicioA.isBefore(fimB) && inicioB.isBefore(fimA);
     }
 
     private List<ReentrantLock> adquirirLocksOrdenados(List<ReservaRecurso> recursos) {

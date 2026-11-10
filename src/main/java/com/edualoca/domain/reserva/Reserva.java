@@ -13,6 +13,7 @@ public class Reserva {
     private final String finalidade;
     private final List<ReservaRecurso> recursos;
     private EstadoReserva estado;
+    private String justificativaRejeicao;
 
     public Reserva(UUID id, UUID solicitanteId, LocalDateTime inicio, LocalDateTime fim,
                     String finalidade, List<ReservaRecurso> recursos, EstadoReserva estado) {
@@ -51,6 +52,15 @@ public class Reserva {
 
     public EstadoReserva getEstado() {
         return estado;
+    }
+
+    public String getJustificativaRejeicao() {
+        return justificativaRejeicao;
+    }
+
+    public void rejeitar(String justificativa) {
+        this.estado = EstadoReserva.REJEITADA;
+        this.justificativaRejeicao = justificativa;
     }
 
     public void setEstado(EstadoReserva estado) {

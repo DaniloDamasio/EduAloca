@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,8 +34,22 @@ public class TratadorDeErros {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResposta> inesperado(Exception e) {
+        if (e instanceof ErrorResponse erroDoFramework) {
+            // 404 (rota inexistente), 405 (metodo), 415 (tipo de midia) etc.: mantem o status, sem detalhe interno.
+            int status = erroDoFramework.getStatusCode().value();
+            return ResponseEntity.status(status).body(new ErroResposta(mensagemPara(status)));
+        }
         LOG.error("Erro inesperado ao processar requisicao", e);
         return ResponseEntity.internalServerError()
                 .body(new ErroResposta("Nao foi possivel concluir a operacao. Tente novamente mais tarde."));
+    }
+
+    private static String mensagemPara(int status) {
+        return switch (status) {
+            case 404 -> "Endereco da API nao encontrado";
+            case 405 -> "Operacao nao permitida para este endereco";
+            case 415 -> "Formato da requisicao nao suportado: envie JSON";
+            default -> "Requisicao nao pode ser atendida";
+        };
     }
 }

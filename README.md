@@ -117,6 +117,43 @@ Isso roda toda a suíte (unitária e de integração) e o gate de cobertura do J
 sobem um servidor WireMock em porta dinâmica — não dependem de rede externa nem de
 nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
 
+## Especificação executável (BDD com Cucumber)
+
+Os cenários de API de [DOCS/testes/bdd-aprovacao-bloqueio.md](DOCS/testes/bdd-aprovacao-bloqueio.md)
+rodam como features Gherkin em português, com Cucumber-JVM na JUnit Platform:
+
+- Feature: [src/test/resources/features/aprovacao-bloqueio.feature](src/test/resources/features/aprovacao-bloqueio.feature)
+  (mesmo texto do documento; uma `Regra` por funcionalidade).
+- Steps: [AprovacaoBloqueioSteps](src/test/java/com/edualoca/bdd/AprovacaoBloqueioSteps.java). Cada
+  ação chama a API por MockMvc com o token Bearer do perfil que a executa.
+- Runner: [AprovacaoBloqueioFeatureTest](src/test/java/com/edualoca/bdd/AprovacaoBloqueioFeatureTest.java),
+  executado pelo Surefire em `./mvnw -B verify`, portanto no CI e dentro do gate do JaCoCo.
+- Linhas de exemplo que dependem de pergunta em aberto (P-xx) ficam na feature com `@bloqueado`
+  e aparecem como *skipped* (`cucumber.filter.tags` em `src/test/resources/junit-platform.properties`).
+
+Para rodar só as features: `./mvnw -B test -Dtest=AprovacaoBloqueioFeatureTest`.
+
+## Nota de segurança da API HTTP
+
+Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de salas).
+
+- **Autenticação:** toda rota exige `Authorization: Bearer <token>`. O token é opaco, gerado
+  com `SecureRandom` (256 bits) e resolvido no servidor (`TokenService`). Sem token ou com
+  token desconhecido, a resposta é 401. O token nunca vai na URL.
+- **Autorização (RF-02, RF-03, RF-19):** o ator é sempre o usuário do token, nunca um campo
+  do corpo. Perfil e dono são checados no domínio (`ReservaService`). `POST /manutencoes`
+  é exclusivo do Administrador.
+- **Entrada (RNF-04):** JSON malformado, data fora do formato ISO, tipo/id de recurso
+  inexistente, quantidade < 1 ou mais de 50 recursos por reserva resultam em 400.
+- **Erros (RF-38, RNF-06):** corpo único `{"mensagem": ...}`, sem stacktrace, nome de classe
+  ou mensagem de framework. Erro inesperado vira 500 genérico; o detalhe fica só no log.
+- **Limitações conhecidas (decisão pendente):** ainda não há endpoint de login que emita
+  token a partir de credencial (RF-01). Os tokens ficam em memória, sem expiração nem
+  revogação, e não há rate limit. Isso vale para esta fase acadêmica sem persistência e
+  deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling
+  no login). A auditoria do cadastro de manutenção registra autor `null` (RF-28): é um
+  comportamento herdado de `CadastroRecursoService`.
+
 ## Roadmap
 
 - [x] Definição de personas e objetivos
@@ -127,6 +164,7 @@ nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
 - [x] CI/CD (GitHub Actions: build, testes, relatórios Surefire/Failsafe)
 - [x] Análise estática (SonarCloud, JaCoCo)
 - [x] Adapter HTTP de notificação externa isolado via WireMock (RF-31/32/33, RNF-16)
+- [x] BDD executável com Cucumber-JVM sobre a API (MockMvc + token por perfil)
 - [ ] Testes de integração com persistência real, concorrência, e2e
 - [ ] Teste de carga (JMeter)
 - [x] RTM (Requirements Traceability Matrix) — cobertura inicial, ver [DOCS/RTM.md](DOCS/RTM.md)

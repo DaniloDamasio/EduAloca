@@ -35,7 +35,7 @@ teste que já nasce verde e chamá-lo de "red" seria pular o vermelho, por isso 
 | BDD-R4-02 (linhas aprovar/rejeitar/cancelar), R4-03, R4-04 | Já atendido | Transições fora de SOLICITADA e cancelamento de estado terminal, sem motivo ou de terceiro já são recusados |
 | BDD-R1-08, R4-01 (linhas P-05/P-07/P-08), R4-02 (linhas iniciar uso/concluir) | ⏸ Bloqueado | **P-07/P-08**: gatilho e ator de `iniciar uso`, `concluir` e `não comparecimento` indefinidos |
 | BDD-R1-09, R2-05, R3-07, R3-08 F1/F2, R4-06 | ⏸ Bloqueado | **P-02, P-01, P-04, P-03, P-06** |
-| BDD-R2-03, R2-04, R4-05 | Fora de escopo | Testes só de API; ainda não existe camada web (`@RestController`) |
+| BDD-R2-03, R2-04, R4-05 | Coberto na rodada de API | Testes só de API; viraram cenários Cucumber na seção "Ciclos BDD de API" abaixo |
 
 ## Observações para a próxima rodada
 
@@ -51,3 +51,41 @@ teste que já nasce verde e chamá-lo de "red" seria pular o vermelho, por isso 
   o 409 vem de "reserva inexistente". (bdd-aprovacao-bloqueio.md também cita `rf19T4`, mas ele monta uma reserva
   real e passa pelo motivo certo.) Continuam inalterados. O `BDD-R4-01` deste ciclo monta a reserva no estado de
   origem real.
+
+---
+
+## Ciclos BDD de API (Cucumber-JVM)
+
+> **Branch:** `bdd-cucumber-aprovacao-bloqueio`. **Feature:** [`aprovacao-bloqueio.feature`](../../src/test/resources/features/aprovacao-bloqueio.feature)
+> (texto igual ao do documento BDD). **Steps:** [`AprovacaoBloqueioSteps`](../../src/test/java/com/edualoca/bdd/AprovacaoBloqueioSteps.java).
+> **Runner:** [`AprovacaoBloqueioFeatureTest`](../../src/test/java/com/edualoca/bdd/AprovacaoBloqueioFeatureTest.java) (Surefire).
+> **Comando:** `./mvnw -B test` em cada passo; `./mvnw -B verify` (com o gate JaCoCo) no fim.
+>
+> Cada ação dos cenários chama a API por MockMvc com o token Bearer do perfil que a executa (SOLICITANTE,
+> RESPONSAVEL, ADMINISTRADOR). O relógio é fixo (`Clock` `@Primary` no contexto de teste). Um ciclo cobre uma
+> Regra do documento: o commit red acrescenta os cenários da Regra à feature, e o vermelho tem de ser falha
+> de asserção, não passo indefinido. Antes desta rodada não havia camada web; ela nasceu nos commits green.
+
+| Regra / cenários | Commit red | Commit green | Refactor / fix | Trecho da saída |
+|---|---|---|---|---|
+| **Regra 1**: R1-01, R1-04, R1-05, R1-06, R1-07 (3 exemplos) | `0bbd0e8` (configura Cucumber + feature + steps; `TokenService` só esqueleto) | `4727b59`: `POST /reservas`, `GET /reservas/{id}`, `/aprovacao`, `/rejeicao`, token Bearer, `TratadorDeErros` | — | **Red:** `Então a reserva é criada no estado SOLICITADA … expected: <201> but was: <404>` · `Tests run: 156, Failures: 7`<br>**Green:** `Tests run: 7, Failures: 0 -- in AprovacaoBloqueioFeatureTest` · `Tests run: 156, Failures: 0` |
+| **Regra 2**: R2-01, R2-02, R2-03, R2-04 | **sem red** | `3e1ecaa` (só a feature) | — | Verde na 1ª execução: o 403 já vinha de `ReservaService` e o tratador do ciclo 1 já o traduzia. **Prova de que os cenários falham:** com o `throw 403` de `aprovar` removido, R2-01/R2-03/R2-04 ficam vermelhos (`expected: <403> but was: <200>`); mutante revertido · `Tests run: 160, Failures: 0` |
+| **Regra 3**: R3-01, R3-04, R3-06 | `f4ac2ff` | `67449e2`: `POST /manutencoes` (só ADMINISTRADOR), `GET /salas/disponiveis` | `d27a953` (fix) | **Red:** `uma manutenção da "Lab 3" … expected: <201> but was: <500>`. O **500** em vez de 404 revelou um defeito: o handler genérico engolia `NoResourceFoundException`. O fix mantém 404/405/415 do framework, e o red passou a mostrar `but was: <404>` · `Failures: 3`<br>**Green:** `Tests run: 14, Failures: 0` · `Tests run: 163, Failures: 0` |
+| **Regra 4**: R4-01 (4 linhas + 3 `@bloqueado`), R4-03, R4-04, R4-05 | `4bf7bf4` | `31da649`: `POST /reservas/{id}/cancelamento`, `DELETE /reservas/{id}` → `ReservaService.excluir` | `6124305` | **Red:** `expected: <200>/<400>/<403> but was: <404>` · `Failures: 4, Skipped: 3`. R4-05 já passava **pelo motivo errado** (405 do Spring, rota sem `DELETE`); o green faz o 403 vir da regra RF-30<br>**Green:** `Tests run: 24, Failures: 0, Skipped: 3` · `Tests run: 173, Failures: 0, Skipped: 3` |
+| **Refactor final** | — | — | `6124305`: o passo "o cadastro é recusado" passa a exigir que nenhuma manutenção nova seja persistida; `ApiSegurancaTest` cobre 401, 403 em `/manutencoes`, 400 de entrada malformada e 404/405 sem detalhe interno | `./mvnw -B verify`: `Tests run: 188, Failures: 0, Errors: 0, Skipped: 3` · `All coverage checks have been met.` · JaCoCo **95,1% linhas / 81,4% ramos** (gate 80% / 70%) |
+
+Contagem da suíte: 149 testes → **188** (24 casos Cucumber, sendo 21 executados e 3 `@bloqueado` *skipped*, e
+mais 15 casos em `ApiSegurancaTest`).
+
+### Decisões e limites desta rodada
+
+- **Só a coluna "API" do documento virou feature.** Cenários só de unidade continuam em `BddAprovacaoBloqueioTest`
+  e nas suítes JUnit. Cenários cujo "Então" é uma pergunta (R1-09, R2-05, R3-07, R4-06) não viram passo: não
+  há resultado para verificar.
+- **Preparação ("Dado") fora da API quando não existe endpoint:** salas e usuários com token são criados pelos
+  serviços de domínio. O estado `EM_USO` (R4-05) é atribuído direto no repositório em memória, porque o gatilho
+  `APROVADA → EM_USO` está em aberto (P-07). As reservas de origem são criadas pela API.
+- **Auditoria verificada no registro append-only** (`Banco.auditoria`), porque ainda não existe endpoint de
+  consulta de auditoria.
+- **`cucumber-spring`** entrou além de `cucumber-java` e `cucumber-junit-platform-engine`: sem ele os steps não
+  recebem o contexto Spring (MockMvc, `TokenService`, `Clock`).

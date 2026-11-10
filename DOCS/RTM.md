@@ -15,6 +15,39 @@
 | RNF-16 — Integrações externas isoladas por interface, substituíveis por WireMock em teste (REQUISITOS.md:148) | Adapter acoplado a detalhes de transporte, impossibilitando teste determinístico e offline. | `NotificacaoService.NotificadorExterno` (porta) + `NotificacaoHttpAdapter` (adaptador real) cobertos por `IntegracaoNotificacaoExternaTest` (WireMock em porta dinâmica, sem rede externa). | `./mvnw -B verify`; suíte roda offline. |
 | RNF-16 (segurança da chamada externa) | Token/credencial do provedor vazado em log ou propagado ao cliente do EduAloca. | `IntegracaoNotificacaoExternaTest.seguranca_tokenVazadoNoCorpoDeErro_naoDeveAtravessarParaLogNemRetorno`. | Idem acima. |
 
+## Aprovação, bloqueio por manutenção e máquina de estados da Reserva
+
+Fonte dos cenários: [testes/bdd-aprovacao-bloqueio.md](testes/bdd-aprovacao-bloqueio.md).
+Feature: `src/test/resources/features/aprovacao-bloqueio.feature` (os nomes abaixo são os títulos dos cenários na feature, iguais aos do documento).
+Steps: `src/test/java/com/edualoca/bdd/AprovacaoBloqueioSteps.java`; runner:
+`src/test/java/com/edualoca/bdd/AprovacaoBloqueioFeatureTest.java`. Evidência dos ciclos:
+[testes/evidencia-tdd.md](testes/evidencia-tdd.md).
+
+**Execução de todas as linhas:** `./mvnw -B verify`, que roda JUnit e Cucumber no Surefire, com
+gate JaCoCo ≥80% linha / ≥70% ramo, a cada PR em `.github/workflows/ci.yml`.
+
+| Requisito | Risco | Cenário | Teste ou feature (caminho :: nome) | Commit |
+|---|---|---|---|---|
+| RF-12 — Reserva nasce `SOLICITADA` com recurso restrito | Reserva restrita nasce `APROVADA` e pula a avaliação | BDD-R1-01 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Reserva com recurso restrito nasce SOLICITADA* | red `0bbd0e8` · green `4727b59` |
+| RF-19 — Só Responsável/Administrador aprovam | Aprovação válida recusada ou não auditada | BDD-R1-04, BDD-R1-05 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Responsável aprova reserva restrita*; *Administrador aprova reserva restrita* | red `0bbd0e8` · green `4727b59` |
+| RF-19 — Solicitante recebe 403 ao aprovar/rejeitar | Solicitante aprova a própria reserva ou a de terceiro (segregação de funções) | BDD-R2-01, BDD-R2-02, BDD-R2-03 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Solicitante tenta aprovar a própria reserva*; *Solicitante tenta rejeitar a própria reserva*; *Solicitante tenta aprovar reserva de outro solicitante* | `3e1ecaa` (verde na 1ª execução; mutante comprovou a falha) |
+| RF-20 — Rejeição com justificativa visível ao Solicitante | Justificativa perdida ou invisível para quem pediu | BDD-R1-06 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Responsável rejeita com justificativa*; `src/test/java/com/edualoca/BddAprovacaoBloqueioTest.java` :: `rejeicaoComJustificativa_tornaJustificativaVisivelAoSolicitante` | API: red `0bbd0e8` · green `4727b59`. Unidade: red `ba55d99` · green `39d88a7` · refactor `7d0c2f0` |
+| RF-20 / RNF-04 — Rejeição sem justificativa recusada com 400 | Rejeição com justificativa nula, vazia ou em branco aceita | BDD-R1-07 (3 exemplos) | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Rejeição sem justificativa é recusada* | red `0bbd0e8` · green `4727b59` |
+| RF-38 / RNF-06 — Erro compreensível, sem stacktrace | Resposta expõe classe interna ou stacktrace | BDD-R2-04 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Recusa por perfil traz mensagem compreensível*; `src/test/java/com/edualoca/ApiSegurancaTest.java` :: `errosDoFramework_mantemStatusSemDetalheInterno` | `3e1ecaa`; correção 500→404/405 `d27a953`; `6124305` |
+| RF-22 — Reserva sobre manutenção recusada com 409 | Recurso reservado durante manutenção | BDD-R3-01; BDD-R3-05 (unidade) | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Reserva totalmente dentro da manutenção é recusada*; `src/test/java/com/edualoca/BddAprovacaoBloqueioTest.java` :: `reservaDeRecursoDeQualquerTipoEmManutencao_eRecusadaCom409` | API: red `f4ac2ff` · green `67449e2`. Unidade: red `20a96b8` · green `7c32c37` · refactor `026db1c` |
+| RF-11 — Recurso em manutenção fora da busca | Busca oferece sala indisponível | BDD-R3-04 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Recurso em manutenção não aparece na busca de disponibilidade* | red `f4ac2ff` · green `67449e2` |
+| RF-21 / RF-23 — Manutenção sobre reserva `APROVADA` exige confirmação | Manutenção cadastrada derruba reserva já aprovada | BDD-R3-06 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Cadastrar manutenção sobre reserva APROVADA exige confirmação explícita* | red `f4ac2ff` · green `67449e2` · refactor `6124305` |
+| RF-27 — Toda transição gera exatamente um evento de auditoria com ator e instante | Transição sem auditoria, duplicada ou com autor/instante errado | BDD-R4-01 (4 linhas executáveis; 3 `@bloqueado`) | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Transição permitida muda o estado e gera auditoria*; `src/test/java/com/edualoca/BddAprovacaoBloqueioTest.java` :: `transicaoPermitida_mudaEstadoEGeraUmEventoDeAuditoriaComAtorEInstante` | API: red `4bf7bf4` · green `31da649`. Unidade: red `1b42968` · green `3da386e` · refactor `906b114` |
+| RF-14 — Cancelamento exige motivo | Cancelamento sem motivo aceito | BDD-R4-03 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Cancelamento sem motivo é recusado* | red `4bf7bf4` · green `31da649` |
+| RF-03 — Solicitante só cancela a própria reserva | Solicitante cancela reserva de terceiro | BDD-R4-04 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Solicitante não cancela reserva de terceiro* | red `4bf7bf4` · green `31da649` |
+| RF-30 — Reserva iniciada não pode ser apagada | `DELETE` remove reserva `EM_USO` | BDD-R4-05 | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Reserva iniciada não pode ser apagada* | red `4bf7bf4` (já passava pelo 405 do framework) · green `31da649` (403 pela regra de domínio) |
+| RF-01 / RF-02 — Rota exige token; perfil fora do escopo recebe 403 | Acesso anônimo ou Solicitante cadastrando manutenção | — (fora do documento BDD) | `src/test/java/com/edualoca/ApiSegurancaTest.java` :: `semTokenValido_recusaCom401`, `solicitanteNaoCadastraManutencao` | `6124305` |
+| RNF-04 — Entrada inválida recusada com 400 | JSON malformado ou recurso inexistente processado | — (fora do documento BDD) | `src/test/java/com/edualoca/ApiSegurancaTest.java` :: `entradaInvalida_recusaCom400`, `buscaSemParametro_recusaCom400` | `6124305` |
+
+**Cenários do documento ainda sem linha executável:** BDD-R1-09 (P-02), BDD-R2-05 (P-01),
+BDD-R3-07 (P-04), BDD-R4-06 (P-06) e as linhas de BDD-R4-01/R4-02 com iniciar uso, concluir e
+não comparecimento (P-05, P-07, P-08). Todos aguardam decisão do PRD.
+
 ## Pendências de cobertura (RNF-11)
 
 Os demais RFs/RNFs críticos listados em [REQUISITOS.md](REQUISITOS/REQUISITOS.md) ainda

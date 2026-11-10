@@ -12,8 +12,10 @@
 > no lugar do resultado esperado. Nenhuma política foi inventada. O comportamento atual do código
 > aparece só como *observação* e **não** serve de critério de aceite.
 >
-> **Status da RTM:** nenhuma das quatro regras abaixo tem linha na [RTM.md](../RTM.md) ainda
-> (lá só estão RF-31/32/33 e RNF-16). Estes cenários servem de insumo para essas linhas.
+> **Status da RTM:** os cenários de API deste documento estão ligados a requisito, teste ou feature e
+> commit na seção "Aprovação, bloqueio por manutenção e máquina de estados da Reserva" da [RTM.md](../RTM.md).
+> Eles rodam como especificação executável em
+> [`src/test/resources/features/aprovacao-bloqueio.feature`](../../src/test/resources/features/aprovacao-bloqueio.feature).
 
 ---
 

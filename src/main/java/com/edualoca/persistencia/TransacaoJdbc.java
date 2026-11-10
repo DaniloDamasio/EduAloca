@@ -3,6 +3,10 @@ package com.edualoca.persistencia;
 import com.edualoca.domain.reserva.Transacao;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * Transacao de banco para o trabalho do dominio. Os repositorios JDBC que usam o mesmo {@code DataSource}
+ * participam dela (propagacao REQUIRED); qualquer excecao desfaz todas as escritas.
+ */
 public class TransacaoJdbc implements Transacao {
 
     private final TransactionTemplate transacao;
@@ -13,6 +17,6 @@ public class TransacaoJdbc implements Transacao {
 
     @Override
     public void executar(Runnable trabalho) {
-        trabalho.run(); // esqueleto: ainda sem transacao
+        transacao.executeWithoutResult(status -> trabalho.run());
     }
 }

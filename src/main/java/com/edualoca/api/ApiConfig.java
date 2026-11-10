@@ -3,9 +3,12 @@ package com.edualoca.api;
 import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
 import com.edualoca.domain.recurso.CadastroRecursoService;
 import com.edualoca.domain.recurso.PesquisaRecursoService;
+import com.edualoca.domain.reserva.HistoricoReservaRepositorio;
+import com.edualoca.domain.reserva.HistoricoReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaRepositorio;
 import com.edualoca.domain.reserva.ReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.reserva.Transacao;
 import com.edualoca.domain.usuario.AutenticacaoService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -32,9 +35,13 @@ public class ApiConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public ReservaService reservaService(Clock clock, ObjectProvider<ReservaRepositorio> repositorio) {
+    public ReservaService reservaService(Clock clock, ObjectProvider<ReservaRepositorio> repositorio,
+                                         ObjectProvider<HistoricoReservaRepositorio> historico,
+                                         ObjectProvider<Transacao> transacao) {
         // PostgreSQL quando configurado (PersistenciaPostgresConfig); caso contrario, memoria.
-        return new ReservaService(clock, repositorio.getIfAvailable(ReservaRepositorioEmMemoria::new));
+        return new ReservaService(clock, repositorio.getIfAvailable(ReservaRepositorioEmMemoria::new),
+                historico.getIfAvailable(HistoricoReservaRepositorioEmMemoria::new),
+                transacao.getIfAvailable(Transacao::direta));
     }
 
     @Bean

@@ -10,6 +10,8 @@ import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaRepositorio;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.SQLException;
@@ -25,7 +27,7 @@ import java.util.UUID;
  * vira 409. A consulta {@link #existeConflito} continua existindo para dar a resposta cedo no caso comum.
  *
  * <p>Os demais servicos (relatorio, pesquisa, retirada) ainda leem {@link Banco#reservas}, por isso a
- * reserva gravada tambem e mantida nesse cache em memoria apos o commit.
+ * reserva gravada tambem e mantida nesse cache em memoria apos o commit (inclusive o de uma transacao externa).
  */
 public class ReservaRepositorioJdbc implements ReservaRepositorio {
 
@@ -61,7 +63,7 @@ public class ReservaRepositorioJdbc implements ReservaRepositorio {
                         instante(reserva.getInicio()), instante(reserva.getFim()), reserva.getEstado().isAtiva());
             }
         }));
-        Banco.reservas.put(reserva.getId(), reserva);
+        aposCommit(() -> Banco.reservas.put(reserva.getId(), reserva));
     }
 
     @Override
@@ -90,6 +92,23 @@ public class ReservaRepositorioJdbc implements ReservaRepositorio {
                 Boolean.class, tipo(recurso), id(recurso), reservaIgnorada == null ? NENHUMA : reservaIgnorada,
                 instante(inicio), instante(fim));
         return Boolean.TRUE.equals(existe);
+    }
+
+    /**
+     * Dentro de uma transacao externa (ex.: reserva + historico), so publica no cache depois do commit, para que
+     * um rollback nao deixe no cache uma reserva que nao existe no banco.
+     */
+    private static void aposCommit(Runnable acao) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    acao.run();
+                }
+            });
+        } else {
+            acao.run();
+        }
     }
 
     private static void traduzindoSobreposicao(Runnable gravacao) {

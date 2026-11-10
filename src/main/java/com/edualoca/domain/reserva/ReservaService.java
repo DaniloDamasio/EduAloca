@@ -67,7 +67,11 @@ public class ReservaService {
 
             Reserva reserva = new Reserva(UUID.randomUUID(), solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
-            repositorio.inserir(reserva);
+            String motivo = algumRestrito ? "Criacao: recurso restrito aguarda aprovacao" : "Criacao: aprovada automaticamente";
+            transacao.executar(() -> {
+                repositorio.inserir(reserva);
+                historico.registrar(registro(reserva, solicitante, null, motivo));
+            });
             AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
@@ -128,8 +132,7 @@ public class ReservaService {
                 || reserva.getEstado() == EstadoReserva.REJEITADA || reserva.getEstado() == EstadoReserva.NAO_COMPARECEU) {
             throw new RegraNegocioException(409, "Reserva em estado terminal nao pode ser cancelada");
         }
-        reserva.setEstado(EstadoReserva.CANCELADA);
-        repositorio.atualizar(reserva);
+        transicionar(reserva, autor, motivo, () -> reserva.setEstado(EstadoReserva.CANCELADA));
         AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -143,8 +146,7 @@ public class ReservaService {
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
-        reserva.setEstado(EstadoReserva.APROVADA);
-        repositorio.atualizar(reserva);
+        transicionar(reserva, responsavel, "Aprovacao da solicitacao", () -> reserva.setEstado(EstadoReserva.APROVADA));
         AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -161,8 +163,7 @@ public class ReservaService {
         if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
-        reserva.rejeitar(justificativa);
-        repositorio.atualizar(reserva);
+        transicionar(reserva, responsavel, justificativa, () -> reserva.rejeitar(justificativa));
         AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -180,8 +181,19 @@ public class ReservaService {
         return reserva;
     }
 
+    /**
+     * Historico auditavel da reserva, so para Responsavel e Administrador. O perfil e checado antes da existencia
+     * para que o Solicitante nao descubra quais ids de reserva existem.
+     */
     public List<RegistroHistoricoReserva> consultarHistorico(Usuario autor, UUID reservaId) {
-        return historico.listarPorReserva(reservaId); // esqueleto: sem regra
+        Banco.seedSeNecessario();
+        if (autor.getPerfil() != Perfil.RESPONSAVEL && autor.getPerfil() != Perfil.ADMINISTRADOR) {
+            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem consultar o historico da reserva");
+        }
+        if (repositorio.buscar(reservaId) == null) {
+            throw new RegraNegocioException(409, "Reserva inexistente");
+        }
+        return historico.listarPorReserva(reservaId);
     }
 
     public void excluir(Usuario autor, UUID reservaId) {
@@ -191,6 +203,30 @@ public class ReservaService {
             throw new RegraNegocioException(405, "Exclusao fisica de reserva nao e exposta pela API");
         }
         throw new RegraNegocioException(403, "Reserva iniciada nao pode ser excluida");
+    }
+
+    /**
+     * Aplica a mudanca de estado e grava reserva e historico na mesma transacao. Se a gravacao falhar, o banco
+     * desfaz as duas escritas e aqui a reserva em memoria volta ao estado anterior.
+     */
+    private void transicionar(Reserva reserva, Usuario autor, String motivo, Runnable mudanca) {
+        EstadoReserva estadoAnterior = reserva.getEstado();
+        String justificativaAnterior = reserva.getJustificativaRejeicao();
+        mudanca.run();
+        try {
+            transacao.executar(() -> {
+                repositorio.atualizar(reserva);
+                historico.registrar(registro(reserva, autor, estadoAnterior, motivo));
+            });
+        } catch (RuntimeException e) {
+            reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);
+            throw e;
+        }
+    }
+
+    private RegistroHistoricoReserva registro(Reserva reserva, Usuario autor, EstadoReserva estadoAnterior, String motivo) {
+        return new RegistroHistoricoReserva(UUID.randomUUID(), reserva.getId(), autor.getId(), clock.instant(),
+                estadoAnterior, reserva.getEstado(), motivo);
     }
 
     private void validarIntervalo(LocalDateTime inicio, LocalDateTime fim) {

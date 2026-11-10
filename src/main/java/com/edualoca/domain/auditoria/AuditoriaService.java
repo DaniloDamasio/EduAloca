@@ -12,6 +12,10 @@ public class AuditoriaService {
         Banco.auditoria.add(new AuditoriaEvento(UUID.randomUUID(), entidade, entidadeId, acao, autorId, LocalDateTime.now()));
     }
 
+    public static void registrar(String entidade, UUID entidadeId, String acao, UUID autorId, LocalDateTime dataHora) {
+        Banco.auditoria.add(new AuditoriaEvento(UUID.randomUUID(), entidade, entidadeId, acao, autorId, dataHora));
+    }
+
     public List<AuditoriaEvento> consultarPorEntidade(String entidade, UUID entidadeId) {
         Banco.seedSeNecessario();
         List<AuditoriaEvento> eventos = Banco.auditoria.stream()

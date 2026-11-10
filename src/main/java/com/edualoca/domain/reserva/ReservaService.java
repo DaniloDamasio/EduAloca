@@ -20,10 +20,14 @@ public class ReservaService {
 
     private static final ConcurrentHashMap<UUID, ReentrantLock> LOCKS_POR_RECURSO = new ConcurrentHashMap<>();
 
+    private final Clock clock;
+
     public ReservaService() {
+        this(Clock.systemDefaultZone());
     }
 
     public ReservaService(Clock clock) {
+        this.clock = clock;
     }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
@@ -49,7 +53,7 @@ public class ReservaService {
             Reserva reserva = new Reserva(UUID.randomUUID(), solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
             Banco.reservas.put(reserva.getId(), reserva);
-            AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId());
+            AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
             liberarLocks(locksAdquiridos);
@@ -76,7 +80,7 @@ public class ReservaService {
             }
             reserva.setInicio(novoInicio);
             reserva.setFim(novoFim);
-            AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId());
+            AuditoriaService.registrar("Reserva", reserva.getId(), "ATUALIZACAO", autor.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
             liberarLocks(locksAdquiridos);
@@ -100,7 +104,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva em estado terminal nao pode ser cancelada");
         }
         reserva.setEstado(EstadoReserva.CANCELADA);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId());
+        AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
@@ -114,7 +118,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
         reserva.setEstado(EstadoReserva.APROVADA);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId());
+        AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
@@ -131,7 +135,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
         reserva.rejeitar(justificativa);
-        AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId());
+        AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 

@@ -123,6 +123,7 @@ public class ReservaService {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
         reserva.setEstado(EstadoReserva.REJEITADA);
+        reserva.setJustificativaRejeicao(justificativa);
         AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId());
         return reserva;
     }

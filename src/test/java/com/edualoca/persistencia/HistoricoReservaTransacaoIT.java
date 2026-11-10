@@ -28,7 +28,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +100,7 @@ class HistoricoReservaTransacaoIT {
         Map<String, Object> aprovacao = linhas.get(1);
         assertAll(
                 () -> assertEquals(responsavel.getId(), aprovacao.get("usuario_id")),
-                () -> assertEquals(AGORA, ((OffsetDateTime) aprovacao.get("instante")).toInstant()),
+                () -> assertEquals(AGORA, ((Timestamp) aprovacao.get("instante")).toInstant()),
                 () -> assertEquals("SOLICITADA", aprovacao.get("estado_anterior")),
                 () -> assertEquals("APROVADA", aprovacao.get("estado_novo")),
                 () -> assertEquals("Aprovacao da solicitacao", aprovacao.get("motivo")),

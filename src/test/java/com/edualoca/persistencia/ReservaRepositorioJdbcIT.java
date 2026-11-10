@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -28,7 +29,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A constraint ex_reserva_recurso_sem_sobreposicao (ADR-009) exercitada sem a checagem previa do servico:
@@ -107,6 +111,28 @@ class ReservaRepositorioJdbcIT {
 
         primeira.setEstado(EstadoReserva.APROVADA);
         assertThrows(RegraNegocioException.class, () -> repositorio.atualizar(primeira));
+    }
+
+    @Test
+    @DisplayName("Outra violacao de integridade (id duplicado) nao e mascarada como 409 de sobreposicao")
+    void outraViolacaoDeIntegridade_naoViraConflito() {
+        Reserva reserva = reserva(sala, OITO, DEZ, EstadoReserva.APROVADA);
+        repositorio.inserir(reserva);
+
+        assertThrows(DataIntegrityViolationException.class, () -> repositorio.inserir(reserva));
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM reserva", Integer.class));
+    }
+
+    @Test
+    @DisplayName("Checagem de conflito ignora a propria reserva (alteracao), mas enxerga as demais")
+    void existeConflito_ignoraApenasAReservaInformada() {
+        Reserva reserva = reserva(sala, OITO, DEZ, EstadoReserva.APROVADA);
+        repositorio.inserir(reserva);
+
+        assertTrue(repositorio.existeConflito(sala, OITO.plusMinutes(30), DEZ, null));
+        assertFalse(repositorio.existeConflito(sala, OITO.plusMinutes(30), DEZ, reserva.getId()));
+        assertTrue(repositorio.existeConflito(sala, OITO.plusMinutes(30), DEZ, UUID.randomUUID()));
+        assertSame(reserva, repositorio.buscar(reserva.getId()));
     }
 
     private static Reserva reserva(Object recurso, LocalDateTime inicio, LocalDateTime fim, EstadoReserva estado) {

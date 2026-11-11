@@ -44,7 +44,8 @@ class BddAprovacaoBloqueioTest {
     private final ReservaService reservaService = new ReservaService(RELOGIO_FIXO);
 
     private final Usuario ana = new Usuario(UUID.randomUUID(), "ana@example.com", "hash", Perfil.SOLICITANTE);
-    private final Usuario rui = new Usuario(UUID.randomUUID(), "rui@example.com", "hash", Perfil.RESPONSAVEL);
+    /** Responsavel competente pelo Bloco B, onde ficam as salas restritas destes cenarios (P-2, DEF-010). */
+    private final Usuario rui = new Usuario(Banco.RESPONSAVEL_BLOCO_B_ID, "rui@example.com", "hash", Perfil.RESPONSAVEL);
     private final Sala labQuimica = new Sala(UUID.randomUUID(), "Lab Quimica", "laboratorio", 20, "Bloco B", true);
 
     private Reserva reservaSolicitadaDaAnaNoLabQuimica() {

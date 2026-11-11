@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -46,6 +47,13 @@ public class ReservaController {
     @GetMapping("/{id}")
     public ReservaResposta consultar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         return ReservaResposta.de(reservaService.consultar(usuario, id));
+    }
+
+    /** RF-13: so o dono altera a propria reserva; intervalo, posse, estado e conflito sao checados no servico. */
+    @PutMapping("/{id}")
+    public ReservaResposta alterar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                   @RequestBody AlterarReservaRequisicao requisicao) {
+        return ReservaResposta.de(reservaService.alterar(usuario, id, requisicao.inicio(), requisicao.fim()));
     }
 
     /**

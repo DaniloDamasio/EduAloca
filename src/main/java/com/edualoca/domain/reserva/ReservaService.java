@@ -48,6 +48,10 @@ public class ReservaService {
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
                           String finalidade, List<ReservaRecurso> recursos) {
         Banco.seedSeNecessario();
+        // RF-12: so o Solicitante cria reserva (DEF-009). Perfil antes da entrada: 403 nao depende do corpo.
+        if (solicitante.getPerfil() != Perfil.SOLICITANTE) {
+            throw new RegraNegocioException(403, "Apenas o Solicitante pode criar reservas");
+        }
         validarIntervalo(inicio, fim);
         if (finalidade == null || finalidade.isBlank()) {
             throw new RegraNegocioException(400, "Finalidade da reserva e obrigatoria");
@@ -82,12 +86,10 @@ public class ReservaService {
 
     public Reserva alterar(Usuario autor, UUID reservaId, LocalDateTime novoInicio, LocalDateTime novoFim) {
         Banco.seedSeNecessario();
+        // Intervalo antes da posse: com intervalo invalido, id alheio e inexistente recebem o mesmo 400.
         validarIntervalo(novoInicio, novoFim);
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva inexistente");
-        }
-        if (!reserva.getSolicitanteId().equals(autor.getId())) {
+        if (!ehDono(autor, reserva)) {
             throw new RegraNegocioException(403, "Usuario nao autorizado a alterar reserva de outro solicitante");
         }
         if (reserva.getEstado() != EstadoReserva.SOLICITADA && reserva.getEstado() != EstadoReserva.APROVADA) {
@@ -123,10 +125,7 @@ public class ReservaService {
             throw new RegraNegocioException(400, "Motivo do cancelamento e obrigatorio");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva inexistente");
-        }
-        if (!reserva.getSolicitanteId().equals(autor.getId())) {
+        if (!ehDono(autor, reserva)) {
             throw new RegraNegocioException(403, "Usuario nao autorizado a cancelar reserva de outro solicitante");
         }
         if (reserva.getEstado() == EstadoReserva.CONCLUIDA || reserva.getEstado() == EstadoReserva.CANCELADA
@@ -144,7 +143,11 @@ public class ReservaService {
             throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem aprovar reservas");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
+        if (reserva == null) {
+            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
+        }
+        exigirDecisorCompetente(responsavel, reserva, "aprovar");
+        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
         transicionar(reserva, responsavel, "Aprovacao da solicitacao", () -> reserva.setEstado(EstadoReserva.APROVADA));
@@ -161,7 +164,11 @@ public class ReservaService {
             throw new RegraNegocioException(400, "Justificativa da rejeicao e obrigatoria");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
+        if (reserva == null) {
+            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
+        }
+        exigirDecisorCompetente(responsavel, reserva, "rejeitar");
+        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
         transicionar(reserva, responsavel, justificativa, () -> reserva.rejeitar(justificativa));
@@ -197,13 +204,13 @@ public class ReservaService {
         return historico.listarPorReserva(reservaId);
     }
 
+    /**
+     * RF-30 / P-3: nenhuma reserva e apagada fisicamente, por nenhum perfil e em nenhum estado; o fim de uma reserva e
+     * o cancelamento. Sempre 403 (a rota existe, entao 405 contradiria o significado do codigo; DEF-006), sem consultar
+     * a reserva, para que a resposta nao revele estado nem existencia.
+     */
     public void excluir(Usuario autor, UUID reservaId) {
-        Banco.seedSeNecessario();
-        Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva != null && reserva.getEstado() == EstadoReserva.SOLICITADA) {
-            throw new RegraNegocioException(405, "Exclusao fisica de reserva nao e exposta pela API");
-        }
-        throw new RegraNegocioException(403, "Reserva iniciada nao pode ser excluida");
+        throw new RegraNegocioException(403, "Reservas nao podem ser excluidas; para encerrar uma reserva, cancele-a");
     }
 
     /**
@@ -223,6 +230,36 @@ public class ReservaService {
             reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);
             throw e;
         }
+    }
+
+    /**
+     * P-2 / RF-19 (DEF-010): o Administrador decide qualquer reserva; o Responsavel so decide reserva com sala de uma
+     * localizacao sob sua responsabilidade ({@link Banco#responsavelPorLocalizacao}). Checado antes do estado, para que
+     * o Responsavel nao competente nao descubra em que estado a reserva esta.
+     *
+     * <p>Lacuna conhecida: material e professor nao tem localizacao. Reserva sem nenhuma sala fica com qualquer
+     * Responsavel, como antes, ate o vinculo responsavel-recurso ser modelado (registrado em DEF-010).
+     */
+    private static void exigirDecisorCompetente(Usuario autor, Reserva reserva, String acao) {
+        if (autor.getPerfil() == Perfil.ADMINISTRADOR) {
+            return;
+        }
+        List<Sala> salas = reserva.getRecursos().stream().map(ReservaRecurso::getRecurso)
+                .filter(Sala.class::isInstance).map(Sala.class::cast).toList();
+        boolean competente = salas.isEmpty() || salas.stream()
+                .anyMatch(sala -> autor.getId().equals(Banco.responsavelPorLocalizacao.get(sala.getLocalizacao())));
+        if (!competente) {
+            throw new RegraNegocioException(403,
+                    "Apenas o Responsavel pelo local do recurso (ou o Administrador) pode " + acao + " esta reserva");
+        }
+    }
+
+    /**
+     * Posse (RF-03, P-1). Reserva inexistente conta como "nao e sua": o 403 e o mesmo do id alheio, para que ninguem
+     * descubra quais ids existem comparando respostas (DEF-005).
+     */
+    private static boolean ehDono(Usuario autor, Reserva reserva) {
+        return reserva != null && reserva.getSolicitanteId().equals(autor.getId());
     }
 
     private RegistroHistoricoReserva registro(Reserva reserva, Usuario autor, EstadoReserva estadoAnterior, String motivo) {

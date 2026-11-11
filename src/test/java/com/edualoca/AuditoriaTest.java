@@ -82,7 +82,7 @@ class AuditoriaTest {
     }
 
     @Test
-    @DisplayName("RF-30-T2 [gap/inconsistencia Q22, assumindo que nenhum DELETE e exposto mesmo para SOLICITADA]: DELETE de reserva em SOLICITADA deve ser rejeitado, pois a exclusao fisica nao e exposta")
+    @DisplayName("RF-30-T2 [Q22 resolvida pela matriz de autorizacao, P-3]: DELETE de reserva em SOLICITADA e recusado com 403, como nos demais estados (DEF-006)")
     void rf30T2_deleteDeReservaSolicitada_deveSerRejeitadoPorAusenciaDeDelete() {
         // arrange
         com.edualoca.domain.reserva.ReservaService reservaService = new com.edualoca.domain.reserva.ReservaService();
@@ -99,8 +99,8 @@ class AuditoriaTest {
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
                 () -> reservaService.excluir(autor, reservaSolicitadaId));
 
-        // assert
-        assertEquals(405, ex.getStatusHttp());
+        // assert: era 405 enquanto a Q22 estava aberta; a rota DELETE existe, entao 405 nao se aplica (DEF-006)
+        assertEquals(403, ex.getStatusHttp());
     }
 
     @Test

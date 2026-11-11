@@ -352,7 +352,9 @@ public class AprovacaoBloqueioSteps {
     }
 
     private Usuario cadastrarUsuario(String nome, Perfil perfil) {
-        Usuario usuario = new Usuario(UUID.randomUUID(), nome + "@edualoca.test", "hash-de-teste", perfil);
+        // Todo Responsavel dos cenarios e o competente pelo Bloco B, onde ficam as salas cadastradas (P-2, DEF-010).
+        UUID id = perfil == Perfil.RESPONSAVEL ? Banco.RESPONSAVEL_BLOCO_B_ID : UUID.randomUUID();
+        Usuario usuario = new Usuario(id, nome + "@edualoca.test", "hash-de-teste", perfil);
         usuarios.put(nome, usuario);
         tokens.put(nome, tokenService.emitir(usuario));
         return usuario;

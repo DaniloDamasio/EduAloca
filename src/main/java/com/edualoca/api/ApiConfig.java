@@ -3,6 +3,7 @@ package com.edualoca.api;
 import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
 import com.edualoca.domain.recurso.CadastroRecursoService;
 import com.edualoca.domain.recurso.PesquisaRecursoService;
+import com.edualoca.domain.relatorio.RelatorioService;
 import com.edualoca.domain.reserva.HistoricoReservaRepositorio;
 import com.edualoca.domain.reserva.HistoricoReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaRepositorio;
@@ -57,6 +58,11 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public PesquisaRecursoService pesquisaRecursoService() {
         return new PesquisaRecursoService();
+    }
+
+    @Bean
+    public RelatorioService relatorioService(Clock clock) {
+        return new RelatorioService(clock.getZone());
     }
 
     @Override

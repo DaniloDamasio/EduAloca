@@ -65,7 +65,8 @@ class HistoricoReservaTransacaoIT {
 
     private final Clock relogio = Clock.fixed(AGORA, FUSO);
     private final Usuario solicitante = new Usuario(UUID.randomUUID(), "sol@edualoca.test", "h", Perfil.SOLICITANTE);
-    private final Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@edualoca.test", "h", Perfil.RESPONSAVEL);
+    /** Responsavel competente pelo Bloco B, onde fica o laboratorio restrito (P-2, DEF-010). */
+    private final Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_B_ID, "resp@edualoca.test", "h", Perfil.RESPONSAVEL);
     private final Sala salaRestrita = new Sala(UUID.randomUUID(), "Lab Quimica", "laboratorio", 20, "Bloco B", true);
 
     @BeforeAll

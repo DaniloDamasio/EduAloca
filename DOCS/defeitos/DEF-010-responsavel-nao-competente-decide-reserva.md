@@ -67,13 +67,16 @@ sala** continua decidida por qualquer Responsável, como antes. Fechar isso exig
 aleatório, sem vínculo com bloco nenhum. Com a regra P-2 esse Responsável deixou de ser competente. Cada um passa a usar
 o id do Responsável de seed do bloco da sala que o teste já usava: `Banco.RESPONSAVEL_BLOCO_A_ID` em
 `AprovacaoRecursosRestritosTest` e `MaquinaEstadosReservaTest` (salas no Bloco A); `Banco.RESPONSAVEL_BLOCO_B_ID` em
-`BddAprovacaoBloqueioTest`, `HistoricoAuditavelReservaTest`, `HistoricoReservaApiTest` e nos passos Cucumber
-`AprovacaoBloqueioSteps` (salas no Bloco B). As asserções, os cenários `.feature` e o BDD-R1-05 ("Administrador aprova")
+`BddAprovacaoBloqueioTest`, `HistoricoAuditavelReservaTest`, `HistoricoReservaApiTest`, nos passos Cucumber
+`AprovacaoBloqueioSteps` e em `HistoricoReservaTransacaoIT` (salas no Bloco B). As asserções, os cenários `.feature` e o BDD-R1-05 ("Administrador aprova")
 não mudaram.
 
 ## Reteste
 
 `MatrizAutorizacaoApiTest`: 114/114 verdes. Linhas 7 e 8: Responsável do Bloco A 200, Responsável do Bloco B 403,
 Administrador 200, Solicitante 403, anônimo 401. Suíte completa (`./mvnw test`): 374 testes, 0 falhas, 3 ignorados
-(os mesmos 3 ignorados de antes desta série de correções). Antes do ajuste de arranjo, 26 testes antigos falhavam com
+(os mesmos 3 ignorados de antes desta série de correções). Esse reteste rodou só o Surefire. No `./mvnw -B verify` completo
+(com Docker para os ITs), `HistoricoReservaTransacaoIT` falhou em 2 casos pelo mesmo motivo (Responsável com UUID
+aleatório) e recebeu o mesmo ajuste de arranjo em commit seguinte. Depois disso: `./mvnw -B verify` **BUILD SUCCESS**,
+374 testes unitários (3 ignorados) e 14 ITs verdes, gate JaCoCo atendido. Antes do ajuste de arranjo, 26 testes antigos falhavam com
 `403`, o que confirma que a regra nova é aplicada também pelo domínio, não só pela API.

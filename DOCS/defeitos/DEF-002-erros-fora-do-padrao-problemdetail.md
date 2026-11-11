@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Média: o conteúdo já é seguro (sem stack trace), mas o contrato de erro não é o padrão (RFC 9457) e não informa `status`/`title` no corpo |
 | Prioridade | Alta: afeta toda resposta 4xx/5xx da API |
 | Requisitos | RF-38, RNF-06 |
@@ -52,8 +52,13 @@ Igual nos 35 casos de erro da matriz e nos 19 de validação. A checagem de cont
 
 ## Correção
 
-Pendente.
+`TratadorDeErros` passa a devolver `ProblemDetail` (`application/problem+json`) em todos os handlers, com `title` por
+status em português, `detail` com a mensagem de negócio e `instance` com o caminho. A propriedade `mensagem` repete o
+`detail` para manter o contrato anterior (24 asserções de testes existentes e clientes que leem `$.mensagem`).
+`ErroResposta` foi removido. Nenhum teste foi alterado.
 
 ## Reteste
 
-Pendente.
+`MatrizAutorizacaoApiTest::celulaDeErroEmProblemDetail`: 24 de 35 verdes; as 11 restantes falham no login de
+Responsável/Administrador (DEF-003), antes de chegar à resposta de erro. `entradaInvalida`: nenhum caso falha mais por
+formato. Suíte completa (`./mvnw test`): só falham casos de `MatrizAutorizacaoApiTest` ligados a DEF-003 a DEF-008.

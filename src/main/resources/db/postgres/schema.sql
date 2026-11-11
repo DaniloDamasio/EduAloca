@@ -28,3 +28,29 @@ CREATE TABLE IF NOT EXISTS reserva_recurso (
     CONSTRAINT ex_reserva_recurso_sem_sobreposicao
         EXCLUDE USING gist (tipo_recurso WITH =, recurso_id WITH =, periodo WITH &&) WHERE (ativa)
 );
+
+-- Historico auditavel das mudancas de estado (RF-27). Gravado na mesma transacao que altera a reserva.
+-- Append-only (RF-29): a API nao expoe alteracao/exclusao e o trigger abaixo recusa UPDATE e DELETE no banco.
+CREATE TABLE IF NOT EXISTS reserva_historico (
+    sequencia       bigint       GENERATED ALWAYS AS IDENTITY,
+    id              uuid         PRIMARY KEY,
+    reserva_id      uuid         NOT NULL REFERENCES reserva (id),
+    usuario_id      uuid         NOT NULL,
+    instante        timestamptz  NOT NULL,
+    estado_anterior varchar(20),
+    estado_novo     varchar(20)  NOT NULL,
+    motivo          text         NOT NULL CHECK (btrim(motivo) <> ''),
+    CONSTRAINT ck_reserva_historico_transicao CHECK (estado_anterior IS DISTINCT FROM estado_novo)
+);
+
+CREATE INDEX IF NOT EXISTS ix_reserva_historico_reserva ON reserva_historico (reserva_id, sequencia);
+
+-- Corpo entre aspas simples (e nao $$) porque o ScriptUtils do Spring nao reconhece dollar-quoting ao separar comandos.
+CREATE OR REPLACE FUNCTION recusar_alteracao_historico() RETURNS trigger LANGUAGE plpgsql AS
+'BEGIN
+    RAISE EXCEPTION ''reserva_historico e somente inclusao: % recusado'', TG_OP USING ERRCODE = ''insufficient_privilege'';
+END';
+
+CREATE OR REPLACE TRIGGER tg_reserva_historico_somente_inclusao
+    BEFORE UPDATE OR DELETE ON reserva_historico
+    FOR EACH ROW EXECUTE FUNCTION recusar_alteracao_historico();

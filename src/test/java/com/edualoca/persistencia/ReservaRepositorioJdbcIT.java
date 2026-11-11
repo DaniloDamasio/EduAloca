@@ -67,7 +67,7 @@ class ReservaRepositorioJdbcIT {
 
     @BeforeEach
     void limpar() {
-        jdbc.execute("TRUNCATE reserva_recurso, reserva");
+        jdbc.execute("TRUNCATE reserva_historico, reserva_recurso, reserva");
     }
 
     @Test

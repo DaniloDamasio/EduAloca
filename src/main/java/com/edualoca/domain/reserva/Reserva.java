@@ -63,6 +63,12 @@ public class Reserva {
         this.justificativaRejeicao = justificativa;
     }
 
+    /** Volta estado e justificativa ao que eram antes de uma transicao cuja gravacao falhou. */
+    void desfazerTransicao(EstadoReserva estadoAnterior, String justificativaAnterior) {
+        this.estado = estadoAnterior;
+        this.justificativaRejeicao = justificativaAnterior;
+    }
+
     public void setEstado(EstadoReserva estado) {
         this.estado = estado;
     }

@@ -89,3 +89,42 @@ mais 15 casos em `ApiSegurancaTest`).
   consulta de auditoria.
 - **`cucumber-spring`** entrou além de `cucumber-java` e `cucumber-junit-platform-engine`: sem ele os steps não
   recebem o contexto Spring (MockMvc, `TokenService`, `Clock`).
+
+---
+
+## Histórico auditável das reservas (RF-27, RF-29, RF-30)
+
+> **Branch:** `historico-auditavel-reservas`. **Comando:** `./mvnw -B test` (unidade e API) e
+> `./mvnw -B verify` (com os ITs do Testcontainers e o gate JaCoCo).
+>
+> Mesmas regras do ciclo: o vermelho tem de ser falha de asserção. Quando o teste precisava de uma API
+> inexistente, um commit `chore` anterior trouxe só o esqueleto (métodos sem efeito). Os commits de teste e de
+> código são separados.
+
+| Rodada | Esqueleto | Commit red | Commit green | Trecho da saída |
+|---|---|---|---|---|
+| **Unidade**: registro por transição (criar, aprovar, rejeitar, cancelar) com usuário, instante do `Clock`, estado anterior/novo e motivo; registro inválido recusado; lista imutável; falha ao gravar desfaz a mudança em memória; reserva iniciada não é apagada e mantém o histórico; consulta só para Responsável/Administrador | `ebd7135` | `1236d98` | `e24323a` | **Red:** `esperava exatamente um registro de historico ==> expected: <1> but was: <0>`; `solicitanteDonoRecebe403 Expected RegraNegocioException to be thrown, but nothing was thrown` · `Tests run: 29, Failures: 29, Errors: 0`<br>**Green:** `Tests run: 233, Failures: 0, Errors: 0, Skipped: 3` |
+| **Integração (PostgreSQL via Testcontainers)**: mesma transação; rollback depois de o histórico já ter sido escrito não deixa auditoria órfã (transição e criação); banco recusa UPDATE/DELETE | `f345f17` (repositório vazio, `TransacaoJdbc` sem transação, tabela mínima) | `c421ae5` | `ce0dfb9` (fix de teste antes: `791b71e`) | **Red:** `expected: <2> but was: <0>` · `Tests run: 4, Failures: 4, Errors: 0`<br>**Passo intermediário (só o repositório, sem transação):** `expected: <[SOLICITADA]> but was: <[SOLICITADA, APROVADA]>` e `expected: <SOLICITADA> but was: <APROVADA>`, o que prova que o IT detecta auditoria órfã<br>**Green:** `Tests run: 4, Failures: 0 -- in HistoricoReservaTransacaoIT` |
+| **API**: `GET /reservas/{id}/historico` 200 para Responsável/Administrador, 403 para o Solicitante dono, 401 sem token, 405 para PUT/PATCH/DELETE/POST | — (rota inexistente já dá 404) | `3ff6122` | `bf674f5` | **Red:** `Status expected:<403> but was:<404>` (idem 200/401/405) · `Tests run: 8, Failures: 8, Errors: 0`<br>**Green:** `Tests run: 241, Failures: 0, Errors: 0, Skipped: 3` |
+| **Final** | — | — | — | `./mvnw -B verify`: `Tests run: 241` (unidade) + `Tests run: 14` (IT), `Failures: 0` · `All coverage checks have been met.` · JaCoCo **96,2% linhas / 85,0% ramos** |
+
+Contagem da suíte: 204 testes de unidade e 10 ITs → **241 + 14** (29 de unidade, 8 de API e 4 ITs novos).
+
+### Decisões e limites desta rodada
+
+- **Como se prova a mesma transação:** no IT, um decorador do repositório grava o histórico de verdade e, ainda
+  dentro da transação, lê pela mesma conexão o estado `APROVADA` e a nova linha de histórico. Só depois lança a
+  falha. Após o rollback, o banco tem `SOLICITADA` e só o registro da criação.
+- **Cache em memória:** `ReservaRepositorioJdbc` só publica a reserva em `Banco.reservas` depois do commit. Antes
+  disso, uma criação desfeita deixava no cache uma reserva que não existia no banco (pego por
+  `rollbackNaCriacaoNaoDeixaNada`).
+- **Criação conta como mudança de estado** (`null → SOLICITADA/APROVADA`). Alterar só o horário não muda o
+  estado e não gera registro (continua gerando o `AuditoriaEvento` `ATUALIZACAO` de RF-28).
+- **Exclusão (RF-30):** o 403 para reserva iniciada já existia. O que deixou o teste vermelho foi exigir que o
+  histórico continue intacto. `EM_USO`, `CONCLUIDA` e `NAO_COMPARECEU` são atribuídos direto, porque os gatilhos
+  continuam em aberto (P-07/P-08).
+- **Dois mecanismos de auditoria convivem:** `AuditoriaEvento` (genérico, em memória, usado por RF-28 e pelos
+  cenários BDD) e `RegistroHistoricoReserva` (histórico de estado, persistido). Unificar os dois é decisão para
+  outra rodada.
+- **Docker via Colima:** localmente os ITs precisaram de `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock`
+  e `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`.

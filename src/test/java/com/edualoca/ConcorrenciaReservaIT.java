@@ -83,7 +83,7 @@ class ConcorrenciaReservaIT {
     @BeforeEach
     void limparBanco() {
         jdbc = new JdbcTemplate(dataSource);
-        jdbc.execute("TRUNCATE reserva_recurso, reserva");
+        jdbc.execute("TRUNCATE reserva_historico, reserva_recurso, reserva");
     }
 
     @Test

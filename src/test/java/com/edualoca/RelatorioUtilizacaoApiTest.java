@@ -247,7 +247,7 @@ class RelatorioUtilizacaoApiTest {
             "01/03/2027,       2027-04-01T00:00",   // formato que nao e ISO
             "2027-03-01T00:00, 2027-03-01T00:00",   // fim igual ao inicio
             "2027-04-01T00:00, 2027-03-01T00:00",   // fim antes do inicio
-            "2027-01-01T00:00, 2028-01-02T00:00"    // periodo maior que 366 dias
+            "2027-01-01T00:00, 2028-01-03T00:00"    // 367 dias: 2027 tem 365 + 2, passa do limite de 366
     })
     @DisplayName("Periodo ausente, mal formatado, invertido ou longo demais e recusado com 400 sem detalhe interno")
     void periodoInvalido400(String inicio, String fim) throws Exception {
@@ -262,6 +262,19 @@ class RelatorioUtilizacaoApiTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").isString())
                 .andExpect(content().string(not(containsString("Exception"))));
+    }
+
+    @Test
+    @DisplayName("Periodo de exatamente 366 dias e o maior aceito")
+    void periodoDeUmAnoNoLimite() throws Exception {
+        // 01/01/2027 a 02/01/2028 = 365 dias de 2027 + 1 = 366 dias -> aceito.
+        // Contem toda a massa: Sala 101 = R1 2 h + R2 4 h + R5 4 h = 10,0 h; Lab 2 = R3 2,5 h; Ana = 2 + 2,5 = 4,5 h;
+        // conflitos C1, C2 e C3 = 3.
+        relatorio(Perfil.ADMINISTRADOR, "2027-01-01T00:00", "2028-01-02T00:00")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recursos[*].horasReservadas", contains(10.0, 2.5)))
+                .andExpect(jsonPath("$.professores[*].cargaHorariaAlocada", contains(4.5)))
+                .andExpect(jsonPath("$.conflitosEvitados").value(3));
     }
 
     private ResultActions relatorio(Perfil perfil, String inicio, String fim) throws Exception {

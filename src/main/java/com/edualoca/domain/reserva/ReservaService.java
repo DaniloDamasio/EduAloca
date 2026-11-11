@@ -56,22 +56,23 @@ public class ReservaService {
             throw new RegraNegocioException(400, "Reserva deve ter ao menos um recurso vinculado");
         }
 
+        UUID reservaId = UUID.randomUUID();
         List<ReentrantLock> locksAdquiridos = adquirirLocksOrdenados(recursos);
         try {
             for (ReservaRecurso rr : recursos) {
-                validarRecursoDisponivel(rr.getRecurso(), inicio, fim, null);
+                validarRecursoDisponivel(rr.getRecurso(), inicio, fim, null, reservaId, solicitante);
             }
 
             boolean algumRestrito = recursos.stream().anyMatch(this::ehRestrito);
             EstadoReserva estadoInicial = algumRestrito ? EstadoReserva.SOLICITADA : EstadoReserva.APROVADA;
 
-            Reserva reserva = new Reserva(UUID.randomUUID(), solicitante.getId(), inicio, fim,
+            Reserva reserva = new Reserva(reservaId, solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
             String motivo = algumRestrito ? "Criacao: recurso restrito aguarda aprovacao" : "Criacao: aprovada automaticamente";
-            transacao.executar(() -> {
+            auditandoRecusaDoBanco(reservaId, solicitante, () -> transacao.executar(() -> {
                 repositorio.inserir(reserva);
                 historico.registrar(registro(reserva, solicitante, null, motivo));
-            });
+            }));
             AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
             return reserva;
         } finally {
@@ -95,14 +96,14 @@ public class ReservaService {
         List<ReentrantLock> locksAdquiridos = adquirirLocksOrdenados(reserva.getRecursos());
         try {
             for (ReservaRecurso rr : reserva.getRecursos()) {
-                validarRecursoDisponivel(rr.getRecurso(), novoInicio, novoFim, reservaId);
+                validarRecursoDisponivel(rr.getRecurso(), novoInicio, novoFim, reservaId, reservaId, autor);
             }
             LocalDateTime inicioAnterior = reserva.getInicio();
             LocalDateTime fimAnterior = reserva.getFim();
             reserva.setInicio(novoInicio);
             reserva.setFim(novoFim);
             try {
-                repositorio.atualizar(reserva);
+                auditandoRecusaDoBanco(reservaId, autor, () -> repositorio.atualizar(reserva));
             } catch (RuntimeException e) {
                 // A gravacao foi recusada (ex.: sobreposicao detectada pelo banco); desfaz a alteracao em memoria.
                 reserva.setInicio(inicioAnterior);
@@ -246,15 +247,37 @@ public class ReservaService {
         return false;
     }
 
-    private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada) {
+    private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada,
+                                          UUID reservaTentada, Usuario autor) {
         boolean emManutencao = Banco.manutencoes.values().stream()
                 .anyMatch(m -> m.getRecurso() == recurso && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
         if (emManutencao) {
             throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
         }
         if (repositorio.existeConflito(recurso, inicio, fim, reservaIgnorada)) {
+            registrarRejeicaoPorSobreposicao(reservaTentada, autor);
             throw new RegraNegocioException(409, "Recurso indisponivel: sobreposicao com reserva ativa");
         }
+    }
+
+    /**
+     * Na gravacao, o unico 409 possivel vem da constraint de exclusao do banco (ADR-009): outra instancia gravou
+     * reserva sobreposta depois da checagem. Tambem e um conflito evitado (RF-35).
+     */
+    private void auditandoRecusaDoBanco(UUID reservaTentada, Usuario autor, Runnable gravacao) {
+        try {
+            gravacao.run();
+        } catch (RegraNegocioException e) {
+            if (e.getStatusHttp() == 409) {
+                registrarRejeicaoPorSobreposicao(reservaTentada, autor);
+            }
+            throw e;
+        }
+    }
+
+    /** RF-28/RF-35: base da contagem de conflitos evitados no relatorio de utilizacao. */
+    private void registrarRejeicaoPorSobreposicao(UUID reservaTentada, Usuario autor) {
+        AuditoriaService.registrar("Reserva", reservaTentada, "REJEICAO_SOBREPOSICAO", autor.getId(), LocalDateTime.now(clock));
     }
 
     private List<ReentrantLock> adquirirLocksOrdenados(List<ReservaRecurso> recursos) {

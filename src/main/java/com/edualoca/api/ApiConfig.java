@@ -61,8 +61,8 @@ public class ApiConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public RelatorioService relatorioService() {
-        return new RelatorioService();
+    public RelatorioService relatorioService(Clock clock) {
+        return new RelatorioService(clock.getZone());
     }
 
     @Override

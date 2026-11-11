@@ -16,6 +16,7 @@ import com.edualoca.domain.usuario.Usuario;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -33,6 +34,17 @@ public class RelatorioService {
     private static final Set<EstadoReserva> ESTADOS_DE_USO =
             EnumSet.of(EstadoReserva.APROVADA, EstadoReserva.EM_USO, EstadoReserva.CONCLUIDA);
 
+    /** Fuso em que as datas das reservas (LocalDateTime) sao interpretadas para medir tempo decorrido. */
+    private final ZoneId fuso;
+
+    public RelatorioService() {
+        this(ZoneId.systemDefault());
+    }
+
+    public RelatorioService(ZoneId fuso) {
+        this.fuso = fuso;
+    }
+
     /**
      * RF-34/RF-35: horas reservadas por recurso (sala e material), carga horaria por professor e conflitos evitados
      * no periodo semiaberto [inicio, fim). Reserva que cruza a borda conta so a parte de dentro do periodo.
@@ -41,7 +53,7 @@ public class RelatorioService {
         Banco.seedSeNecessario();
         validarAcesso(autor);
         validarIntervalo(inicio, fim);
-        if (Duration.between(inicio, fim).compareTo(PERIODO_MAXIMO) > 0) {
+        if (decorrido(inicio, fim).compareTo(PERIODO_MAXIMO) > 0) {
             throw new RegraNegocioException(400, "Periodo do relatorio nao pode passar de 366 dias");
         }
         Map<UUID, UsoRecurso> recursos = new LinkedHashMap<>();
@@ -53,7 +65,7 @@ public class RelatorioService {
             }
             LocalDateTime inicioDentro = reserva.getInicio().isBefore(inicio) ? inicio : reserva.getInicio();
             LocalDateTime fimDentro = reserva.getFim().isAfter(fim) ? fim : reserva.getFim();
-            long minutos = Duration.between(inicioDentro, fimDentro).toMinutes();
+            long minutos = decorrido(inicioDentro, fimDentro).toMinutes();
             reserva.getRecursos().stream().map(ReservaRecurso::getRecurso).distinct().forEach(recurso -> {
                 switch (recurso) {
                     case Sala s -> recursos.merge(s.getId(), new UsoRecurso("SALA", s.getId(), s.getNome(), minutos), UsoRecurso::somar);
@@ -89,6 +101,11 @@ public class RelatorioService {
         validarAcesso(autor);
         validarIntervalo(inicio, fim);
         return contarRejeicoes(inicio, fim);
+    }
+
+    /** Tempo realmente decorrido no fuso do servidor (horario de verao incluido), nao a diferenca de relogio de parede. */
+    private Duration decorrido(LocalDateTime inicio, LocalDateTime fim) {
+        return Duration.between(inicio.atZone(fuso), fim.atZone(fuso));
     }
 
     /** Rejeicoes por sobreposicao registradas em auditoria em [inicio, fim) (criterio de aceite de RF-35). */

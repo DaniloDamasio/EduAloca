@@ -164,7 +164,8 @@ Regras do cálculo:
 - `recursos` traz salas e materiais (horas da reserva, independente da quantidade de itens do material);
   `professores` traz a carga horária alocada a cada professor. Só aparece quem tem uso no período; a ordem é
   maior número de horas primeiro e, no empate, nome.
-- Horas em decimal com 2 casas (90 min = `1.50`).
+- Horas em decimal com 2 casas (90 min = `1.50`), medidas como tempo decorrido no fuso do servidor: uma reserva
+  que atravessa mudança de horário de verão conta as horas reais, não a diferença do relógio de parede.
 - **`conflitosEvitados`** = tentativas de criar ou alterar reserva recusadas por sobreposição com reserva ativa
   (checagem do serviço ou constraint `ex_reserva_recurso_sem_sobreposicao`), contadas pelo **instante da
   tentativa** dentro do período (critério de aceite de RF-35: rejeições registradas em auditoria no período). Cada

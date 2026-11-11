@@ -16,6 +16,9 @@ public class PesquisaRecursoService {
                                    LocalDateTime inicio, LocalDateTime fim) {
         Banco.seedSeNecessario();
         validarIntervalo(inicio, fim);
+        if (capacidadeMinima < 0) {
+            throw new RegraNegocioException(400, "Capacidade minima invalida: informe zero ou um numero positivo de lugares");
+        }
         return Banco.salas.values().stream()
                 .filter(Sala::isAtivo)
                 .filter(s -> tipo == null || tipo.equalsIgnoreCase(s.getTipo()))

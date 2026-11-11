@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Baixa: entrada fora do domínio é aceita silenciosamente e devolve todas as salas |
 | Prioridade | Média |
 | Requisitos | RNF-04, RF-08 |
@@ -46,8 +46,11 @@ Nenhuma checagem de limite em `capacidadeMinima`; o filtro `capacidade >= -5` ac
 
 ## Correção
 
-Pendente.
+`PesquisaRecursoService.buscarSalas` recusa `capacidadeMinima < 0` com `400` ("Capacidade minima invalida: informe
+zero ou um numero positivo de lugares"), depois da validação do intervalo. Zero continua aceito: é o valor padrão do
+parâmetro e significa "sem mínimo". Nenhum teste foi alterado.
 
 ## Reteste
 
-Pendente.
+`entradaInvalida` "buscar salas com capacidade minima negativa" verde: `400` em ProblemDetail citando a capacidade.
+`PesquisaDisponibilidadeTest` e a célula da linha 2 da matriz (busca sem `capacidadeMinima`) continuam verdes.

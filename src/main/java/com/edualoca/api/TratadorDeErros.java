@@ -32,10 +32,24 @@ public class TratadorDeErros {
         return problema(e.getStatusHttp(), e.getMessage());
     }
 
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class})
-    public ResponseEntity<ProblemDetail> entradaInvalida(Exception e) {
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> corpoIlegivel(HttpMessageNotReadableException e) {
         return problema(400, "Requisicao invalida: verifique os campos e o formato das datas (aaaa-mm-ddThh:mm)");
+    }
+
+    /**
+     * DEF-008: nomeia o parametro, que e contrato publico da API (o mesmo nome que o cliente envia na URL). O valor
+     * recebido nao e ecoado, para nao refletir entrada do cliente na resposta.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> parametroAusente(MissingServletRequestParameterException e) {
+        return problema(400, "Parametro obrigatorio ausente: informe '" + e.getParameterName() + "'");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> parametroInvalido(MethodArgumentTypeMismatchException e) {
+        return problema(400, "Valor invalido para '" + e.getName()
+                + "': use numero inteiro, UUID ou data no formato aaaa-mm-ddThh:mm, conforme o campo");
     }
 
     @ExceptionHandler(Exception.class)

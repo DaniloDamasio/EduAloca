@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Baixa: o usuário recebe uma mensagem genérica sobre "campos e datas" e não sabe o que corrigir |
 | Prioridade | Baixa |
 | Requisitos | RF-38, RNF-04 |
@@ -49,8 +49,13 @@ descarta o nome do parâmetro. O nome do parâmetro é parte do contrato públic
 
 ## Correção
 
-Pendente.
+`TratadorDeErros` separa o handler genérico em três: corpo ilegível (mensagem genérica de antes), parâmetro ausente
+("Parametro obrigatorio ausente: informe 'inicio'") e parâmetro com tipo inválido ("Valor invalido para
+'capacidadeMinima': ..."). O nome do parâmetro é o mesmo que o cliente usa na URL, ou seja, contrato público e não
+detalhe interno. O valor recebido **não** é ecoado, para não refletir entrada do cliente na resposta. Nenhum teste foi
+alterado.
 
 ## Reteste
 
-Pendente.
+`entradaInvalida`: 19/19 verdes ("buscar salas sem inicio" agora cita `inicio`). `ApiSegurancaTest.buscaSemParametro`
+e os casos de data malformada continuam verdes (400, sem `Exception` no corpo).

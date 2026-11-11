@@ -119,7 +119,9 @@ class HistoricoReservaApiTest {
         return "Bearer " + tokenService.emitir(usuario);
     }
 
+    /** O Responsavel e o competente pelo Bloco B, onde fica o laboratorio restrito (P-2, DEF-010). */
     private static Usuario usuario(Perfil perfil) {
-        return new Usuario(UUID.randomUUID(), perfil.name().toLowerCase() + "@edualoca.test", "h", perfil);
+        UUID id = perfil == Perfil.RESPONSAVEL ? Banco.RESPONSAVEL_BLOCO_B_ID : UUID.randomUUID();
+        return new Usuario(id, perfil.name().toLowerCase() + "@edualoca.test", "h", perfil);
     }
 }

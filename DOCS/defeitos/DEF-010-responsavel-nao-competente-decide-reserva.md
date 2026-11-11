@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Alta: qualquer Responsável decide reserva de recurso que não é seu, contra a regra crítica “Somente responsáveis aprovam recursos restritos” lida como Responsável competente |
 | Prioridade | Alta |
 | Requisitos | RF-18, RF-19, RF-32 (regra P-2 da matriz) |
@@ -52,8 +52,28 @@ de perfil sem checagem de competência.
 
 ## Correção
 
-Pendente.
+`ReservaService.aprovar` e `rejeitar` chamam `exigirDecisorCompetente` depois de carregar a reserva e **antes** de
+checar o estado, para que um Responsável não competente não descubra o estado dela:
+
+- Administrador: decide qualquer reserva (RF-19, decisão de 11/11/2026).
+- Responsável: decide se `Banco.responsavelPorLocalizacao` aponta para ele em alguma sala da reserva; senão `403`
+  ("Apenas o Responsavel pelo local do recurso (ou o Administrador) pode aprovar esta reserva").
+
+**Lacuna conhecida (não corrigida):** material e professor não têm localização nem responsável. Reserva **sem nenhuma
+sala** continua decidida por qualquer Responsável, como antes. Fechar isso exige modelar o vínculo responsável↔recurso
+(material e professor), o que muda o modelo de dados e fica fora deste defeito.
+
+**Testes alterados (só o arranjo, nenhuma asserção):** os testes de aprovação e rejeição usavam um Responsável com UUID
+aleatório, sem vínculo com bloco nenhum. Com a regra P-2 esse Responsável deixou de ser competente. Cada um passa a usar
+o id do Responsável de seed do bloco da sala que o teste já usava: `Banco.RESPONSAVEL_BLOCO_A_ID` em
+`AprovacaoRecursosRestritosTest` e `MaquinaEstadosReservaTest` (salas no Bloco A); `Banco.RESPONSAVEL_BLOCO_B_ID` em
+`BddAprovacaoBloqueioTest`, `HistoricoAuditavelReservaTest`, `HistoricoReservaApiTest` e nos passos Cucumber
+`AprovacaoBloqueioSteps` (salas no Bloco B). As asserções, os cenários `.feature` e o BDD-R1-05 ("Administrador aprova")
+não mudaram.
 
 ## Reteste
 
-Pendente.
+`MatrizAutorizacaoApiTest`: 114/114 verdes. Linhas 7 e 8: Responsável do Bloco A 200, Responsável do Bloco B 403,
+Administrador 200, Solicitante 403, anônimo 401. Suíte completa (`./mvnw test`): 374 testes, 0 falhas, 3 ignorados
+(os mesmos 3 ignorados de antes desta série de correções). Antes do ajuste de arranjo, 26 testes antigos falhavam com
+`403`, o que confirma que a regra nova é aplicada também pelo domínio, não só pela API.

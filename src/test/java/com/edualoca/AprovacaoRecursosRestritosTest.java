@@ -1,5 +1,6 @@
 package com.edualoca;
 
+import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
@@ -37,7 +38,7 @@ class AprovacaoRecursosRestritosTest {
     @DisplayName("RF-18-T1: reserva restrita nao pode transicionar diretamente de SOLICITADA para EM_USO, pulando APROVADA")
     void rf18T1_transicaoDiretaSolicitadaParaEmUso_deveSerBloqueada() {
         // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
         UUID reservaSolicitadaComRecursoRestritoId = UUID.randomUUID();
 
         // act
@@ -52,7 +53,7 @@ class AprovacaoRecursosRestritosTest {
     @DisplayName("RF-19-T1: responsavel aprova reserva SOLICITADA de recurso restrito e ela transiciona para APROVADA")
     void rf19T1_responsavelAprovaReservaRestrita_deveTransicionarParaAprovada() {
         // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
         UUID reservaId = criarReservaSolicitadaComRecursoRestrito();
 
         // act
@@ -95,7 +96,7 @@ class AprovacaoRecursosRestritosTest {
     @DisplayName("RF-19-T4 [gap Q16, assumindo HTTP 409 por transicao invalida]: aprovar reserva ja fora de SOLICITADA deve ser rejeitado")
     void rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado() {
         // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
         UUID reservaJaAprovadaId = criarReservaSolicitadaComRecursoRestrito();
         reservaService.aprovar(responsavel, reservaJaAprovadaId);
 
@@ -111,7 +112,7 @@ class AprovacaoRecursosRestritosTest {
     @DisplayName("RF-20-T1: responsavel rejeita reserva restrita com justificativa nao vazia e transiciona para REJEITADA")
     void rf20T1_rejeicaoComJustificativa_deveTransicionarParaRejeitada() {
         // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
         UUID reservaId = criarReservaSolicitadaComRecursoRestrito();
 
         // act
@@ -125,7 +126,7 @@ class AprovacaoRecursosRestritosTest {
     @DisplayName("RF-20-T2: rejeicao sem justificativa (vazia/nula) deve ser rejeitada com HTTP 400")
     void rf20T2_rejeicaoSemJustificativa_deveSerRejeitada() {
         // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
         UUID reservaId = UUID.randomUUID();
 
         // act

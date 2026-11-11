@@ -1,5 +1,6 @@
 package com.edualoca;
 
+import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
@@ -22,8 +23,9 @@ class MaquinaEstadosReservaTest {
 
     private final ReservaService reservaService = new ReservaService();
 
+    /** Responsavel competente pelo Bloco A, onde ficam as salas destes testes (P-2, DEF-010). */
     private Usuario responsavel() {
-        return new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        return new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
     }
 
     @Test

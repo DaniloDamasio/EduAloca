@@ -143,7 +143,11 @@ public class ReservaService {
             throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem aprovar reservas");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
+        if (reserva == null) {
+            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
+        }
+        exigirDecisorCompetente(responsavel, reserva, "aprovar");
+        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
         }
         transicionar(reserva, responsavel, "Aprovacao da solicitacao", () -> reserva.setEstado(EstadoReserva.APROVADA));
@@ -160,7 +164,11 @@ public class ReservaService {
             throw new RegraNegocioException(400, "Justificativa da rejeicao e obrigatoria");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null || reserva.getEstado() != EstadoReserva.SOLICITADA) {
+        if (reserva == null) {
+            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
+        }
+        exigirDecisorCompetente(responsavel, reserva, "rejeitar");
+        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
             throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
         }
         transicionar(reserva, responsavel, justificativa, () -> reserva.rejeitar(justificativa));
@@ -221,6 +229,28 @@ public class ReservaService {
         } catch (RuntimeException e) {
             reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);
             throw e;
+        }
+    }
+
+    /**
+     * P-2 / RF-19 (DEF-010): o Administrador decide qualquer reserva; o Responsavel so decide reserva com sala de uma
+     * localizacao sob sua responsabilidade ({@link Banco#responsavelPorLocalizacao}). Checado antes do estado, para que
+     * o Responsavel nao competente nao descubra em que estado a reserva esta.
+     *
+     * <p>Lacuna conhecida: material e professor nao tem localizacao. Reserva sem nenhuma sala fica com qualquer
+     * Responsavel, como antes, ate o vinculo responsavel-recurso ser modelado (registrado em DEF-010).
+     */
+    private static void exigirDecisorCompetente(Usuario autor, Reserva reserva, String acao) {
+        if (autor.getPerfil() == Perfil.ADMINISTRADOR) {
+            return;
+        }
+        List<Sala> salas = reserva.getRecursos().stream().map(ReservaRecurso::getRecurso)
+                .filter(Sala.class::isInstance).map(Sala.class::cast).toList();
+        boolean competente = salas.isEmpty() || salas.stream()
+                .anyMatch(sala -> autor.getId().equals(Banco.responsavelPorLocalizacao.get(sala.getLocalizacao())));
+        if (!competente) {
+            throw new RegraNegocioException(403,
+                    "Apenas o Responsavel pelo local do recurso (ou o Administrador) pode " + acao + " esta reserva");
         }
     }
 

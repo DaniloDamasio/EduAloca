@@ -286,7 +286,11 @@ class MatrizAutorizacaoApiTest {
                 assertEquals(403, alheia.getResponse().getStatus(), () -> operacao.rota + " alheia: " + corpo(alheia));
                 assertEquals(alheia.getResponse().getStatus(), inexistente.getResponse().getStatus(),
                         () -> operacao.rota + " inexistente: " + corpo(inexistente));
-                assertEquals(corpo(alheia), corpo(inexistente), () -> operacao.rota + ": corpos diferentes revelam o id");
+                // "instance" traz o proprio id da rota e difere por natureza; o que nao pode diferir e o problema.
+                for (String campo : List.of("$.status", "$.title", "$.detail")) {
+                    assertEquals((Object) JsonPath.read(corpo(alheia), campo), JsonPath.read(corpo(inexistente), campo),
+                            () -> operacao.rota + ": " + campo + " diferente revela se o id existe");
+                }
             }
         }
 

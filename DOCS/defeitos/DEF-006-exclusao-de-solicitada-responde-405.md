@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Baixa: o acesso está correto (ninguém apaga), mas o status contradiz o significado do código |
 | Prioridade | Baixa |
 | Requisitos | RF-30 (regra P-3 da matriz) |
@@ -49,8 +49,17 @@ linha 10 DELETE /reservas/{id} como SOLICITANTE (RESTRITA):
 
 ## Correção
 
-Pendente.
+`ReservaService.excluir` responde sempre `403` ("Reservas nao podem ser excluidas; para encerrar uma reserva,
+cancele-a"), em qualquer estado e para qualquer perfil, sem consultar a reserva, para que a resposta também não revele
+o estado nem se o id existe.
+
+**Teste alterado:** `AuditoriaTest.rf30T2_deleteDeReservaSolicitada…` esperava `405`. Esse valor foi fixado quando a
+pergunta Q22 estava aberta ("assumindo que nenhum DELETE é exposto"); a matriz (P-3) resolveu a Q22 a favor de `403`,
+que o RF-30 já aceitava ("403/405"). A asserção passou para `403` e o `@DisplayName` cita a resolução. O cenário BDD
+"Reserva iniciada não pode ser apagada" aceita 403 ou 405 e não mudou.
 
 ## Reteste
 
-Pendente.
+Linha 10 da matriz: 5/5 células verdes (anônimo 401; Solicitante em `SOLICITADA` e em `APROVADA`, Responsável e
+Administrador 403). Antes da correção, Responsável e Administrador também recebiam 405 em `SOLICITADA` (visível só
+depois do DEF-003). Suíte completa sem falhas fora da matriz.

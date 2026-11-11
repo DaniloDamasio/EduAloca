@@ -192,13 +192,13 @@ public class ReservaService {
         return historico.listarPorReserva(reservaId);
     }
 
+    /**
+     * RF-30 / P-3: nenhuma reserva e apagada fisicamente, por nenhum perfil e em nenhum estado; o fim de uma reserva e
+     * o cancelamento. Sempre 403 (a rota existe, entao 405 contradiria o significado do codigo; DEF-006), sem consultar
+     * a reserva, para que a resposta nao revele estado nem existencia.
+     */
     public void excluir(Usuario autor, UUID reservaId) {
-        Banco.seedSeNecessario();
-        Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva != null && reserva.getEstado() == EstadoReserva.SOLICITADA) {
-            throw new RegraNegocioException(405, "Exclusao fisica de reserva nao e exposta pela API");
-        }
-        throw new RegraNegocioException(403, "Reserva iniciada nao pode ser excluida");
+        throw new RegraNegocioException(403, "Reservas nao podem ser excluidas; para encerrar uma reserva, cancele-a");
     }
 
     /**

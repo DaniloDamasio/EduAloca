@@ -16,6 +16,11 @@ public class RelogioAjustavel extends Clock {
         this.zona = zona;
     }
 
+    /** Coloca o relogio num instante absoluto; util quando o mesmo relogio e reaproveitado entre testes. */
+    public void definir(Instant instante) {
+        agora = instante;
+    }
+
     public void avancar(Duration duracao) {
         agora = agora.plus(duracao);
     }

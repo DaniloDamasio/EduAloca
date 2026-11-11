@@ -82,12 +82,10 @@ public class ReservaService {
 
     public Reserva alterar(Usuario autor, UUID reservaId, LocalDateTime novoInicio, LocalDateTime novoFim) {
         Banco.seedSeNecessario();
+        // Intervalo antes da posse: com intervalo invalido, id alheio e inexistente recebem o mesmo 400.
         validarIntervalo(novoInicio, novoFim);
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva inexistente");
-        }
-        if (!reserva.getSolicitanteId().equals(autor.getId())) {
+        if (!ehDono(autor, reserva)) {
             throw new RegraNegocioException(403, "Usuario nao autorizado a alterar reserva de outro solicitante");
         }
         if (reserva.getEstado() != EstadoReserva.SOLICITADA && reserva.getEstado() != EstadoReserva.APROVADA) {
@@ -123,10 +121,7 @@ public class ReservaService {
             throw new RegraNegocioException(400, "Motivo do cancelamento e obrigatorio");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva inexistente");
-        }
-        if (!reserva.getSolicitanteId().equals(autor.getId())) {
+        if (!ehDono(autor, reserva)) {
             throw new RegraNegocioException(403, "Usuario nao autorizado a cancelar reserva de outro solicitante");
         }
         if (reserva.getEstado() == EstadoReserva.CONCLUIDA || reserva.getEstado() == EstadoReserva.CANCELADA
@@ -223,6 +218,14 @@ public class ReservaService {
             reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);
             throw e;
         }
+    }
+
+    /**
+     * Posse (RF-03, P-1). Reserva inexistente conta como "nao e sua": o 403 e o mesmo do id alheio, para que ninguem
+     * descubra quais ids existem comparando respostas (DEF-005).
+     */
+    private static boolean ehDono(Usuario autor, Reserva reserva) {
+        return reserva != null && reserva.getSolicitanteId().equals(autor.getId());
     }
 
     private RegistroHistoricoReserva registro(Reserva reserva, Usuario autor, EstadoReserva estadoAnterior, String motivo) {

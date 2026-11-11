@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Média: enumeração de ids de reserva por qualquer Solicitante (403 = existe e é de outro; 409 = não existe) |
 | Prioridade | Média |
 | Requisitos | RF-03, RF-14 (regra P-1 da matriz) |
@@ -50,8 +50,15 @@ a rota existir (DEF-004).
 
 ## Correção
 
-Pendente.
+`ReservaService.cancelar` e `ReservaService.alterar` trocam a sequência "inexistente → 409; não é dono → 403" por uma
+checagem única de posse (`ehDono`), em que reserva inexistente conta como "não é sua". O resultado é o mesmo `403`,
+com a mesma mensagem, para id alheio e id inexistente. Em `alterar` a validação do intervalo continua antes da posse;
+com intervalo inválido o id alheio e o inexistente recebem o mesmo `400`, então essa ordem não reabre o vazamento e
+mantém `RegrasCriticasTest.rc01T6` como está. A rota `PUT` (DEF-004) tinha a mesma falha, também corrigida aqui.
+Nenhum teste foi alterado.
 
 ## Reteste
 
-Pendente.
+Linha 5 (`PUT`) e linha 6 (cancelamento) da matriz: a célula "Solicitante, id inexistente → 403" está verde nas duas.
+`Posse.idAlheioEIdInexistenteSaoIndistinguiveis` está verde: consultar, alterar e cancelar devolvem o mesmo `status`,
+`title` e `detail` para id alheio e inexistente. Suíte completa sem falhas fora da matriz.

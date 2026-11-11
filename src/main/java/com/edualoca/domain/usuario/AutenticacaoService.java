@@ -14,7 +14,8 @@ public class AutenticacaoService {
             throw new RegraNegocioException(401, "Credenciais invalidas");
         }
         UUID id = Banco.usuarioIdPorEmail.computeIfAbsent(email, e -> UUID.randomUUID());
-        return new Usuario(id, email, SenhaHasher.hash(senhaCadastrada), Perfil.SOLICITANTE);
+        Perfil perfil = Banco.perfilPorEmail.getOrDefault(email, Perfil.SOLICITANTE);
+        return new Usuario(id, email, SenhaHasher.hash(senhaCadastrada), perfil);
     }
 
     public void autorizar(Usuario usuario, Perfil perfilExigido) {

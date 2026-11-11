@@ -9,6 +9,7 @@ import com.edualoca.domain.recurso.Professor;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.retirada.RegistroRetirada;
+import com.edualoca.domain.usuario.Perfil;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,10 +33,15 @@ public final class Banco {
     public static final Map<UUID, RegistroRetirada> retiradas = new ConcurrentHashMap<>();
     public static final Map<String, String> credenciais = new ConcurrentHashMap<>();
     public static final Map<String, UUID> usuarioIdPorEmail = new ConcurrentHashMap<>();
+    /** Perfil de cada conta; conta sem entrada aqui e Solicitante (DEF-003). */
+    public static final Map<String, Perfil> perfilPorEmail = new ConcurrentHashMap<>();
     public static final Map<UUID, NotificacaoEnviada> notificacoes = new ConcurrentHashMap<>();
     public static final Map<String, UUID> responsavelPorLocalizacao = new ConcurrentHashMap<>();
 
     public static final UUID SALA_EXCLUIDA_POR_CONFLITO_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID RESPONSAVEL_BLOCO_A_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
+    public static final UUID RESPONSAVEL_BLOCO_B_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
+    public static final UUID ADMINISTRADOR_ID = UUID.fromString("00000000-0000-0000-0000-0000000000ad");
 
     private static final Object SEED_LOCK = new Object();
     private static volatile boolean seeded = false;
@@ -55,6 +61,7 @@ public final class Banco {
             retiradas.clear();
             credenciais.clear();
             usuarioIdPorEmail.clear();
+            perfilPorEmail.clear();
             notificacoes.clear();
             responsavelPorLocalizacao.clear();
             seeded = false;
@@ -88,10 +95,20 @@ public final class Banco {
 
             credenciais.put("usuario@example.com", "senhaValida123");
             credenciais.put("novo@example.com", "minhaSenha123");
+            contaSeed("responsavel@example.com", "senhaResponsavel123", RESPONSAVEL_BLOCO_A_ID, Perfil.RESPONSAVEL);
+            contaSeed("responsavel.b@example.com", "senhaResponsavelB123", RESPONSAVEL_BLOCO_B_ID, Perfil.RESPONSAVEL);
+            contaSeed("admin@example.com", "senhaAdmin123", ADMINISTRADOR_ID, Perfil.ADMINISTRADOR);
 
-            responsavelPorLocalizacao.put("Bloco A", UUID.randomUUID());
+            responsavelPorLocalizacao.put("Bloco A", RESPONSAVEL_BLOCO_A_ID);
+            responsavelPorLocalizacao.put("Bloco B", RESPONSAVEL_BLOCO_B_ID);
 
             seeded = true;
         }
+    }
+
+    private static void contaSeed(String email, String senha, UUID id, Perfil perfil) {
+        credenciais.put(email, senha);
+        usuarioIdPorEmail.put(email, id);
+        perfilPorEmail.put(email, perfil);
     }
 }

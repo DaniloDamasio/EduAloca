@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Alta: RF-13 inacessível pela API; anônimo recebe 405 em vez de 401 |
 | Prioridade | Alta |
 | Requisitos | RF-03, RF-13 |
@@ -52,8 +52,14 @@ Rota não implementada em [ReservaController.java](../../src/main/java/com/edual
 
 ## Correção
 
-Pendente.
+`PUT /reservas/{id}` em `ReservaController`, com corpo `AlterarReservaRequisicao(inicio, fim)` e o usuário do token
+como autor. A regra continua toda em `ReservaService.alterar` (intervalo, posse, estado e conflito); o controller não
+decide nada. Como o `@UsuarioAutenticado` vem antes do `@RequestBody`, anônimo recebe 401 antes de qualquer validação
+do corpo. Nenhum teste foi alterado.
 
 ## Reteste
 
-Pendente.
+Linha 5 da matriz: 5 de 6 células verdes (anônimo 401, dono 200, outro Solicitante 403, Responsável 403,
+Administrador 403). A célula "id inexistente → 403" continua vermelha (409), pela mesma causa do DEF-005, e fica com
+ele. `entradaInvalida`: "alterar com fim antes do inicio" e "alterar sem fim" verdes (400 citando `fim`).
+`Posse.alterarReservaAlheia` verde: 403 e a reserva do dono segue em 10/03 08:00-10:00, `APROVADA`.

@@ -133,6 +133,58 @@ rodam como features Gherkin em português, com Cucumber-JVM na JUnit Platform:
 
 Para rodar só as features: `./mvnw -B test -Dtest=AprovacaoBloqueioFeatureTest`.
 
+## API — Relatório de utilização (RF-34, RF-35, RF-36)
+
+`GET /relatorios/utilizacao?inicio=<aaaa-mm-ddThh:mm>&fim=<aaaa-mm-ddThh:mm>` — somente leitura.
+
+```
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/relatorios/utilizacao?inicio=2027-03-01T00:00&fim=2027-04-01T00:00"
+```
+
+```json
+{
+  "recursos": [
+    { "tipo": "SALA", "id": "6f0c…", "nome": "Sala 101", "horasReservadas": 4.00 },
+    { "tipo": "SALA", "id": "a41b…", "nome": "Lab 2",    "horasReservadas": 1.50 }
+  ],
+  "professores": [
+    { "id": "c9d2…", "nome": "Prof. Ana", "cargaHorariaAlocada": 3.50 }
+  ],
+  "conflitosEvitados": 2
+}
+```
+
+Regras do cálculo:
+
+- **Período semiaberto `[inicio, fim)`**, no horário local do servidor, como o resto da API. Máximo de 366 dias.
+- **Uso** = reservas `APROVADA`, `EM_USO` ou `CONCLUIDA`. `SOLICITADA` (pendente), `REJEITADA`, `CANCELADA` e
+  `NAO_COMPARECEU` não contam.
+- Reserva que **cruza a borda** do período conta só a parte que cai dentro dele.
+- `recursos` traz salas e materiais (horas da reserva, independente da quantidade de itens do material);
+  `professores` traz a carga horária alocada a cada professor. Só aparece quem tem uso no período; a ordem é
+  maior número de horas primeiro e, no empate, nome.
+- Horas em decimal com 2 casas (90 min = `1.50`).
+- **`conflitosEvitados`** = tentativas de criar ou alterar reserva recusadas por sobreposição com reserva ativa
+  (checagem do serviço ou constraint `ex_reserva_recurso_sem_sobreposicao`), contadas pelo **instante da
+  tentativa** dentro do período (critério de aceite de RF-35: rejeições registradas em auditoria no período). Cada
+  tentativa grava um evento `REJEICAO_SOBREPOSICAO` na auditoria. Recusa por manutenção não conta.
+
+| Status | Quando |
+|---|---|
+| 200 | Responsável ou Administrador com período válido (período sem dados devolve listas vazias e `0`) |
+| 400 | `inicio`/`fim` ausente, fora do formato ISO, `fim <= inicio` ou período maior que 366 dias |
+| 401 | Sem token ou token desconhecido |
+| 403 | Solicitante (checado antes dos parâmetros: o Solicitante recebe 403 mesmo com período inválido) |
+
+Testes: [RelatorioUtilizacaoApiTest](src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java) (caixa-preta, massa
+semeada pela própria API e valores calculados à mão no comentário de cada teste) e
+[RejeicaoSobreposicaoAuditoriaTest](src/test/java/com/edualoca/RejeicaoSobreposicaoAuditoriaTest.java).
+
+**Limitações conhecidas:** o relatório lê o cache em memória das reservas (`Banco.reservas`) e a auditoria em
+memória; com PostgreSQL, reservas e conflitos anteriores a um reinício da aplicação não aparecem (pendência P2 de
+[DOCS/status-requisitos.md](DOCS/status-requisitos.md)). Os eventos de auditoria usam horário local sem fuso.
+
 ## Nota de segurança da API HTTP
 
 Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de salas).
@@ -151,6 +203,9 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   `reserva_historico`. O usuário e o instante do registro vêm do token e do `Clock` do servidor,
   nunca do corpo da requisição. A recusa por trigger protege contra a aplicação, não contra um
   DBA com privilégio para desabilitar o trigger.
+- **Relatórios (RF-36):** `GET /relatorios/utilizacao` só atende Responsável e Administrador; o perfil é checado
+  antes dos parâmetros, então o Solicitante recebe 403 sem nenhum dado e sem eco da entrada. O período é limitado a
+  366 dias para conter o custo da consulta.
 - **Entrada (RNF-04):** JSON malformado, data fora do formato ISO, tipo/id de recurso
   inexistente, quantidade < 1 ou mais de 50 recursos por reserva resultam em 400.
 - **Erros (RF-38, RNF-06):** corpo único `{"mensagem": ...}`, sem stacktrace, nome de classe

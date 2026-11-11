@@ -58,6 +58,25 @@ não têm linha nesta matriz. Cada nova entrega de feature deve adicionar aqui o
 requisito, o risco que o teste mitiga, o(s) teste(s) correspondente(s) e a forma de
 execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
 
+## Relatório de utilização (`GET /relatorios/utilizacao`)
+
+Testes de API em caixa-preta: a massa (4 recursos, 5 reservas, 1 cancelamento, 3 tentativas recusadas) é criada
+pela própria API com relógio do servidor fixo (`@TestBean Clock`), e os valores esperados estão calculados à mão no
+comentário de cada teste. Mutantes "cancelada conta como uso" e "sem recorte na borda" derrubam 4 e 3 testes,
+respectivamente. Documentação: [README.md › API — Relatório de utilização](../README.md#api--relatório-de-utilização-rf-34-rf-35-rf-36).
+Execução: `./mvnw -B verify` (Surefire), a cada PR no CI.
+
+| Requisito | Risco | Teste (caminho :: nome) | Commit |
+|---|---|---|---|
+| RF-34 — Horas reservadas por recurso e carga horária por professor no período | Total errado por contar reserva fora do período, reserva inteira quando só parte cai no período, ou professor misturado aos recursos | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `relatorioDoMes`, `periodoDeUmAnoNoLimite` | red `09577bd` · green `faba0a3` |
+| RF-34 — Reserva que cruza a borda conta só a parte de dentro | Horas de fora do período somadas ao relatório | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `reservaQueCruzaABorda` (corta início e fim), `relatorioDoMes` (R2 e R3) | red `09577bd` · green `faba0a3` |
+| RF-34 — Reserva cancelada não conta como uso | Cancelamento continua inflando uso da sala e carga do professor | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `reservaCanceladaNaoConta`, `relatorioDoMes` (Prof. Bruno ausente, Lab 2 = 1,5 h) | red `09577bd` · green `faba0a3` |
+| RF-34 — Período vazio | Erro ou lixo quando não há dados | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `periodoVazio` | red `09577bd` · green `faba0a3` |
+| RF-34 / RNF-04 — Período inválido recusado com 400 | Período ausente, mal formatado, invertido ou ilimitado processado (custo/erro 500) | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `periodoInvalido400` (6 casos) | red `09577bd` · green `faba0a3` |
+| RF-35 — Conflitos evitados = tentativas recusadas por sobreposição no período | Contagem sempre 0 (nada gravava `REJEICAO_SOBREPOSICAO`) ou contando tentativas de fora do período | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `relatorioDoMes` (C1 fora, C2 e C3 dentro), `periodoDeUmAnoNoLimite` | red `09577bd` · green `faba0a3` |
+| RF-28 / RF-35 — Recusa por sobreposição grava `REJEICAO_SOBREPOSICAO` (uma por tentativa, autor e instante do `Clock`) | Recusa sem rastro; recusa pela constraint do banco ou na alteração não contada; recusa por manutenção contada como conflito | `src/test/java/com/edualoca/RejeicaoSobreposicaoAuditoriaTest.java` :: `criacaoRecusadaPorSobreposicao_gravaRejeicao`, `recusaDaConstraintNoBanco_gravaRejeicao`, `alteracaoRecusadaPorSobreposicao_gravaRejeicao`, `recusaPorManutencao_naoGravaRejeicao`, `semSobreposicao_naoGravaRejeicao` | red `09577bd` · green `faba0a3` |
+| RF-36 / RF-01 — Só Responsável e Administrador; 401 sem token; 403 para Solicitante | Solicitante ou anônimo lê dados de uso | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `relatorioDoMes` (RESPONSAVEL e ADMINISTRADOR → 200), `semToken401`, `tokenDesconhecido401`, `solicitante403`, `solicitanteComParametroInvalido403` | red `09577bd` · green `faba0a3` |
+
 ## Concorrência de reservas (PostgreSQL real via Testcontainers)
 
 | Requisito | Risco | Teste | Evidência / Execução |

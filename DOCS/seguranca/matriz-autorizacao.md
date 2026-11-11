@@ -86,7 +86,8 @@ célula vermelha foi registrada em `DOCS/defeitos/` antes da correção:
 | D-07 | [DEF-005](../defeitos/DEF-005-cancelamento-revela-id-inexistente.md) |
 | Erros fora de ProblemDetail (todas as células de erro) | [DEF-002](../defeitos/DEF-002-erros-fora-do-padrao-problemdetail.md) |
 | Validação de entrada (fora da matriz) | [DEF-007](../defeitos/DEF-007-capacidade-minima-negativa-aceita.md), [DEF-008](../defeitos/DEF-008-parametro-ausente-sem-nome-do-campo.md) |
-| D-03, D-05 | Mascaradas pelo D-01: as células falham no login antes de chegar à operação. Registro após a correção do DEF-003. |
+| D-03 | [DEF-009](../defeitos/DEF-009-responsavel-e-administrador-criam-reserva.md) (mascarada pelo D-01 até o DEF-003) |
+| D-05 | [DEF-010](../defeitos/DEF-010-responsavel-nao-competente-decide-reserva.md) (mascarada pelo D-01 até o DEF-003) |
 
 ## 5. Rotas que não aparecem em nenhuma regra de segurança
 

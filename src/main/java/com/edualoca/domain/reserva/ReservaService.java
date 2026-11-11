@@ -48,6 +48,10 @@ public class ReservaService {
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
                           String finalidade, List<ReservaRecurso> recursos) {
         Banco.seedSeNecessario();
+        // RF-12: so o Solicitante cria reserva (DEF-009). Perfil antes da entrada: 403 nao depende do corpo.
+        if (solicitante.getPerfil() != Perfil.SOLICITANTE) {
+            throw new RegraNegocioException(403, "Apenas o Solicitante pode criar reservas");
+        }
         validarIntervalo(inicio, fim);
         if (finalidade == null || finalidade.isBlank()) {
             throw new RegraNegocioException(400, "Finalidade da reserva e obrigatoria");

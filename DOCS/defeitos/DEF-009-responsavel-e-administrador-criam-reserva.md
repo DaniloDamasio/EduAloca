@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção) |
 | Severidade | Média: perfis sem a operação no escopo (RF-12: SOL) criam reservas; o Administrador pode ocupar qualquer recurso |
 | Prioridade | Média |
 | Requisitos | RF-02, RF-12 |
@@ -49,8 +49,12 @@ Nenhuma checagem de perfil em [ReservaService.java:48-57](../../src/main/java/co
 
 ## Correção
 
-Pendente.
+`ReservaService.criar` recusa com `403` ("Apenas o Solicitante pode criar reservas") qualquer perfil que não seja
+Solicitante, antes de validar intervalo, finalidade e recursos, para que o 403 não dependa do corpo enviado. A regra
+fica no domínio, como as demais checagens de perfil de reserva. Nenhum teste foi alterado; nenhum teste existente
+criava reserva com outro perfil.
 
 ## Reteste
 
-Pendente.
+Linha 3 da matriz: 4/4 verdes (anônimo 401, Solicitante 201, Responsável 403, Administrador 403), e as duas células de
+erro passam na checagem de ProblemDetail. Suíte completa sem falhas fora da matriz.

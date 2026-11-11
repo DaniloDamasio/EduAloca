@@ -1,7 +1,12 @@
 # Matriz de autorização da API
 
 Levantamento de 2026-11-11, branch `relatorio-utilizacao` (commit `50db94f`). Este documento registra a resposta
-**esperada** de cada operação por perfil e marca onde o código atual diverge. Nenhuma correção foi feita.
+**esperada** de cada operação por perfil e marca onde o código divergia.
+
+> **Atualização (11/11/2026, commit `936860b`):** a matriz é executada por `MatrizAutorizacaoApiTest` com tokens do
+> login real, e as divergências D-01, D-02, D-03, D-05, D-06 e D-07 foram corrigidas (DEF-003 a DEF-010). A D-04 foi
+> encerrada por decisão (RF-19 mantido). As seções 1, 3 (Evidência) e 4 descrevem o estado no levantamento. Os
+> riscos das seções 5 a 7 continuam abertos, exceto o 405 de `PUT /reservas/{id}`.
 
 ## 1. Como a autorização funciona hoje
 
@@ -34,16 +39,16 @@ Legenda: **200/201/204** = permitido · **401** = sem token válido · **403** =
 
 | # | Operação | Rota | Anônimo | Solicitante | Responsável | Administrador | Situação |
 |---|---|---|---|---|---|---|---|
-| 1 | Login | `POST /auth/login` | 200 | 200 | 200 | 200 | ⚠️ **D-01** |
+| 1 | Login | `POST /auth/login` | 200 | 200 | 200 | 200 | ✅ D-01 corrigida |
 | 2 | Buscar salas disponíveis | `GET /salas/disponiveis` | 401 | 200 | 200 | 200 | ✅ |
-| 3 | Criar reserva | `POST /reservas` | 401 | 201 | 403 | 403 | ⚠️ **D-03** |
+| 3 | Criar reserva | `POST /reservas` | 401 | 201 | 403 | 403 | ✅ D-03 corrigida |
 | 4 | Consultar reserva | `GET /reservas/{id}` | 401 | 200 própria · 403 alheia | 200 | 200 | ✅ |
-| 5 | Alterar reserva (RF-13) | `PUT /reservas/{id}` | 401 | 200 própria · 403 alheia | 403 | 403 | ⚠️ **D-02** |
-| 6 | Cancelar reserva | `POST /reservas/{id}/cancelamento` | 401 | 200 própria · 403 alheia | 403 | 403 | ⚠️ **D-07**, ver nota |
-| 7 | Aprovar reserva restrita | `POST /reservas/{id}/aprovacao` | 401 | 403 | 200 se competente · 403 se não | 200 | ⚠️ **D-05** |
-| 8 | Rejeitar reserva restrita | `POST /reservas/{id}/rejeicao` | 401 | 403 | 200 se competente · 403 se não | 200 | ⚠️ **D-05** |
+| 5 | Alterar reserva (RF-13) | `PUT /reservas/{id}` | 401 | 200 própria · 403 alheia | 403 | 403 | ✅ D-02, D-07 corrigidas |
+| 6 | Cancelar reserva | `POST /reservas/{id}/cancelamento` | 401 | 200 própria · 403 alheia | 403 | 403 | ✅ D-07 corrigida, ver nota |
+| 7 | Aprovar reserva restrita | `POST /reservas/{id}/aprovacao` | 401 | 403 | 200 se competente · 403 se não | 200 | ✅ D-05 corrigida |
+| 8 | Rejeitar reserva restrita | `POST /reservas/{id}/rejeicao` | 401 | 403 | 200 se competente · 403 se não | 200 | ✅ D-05 corrigida |
 | 9 | Histórico auditável da reserva | `GET /reservas/{id}/historico` | 401 | 403 | 200 | 200 | ✅ |
-| 10 | Excluir reserva | `DELETE /reservas/{id}` | 401 | 403 | 403 | 403 | ⚠️ **D-06** |
+| 10 | Excluir reserva | `DELETE /reservas/{id}` | 401 | 403 | 403 | 403 | ✅ D-06 corrigida |
 | 11 | Cadastrar manutenção/bloqueio | `POST /manutencoes` | 401 | 403 | 403 | 201 | ✅ |
 | 12 | Relatório de utilização | `GET /relatorios/utilizacao` | 401 | 403 | 200 | 200 | ✅ |
 

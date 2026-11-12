@@ -7,10 +7,14 @@ target/
 DOCS/enunciado.md
 DOCS/PR_TEMPLATE.md
 
-# JMeter: plano e CSV versionados; relatorio HTML e resultados brutos nao
+# JMeter: plano, CSV, script e resumos de cada rodada versionados (evidencia dos resultado-0x.md).
+# Ficam fora os brutos (.jtl, uma linha por requisicao, ~60 MB), publicados compactados na release
+# "carga-rodada-02" do GitHub com SHA-256 nos documentos; o relatorio HTML (regerado do .jtl); e a
+# tentativa da rodada 02 descartada por suspensao da maquina.
 perf/relatorio-*/
-perf/resultados/
-jmeter.log
+perf/resultados/**/*.jtl
+perf/resultados/rodada-02-tentativa-1/
+/jmeter.log
 
 # Configuracao local do editor (VS Code)
 .vscode/

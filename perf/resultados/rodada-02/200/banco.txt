@@ -1,0 +1,5 @@
+reservas 871
+linhas_ativas 871
+max_por_recurso_periodo 1
+pares_sobrepostos 0
+recursos_distintos 1

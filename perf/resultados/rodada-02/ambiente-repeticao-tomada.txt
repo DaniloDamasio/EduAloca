@@ -1,0 +1,11 @@
+commit=38bbc04
+jar_sha256=d66c57130a04e87f
+jmx_sha256=cdf79be50df25847
+csv_sha256=a4b336ba2b8cb3d9
+openjdk version "21.0.9" 2025-10-21 LTS
+OpenJDK Runtime Environment Temurin-21.0.9+10 (build 21.0.9+10-LTS)
+5.6.3
+docker=29.5.2
+26.7.2
+inicio=2026-11-12 19:01:11 -0300
+fim=2026-11-12 19:19:36 -0300

@@ -1,0 +1,1 @@
+2026-11-12 18:31:59,555 INFO o.a.j.p.j.s.J.Resumo: RESUMO DISPUTA: 201=434 409=3905 janelas_com_vencedor=434 duplas=0

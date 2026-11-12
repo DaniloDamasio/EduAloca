@@ -60,7 +60,7 @@ Commit `2c9b98c`.
 
 ## Reteste
 
-- `CrudRecursoTest` verde (17 casos nos 3 grupos). `./mvnw -B verify` local com Docker: 419 unitários (3 pulados) e
+- `CrudRecursoTest` verde (13 casos nos 3 grupos). `./mvnw -B verify` local com Docker: 419 unitários (3 pulados) e
   14 ITs, gate JaCoCo atendido.
 - Mutação: 24 de 24 mutantes de cadastro mortos (C1–C24, [mutacao-manual.md §6](../testes/mutacao-manual.md)).
 

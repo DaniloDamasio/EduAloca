@@ -124,6 +124,22 @@ class InicioUsoReservaTest {
     }
 
     @Test
+    @DisplayName("P-07: reserva sem sala (so material) tambem exige perfil Responsavel/Administrador para iniciar o uso")
+    void reservaSemSala_solicitanteRecebe403() {
+        Banco.seedSeNecessario();
+        Material restrito = new Material(UUID.randomUUID(), "Camera restrita", "camera", 1, true);
+        Reserva reserva = reservas.criar(solicitante, INICIO, FIM, "Gravacao", List.of(new ReservaRecurso(restrito, 1)));
+        reservas.aprovar(administrador, reserva.getId());
+
+        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
+                () -> reservas.iniciarUso(solicitante, reserva.getId()));
+
+        assertAll(
+                () -> assertEquals(403, ex.getStatusHttp()),
+                () -> assertEquals(EstadoReserva.APROVADA, reserva.getEstado()));
+    }
+
+    @Test
     @DisplayName("RF-18: REJEITADA, CANCELADA, EM_USO e inexistente nao iniciam uso (409)")
     void foraDeAprovada_409() {
         Reserva rejeitada = restritaSolicitada();

@@ -4,6 +4,7 @@ import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.notificacao.NotificacaoService;
 import com.edualoca.domain.recurso.Manutencao;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.usuario.Perfil;
@@ -16,15 +17,19 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ReservaService {
 
     private static final ConcurrentHashMap<UUID, ReentrantLock> LOCKS_POR_RECURSO = new ConcurrentHashMap<>();
+    private static final Logger LOG = Logger.getLogger(ReservaService.class.getName());
 
     private final Clock clock;
     private final ReservaRepositorio repositorio;
     private final HistoricoReservaRepositorio historico;
     private final Transacao transacao;
+    private final NotificacaoService notificacao;
 
     public ReservaService() {
         this(Clock.systemDefaultZone());
@@ -40,10 +45,17 @@ public class ReservaService {
 
     public ReservaService(Clock clock, ReservaRepositorio repositorio, HistoricoReservaRepositorio historico,
                           Transacao transacao) {
+        this(clock, repositorio, historico, transacao, new NotificacaoService());
+    }
+
+    /** RF-31/32: {@code notificacao} e avisada depois que a mudanca ja foi gravada (nunca dentro da transacao). */
+    public ReservaService(Clock clock, ReservaRepositorio repositorio, HistoricoReservaRepositorio historico,
+                          Transacao transacao, NotificacaoService notificacao) {
         this.clock = clock;
         this.repositorio = repositorio;
         this.historico = historico;
         this.transacao = transacao;
+        this.notificacao = notificacao;
     }
 
     public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
@@ -79,6 +91,9 @@ public class ReservaService {
                 historico.registrar(registro(reserva, solicitante, null, motivo));
             }));
             AuditoriaService.registrar("Reserva", reserva.getId(), "CRIACAO", solicitante.getId(), LocalDateTime.now(clock));
+            if (algumRestrito) {
+                notificarSemPropagar(() -> notificacao.notificarResponsavelCompetente(reserva), reserva);
+            }
             return reserva;
         } finally {
             liberarLocks(locksAdquiridos);
@@ -269,6 +284,17 @@ public class ReservaService {
         } catch (RuntimeException e) {
             reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);
             throw e;
+        }
+        // RF-31: so depois da gravacao. RF-33: falha de notificacao nunca desfaz a transicao.
+        notificarSemPropagar(() -> notificacao.notificarTransicaoDeEstado(reserva), reserva);
+    }
+
+    private static void notificarSemPropagar(Runnable envio, Reserva reserva) {
+        try {
+            envio.run();
+        } catch (RuntimeException e) {
+            LOG.log(Level.WARNING, "Notificacao da reserva {0} falhou; a mudanca de estado foi mantida ({1})",
+                    new Object[]{reserva.getId(), e.getClass().getSimpleName()});
         }
     }
 

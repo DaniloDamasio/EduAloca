@@ -24,7 +24,7 @@ public class NotificacaoService {
     }
 
     public NotificacaoEnviada notificarTransicaoDeEstado(Reserva reserva) {
-        StatusNotificacao status = notificadorExterno.enviar(reserva) ? StatusNotificacao.ENVIADA : StatusNotificacao.FALHA;
+        StatusNotificacao status = enviarSemPropagar(reserva) ? StatusNotificacao.ENVIADA : StatusNotificacao.FALHA;
         NotificacaoEnviada notificacao = new NotificacaoEnviada(UUID.randomUUID(), reserva.getSolicitanteId(),
                 "Sua reserva mudou para " + reserva.getEstado(), status);
         Banco.notificacoes.put(notificacao.getId(), notificacao);
@@ -40,6 +40,15 @@ public class NotificacaoService {
                 "Nova solicitacao restrita pendente de aprovacao", status);
         Banco.notificacoes.put(notificacao.getId(), notificacao);
         return notificacao;
+    }
+
+    /** RF-33: excecao do provedor vira {@code FALHA} registrada, nunca sobe para quem mudou o estado. */
+    private boolean enviarSemPropagar(Reserva reserva) {
+        try {
+            return notificadorExterno.enviar(reserva);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private UUID encontrarResponsavelCompetente(Reserva reserva) {

@@ -10,8 +10,9 @@
 #     cobertos em BddAprovacaoBloqueioTest e nas suites JUnit;
 #   - cenarios bloqueados por pergunta em aberto (R1-09/P-02, R2-05/P-01, R3-07/P-04, R4-06/P-06):
 #     o passo "Entao" deles e uma pergunta, nao um resultado verificavel.
-# Linhas de exemplo bloqueadas ficam aqui com a tag @bloqueado e nao rodam
-# (cucumber.filter.tags em src/test/resources/junit-platform.properties).
+# Linhas de exemplo bloqueadas ficariam aqui com a tag @bloqueado e nao rodariam
+# (cucumber.filter.tags em src/test/resources/junit-platform.properties). Desde 12/11/2026 nenhuma linha esta
+# bloqueada: as decisoes P-05, P-07 e P-08 liberaram iniciar uso, concluir e nao comparecimento em BDD-R4-01.
 
 Funcionalidade: Aprovação, autoaprovação, bloqueio por manutenção e máquina de estados da Reserva
 
@@ -137,13 +138,9 @@ Funcionalidade: Aprovação, autoaprovação, bloqueio por manutenção e máqui
         | SOLICITADA | Responsável | rejeitar (com justificativa) | REJEITADA      | RF-20                        |
         | SOLICITADA | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
         | APROVADA   | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
-
-      @bloqueado
-      Exemplos: aguardam decisão (P-05, P-07, P-08)
-        | origem     | ator        | acao                         | destino        | observação                   |
-        | APROVADA   | ❓ P-07     | iniciar uso                  | EM_USO         | gatilho indefinido           |
-        | EM_USO     | ❓ P-07     | concluir                     | CONCLUIDA      | gatilho indefinido           |
-        | ❓ P-05    | ❓ P-08     | registrar não comparecimento | NAO_COMPARECEU | origem e gatilho indefinidos |
+        | APROVADA   | Responsável | iniciar uso                  | EM_USO         | RF-18, P-07 (manual)         |
+        | EM_USO     | Responsável | concluir                     | CONCLUIDA      | P-07 (manual)                |
+        | APROVADA já iniciada há 15 min | Responsável | registrar não comparecimento | NAO_COMPARECEU | P-05 (de APROVADA), P-08 (início + 15 min) |
 
     # BDD-R4-03 (RF-14)
     Cenário: Cancelamento sem motivo é recusado

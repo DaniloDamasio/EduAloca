@@ -28,6 +28,47 @@ class MaquinaEstadosReservaTest {
         return new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
     }
 
+    // Reservas reais em cada estado de origem (antes, os testes abaixo usavam um UUID inexistente e passavam com
+    // qualquer codigo; status-requisitos.md §4). Data no passado: o nao comparecimento ja passou da tolerancia.
+    private static final java.time.LocalDateTime INI = java.time.LocalDateTime.of(2026, 3, 10, 10, 0);
+
+    private Reserva reservaRestrita() {
+        Sala sala = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        return reservaService.criar(new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE),
+                INI, INI.plusHours(2), "Aula", java.util.List.of(new com.edualoca.domain.reserva.ReservaRecurso(sala, 1)));
+    }
+
+    private Reserva noEstado(EstadoReserva alvo) {
+        Reserva r = reservaRestrita();
+        switch (alvo) {
+            case SOLICITADA -> { }
+            case APROVADA -> reservaService.aprovar(responsavel(), r.getId());
+            case EM_USO -> { reservaService.aprovar(responsavel(), r.getId()); reservaService.iniciarUso(responsavel(), r.getId()); }
+            case CONCLUIDA -> { reservaService.aprovar(responsavel(), r.getId()); reservaService.iniciarUso(responsavel(), r.getId());
+                reservaService.concluir(responsavel(), r.getId()); }
+            case REJEITADA -> reservaService.rejeitar(responsavel(), r.getId(), "sala em banca");
+            case CANCELADA -> reservaService.cancelar(new Usuario(r.getSolicitanteId(), "aluno@example.com", "hash", Perfil.SOLICITANTE), r.getId(), "remarcada");
+            case NAO_COMPARECEU -> { reservaService.aprovar(responsavel(), r.getId()); reservaService.registrarNaoComparecimento(responsavel(), r.getId()); }
+        }
+        assertEquals(alvo, r.getEstado(), "pre-condicao: reserva no estado de origem");
+        return r;
+    }
+
+    /** Nenhuma transicao de decisor sai de estado terminal: todas respondem 409 e o estado nao muda. */
+    private void terminal(EstadoReserva estado) {
+        Reserva r = noEstado(estado);
+        java.util.List<org.junit.jupiter.api.function.Executable> acoes = java.util.List.of(
+                () -> reservaService.aprovar(responsavel(), r.getId()),
+                () -> reservaService.rejeitar(responsavel(), r.getId(), "x"),
+                () -> reservaService.iniciarUso(responsavel(), r.getId()),
+                () -> reservaService.concluir(responsavel(), r.getId()),
+                () -> reservaService.registrarNaoComparecimento(responsavel(), r.getId()));
+        for (org.junit.jupiter.api.function.Executable acao : acoes) {
+            assertEquals(409, assertThrows(RegraNegocioException.class, acao).getStatusHttp());
+        }
+        assertEquals(estado, r.getEstado());
+    }
+
     @Test
     @DisplayName("EST-T1: transicao SOLICITADA -> APROVADA deve ser permitida com auditoria e notificacao")
     void estT1_solicitadaParaAprovada_devePermitir() {
@@ -47,33 +88,23 @@ class MaquinaEstadosReservaTest {
     }
 
     @Test
-    @DisplayName("EST-T2 [gap Q24, assumindo gatilho exposto via metodo de transicao de uso]: transicao APROVADA -> EM_USO deve ser permitida")
+    @DisplayName("EST-T2 (P-07): transicao APROVADA -> EM_USO pelo Responsavel competente")
     void estT2_aprovadaParaEmUso_devePermitir() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaAprovadaId = UUID.randomUUID();
+        Reserva r = noEstado(EstadoReserva.APROVADA);
 
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaAprovadaId));
+        reservaService.iniciarUso(responsavel(), r.getId());
 
-        // assert — ainda sem metodo dedicado de inicio de uso; a chamada de aprovar sobre reserva ja aprovada deve indicar conflito (409), nao sucesso silencioso
-        assertEquals(409, ex.getStatusHttp());
+        assertEquals(EstadoReserva.EM_USO, r.getEstado());
     }
 
     @Test
-    @DisplayName("EST-T3 [gap Q24]: transicao EM_USO -> CONCLUIDA deve ser permitida (mesmo gap de gatilho de EST-T2)")
+    @DisplayName("EST-T3 (P-07): transicao EM_USO -> CONCLUIDA pelo Responsavel competente")
     void estT3_emUsoParaConcluida_devePermitir() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaEmUsoId = UUID.randomUUID();
+        Reserva r = noEstado(EstadoReserva.EM_USO);
 
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaEmUsoId));
+        reservaService.concluir(responsavel(), r.getId());
 
-        // assert — sem metodo dedicado de conclusao; aprovar sobre reserva EM_USO deve ser tratado como conflito ate o gatilho ser definido
-        assertEquals(409, ex.getStatusHttp());
+        assertEquals(EstadoReserva.CONCLUIDA, r.getEstado());
     }
 
     @Test
@@ -129,33 +160,27 @@ class MaquinaEstadosReservaTest {
     }
 
     @Test
-    @DisplayName("EST-T7 [gap Q25, sem gatilho definido]: transicao EM_USO -> NAO_COMPARECEU deve ser permitida")
-    void estT7_emUsoParaNaoCompareceu_devePermitir() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaEmUsoId = UUID.randomUUID();
+    @DisplayName("EST-T7 (P-05): NAO_COMPARECEU sai de APROVADA, nunca de EM_USO (409 e estado intacto)")
+    void estT7_emUsoParaNaoCompareceu_deveSerBloqueada() {
+        Reserva emUso = noEstado(EstadoReserva.EM_USO);
+        Reserva aprovada = noEstado(EstadoReserva.APROVADA);
 
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaEmUsoId));
+        assertEquals(409, assertThrows(RegraNegocioException.class,
+                () -> reservaService.registrarNaoComparecimento(responsavel(), emUso.getId())).getStatusHttp());
+        reservaService.registrarNaoComparecimento(responsavel(), aprovada.getId());
 
-        // assert — sem metodo dedicado para registrar nao comparecimento; tratado como conflito ate definicao do gatilho
-        assertEquals(409, ex.getStatusHttp());
+        assertEquals(EstadoReserva.EM_USO, emUso.getEstado());
+        assertEquals(EstadoReserva.NAO_COMPARECEU, aprovada.getEstado());
     }
 
     @Test
-    @DisplayName("EST-T8: reserva com recurso restrito nao pode pular de SOLICITADA direto para EM_USO")
+    @DisplayName("EST-T8 (RF-18): reserva restrita SOLICITADA nao vai direto para EM_USO nem para CONCLUIDA")
     void estT8_reservaRestritaPulandoAprovada_deveSerBloqueada() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaRestritaSolicitadaId = UUID.randomUUID();
+        Reserva r = noEstado(EstadoReserva.SOLICITADA);
 
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaRestritaSolicitadaId));
-
-        // assert
-        assertEquals(409, ex.getStatusHttp());
+        assertEquals(409, assertThrows(RegraNegocioException.class, () -> reservaService.iniciarUso(responsavel(), r.getId())).getStatusHttp());
+        assertEquals(409, assertThrows(RegraNegocioException.class, () -> reservaService.concluir(responsavel(), r.getId())).getStatusHttp());
+        assertEquals(EstadoReserva.SOLICITADA, r.getEstado());
     }
 
     @Test
@@ -177,62 +202,27 @@ class MaquinaEstadosReservaTest {
     }
 
     @Test
-    @DisplayName("EST-T10 [gap Q16, assumindo HTTP 409]: tentativa de transicao a partir de REJEITADA (estado terminal) deve ser bloqueada")
+    @DisplayName("EST-T10: nenhuma transicao sai de REJEITADA (estado terminal): aprovar, rejeitar, iniciar, concluir e nao comparecimento -> 409")
     void estT10_transicaoAPartirDeRejeitada_deveSerBloqueada() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaRejeitadaId = UUID.randomUUID();
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaRejeitadaId));
-
-        // assert
-        assertEquals(409, ex.getStatusHttp());
+        terminal(EstadoReserva.REJEITADA);
     }
 
     @Test
-    @DisplayName("EST-T11 [gap Q16]: tentativa de transicao a partir de CONCLUIDA (estado terminal) deve ser bloqueada")
+    @DisplayName("EST-T11: nenhuma transicao sai de CONCLUIDA (estado terminal): aprovar, rejeitar, iniciar, concluir e nao comparecimento -> 409")
     void estT11_transicaoAPartirDeConcluida_deveSerBloqueada() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaConcluidaId = UUID.randomUUID();
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaConcluidaId));
-
-        // assert
-        assertEquals(409, ex.getStatusHttp());
+        terminal(EstadoReserva.CONCLUIDA);
     }
 
     @Test
-    @DisplayName("EST-T12 [gap Q16]: tentativa de transicao a partir de CANCELADA (estado terminal) deve ser bloqueada")
+    @DisplayName("EST-T12: nenhuma transicao sai de CANCELADA (estado terminal): aprovar, rejeitar, iniciar, concluir e nao comparecimento -> 409")
     void estT12_transicaoAPartirDeCancelada_deveSerBloqueada() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaCanceladaId = UUID.randomUUID();
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaCanceladaId));
-
-        // assert
-        assertEquals(409, ex.getStatusHttp());
+        terminal(EstadoReserva.CANCELADA);
     }
 
     @Test
-    @DisplayName("EST-T13 [gap Q16]: tentativa de transicao a partir de NAO_COMPARECEU (estado terminal) deve ser bloqueada")
+    @DisplayName("EST-T13: nenhuma transicao sai de NAO_COMPARECEU (estado terminal): aprovar, rejeitar, iniciar, concluir e nao comparecimento -> 409")
     void estT13_transicaoAPartirDeNaoCompareceu_deveSerBloqueada() {
-        // arrange
-        Usuario responsavel = responsavel();
-        UUID reservaNaoCompareceuId = UUID.randomUUID();
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaNaoCompareceuId));
-
-        // assert
-        assertEquals(409, ex.getStatusHttp());
+        terminal(EstadoReserva.NAO_COMPARECEU);
     }
+
 }

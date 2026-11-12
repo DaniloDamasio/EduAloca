@@ -36,7 +36,7 @@ public class RetiradaMaterialService {
         RegistroRetirada registro = new RegistroRetirada(UUID.randomUUID(), reservaId, itemId, autor.getId(), dataHora);
         Banco.retiradas.put(registro.getId(), registro);
         // RF-28: retirada e devolucao tambem entram na auditoria, com o autor do token e a data do servidor.
-        AuditoriaService.registrar("Retirada", registro.getId(), "RETIRADA", autor == null ? null : autor.getId(), dataHora);
+        AuditoriaService.registrar("Retirada", registro.getId(), "RETIRADA", autor.getId(), dataHora);
         return registro;
     }
 

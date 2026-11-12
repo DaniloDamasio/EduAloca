@@ -13,7 +13,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * Gestao de usuarios pelo Administrador (escopo do enunciado: "Administrador gerencia ... usuarios"; RF-28 audita a
@@ -24,7 +23,6 @@ public class UsuarioService {
 
     public static final int SENHA_MINIMA = 8;
     public static final int TEXTO_MAXIMO = 120;
-    private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final Clock clock;
 
@@ -48,7 +46,7 @@ public class UsuarioService {
         exigirAdministrador(ator);
         Banco.seedSeNecessario();
         String emailNormalizado = email == null ? "" : email.strip().toLowerCase(Locale.ROOT);
-        if (emailNormalizado.length() > TEXTO_MAXIMO || !EMAIL.matcher(emailNormalizado).matches()) {
+        if (emailNormalizado.length() > TEXTO_MAXIMO || !emailValido(emailNormalizado)) {
             throw new RegraNegocioException(400, "E-mail inválido: informe um endereço como nome@example.com");
         }
         if (senha == null || senha.length() < SENHA_MINIMA || senha.length() > TEXTO_MAXIMO) {
@@ -104,6 +102,20 @@ public class UsuarioService {
             AuditoriaService.registrar("Usuario", usuarioId, "INATIVACAO", ator.getId(), LocalDateTime.now(clock));
             return conta(email);
         }
+    }
+
+    /**
+     * Um unico "@", parte local nao vazia, dominio com ponto que nao esta na ponta e nenhum espaco. Sem regex, para nao
+     * haver backtracking super-linear com entrada maliciosa (Sonar java:S8786).
+     */
+    static boolean emailValido(String email) {
+        int arroba = email.indexOf('@');
+        if (arroba <= 0 || arroba != email.lastIndexOf('@') || email.chars().anyMatch(Character::isWhitespace)) {
+            return false;
+        }
+        String dominio = email.substring(arroba + 1);
+        int ponto = dominio.lastIndexOf('.');
+        return ponto > 0 && ponto < dominio.length() - 1;
     }
 
     private static ContaUsuario conta(String email) {

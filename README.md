@@ -135,6 +135,31 @@ aplicação a partir de [src/main/resources/static](src/main/resources/static), 
 só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. Os dados voltam ao seed a cada reinício; o que é ou não
 persistido no PostgreSQL está no [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md).
 
+### Escopo da persistência (PostgreSQL)
+
+O PostgreSQL guarda o que as regras críticas do enunciado exigem que seja verificado em ambiente real: as **reservas**,
+os **recursos de cada reserva** e o **histórico de estados**. É no banco que fica a garantia de "duas solicitações
+simultâneas produzem uma única reserva aceita": a constraint de exclusão `ex_reserva_recurso_sem_sobreposicao`
+([ADR-009](DOCS/adr/ADR-009-exclusao-gist-tstzrange.md)) recusa sobreposição mesmo com duas instâncias da aplicação. O
+histórico é gravado na mesma transação da mudança de estado e um trigger recusa `UPDATE`/`DELETE`. Tudo isso é testado
+contra PostgreSQL real com Testcontainers (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
+`ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`) e foi medido sob carga ([resultado-02](DOCS/performance/resultado-02.md)).
+
+O restante (salas, professores, materiais, manutenções, usuários, auditoria, retiradas e notificações) fica **em
+memória**, e as leituras de reserva usam um cache em memória preenchido depois do commit. Consequência: ao reiniciar a
+aplicação, o catálogo volta ao seed e o que foi cadastrado pela interface se perde, mesmo com o PostgreSQL ligado.
+Foi uma decisão de escopo para a entrega ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)): levar
+todas as entidades ao banco exige repositórios para cada uma e trocar a comparação de recursos por referência de objeto
+pela comparação por id em todo o domínio, mexendo justamente nas partes já verificadas por concorrência e carga.
+
+Para rodar com PostgreSQL (opcional; o modo padrão em memória é o de demonstração):
+
+```
+java -jar target/edualoca-0.0.1-SNAPSHOT.jar \
+  --edualoca.persistencia.url=jdbc:postgresql://localhost:5432/edualoca \
+  --edualoca.persistencia.usuario=<usuario> --edualoca.persistencia.senha=<senha>
+```
+
 ### Contas de demonstração
 
 A tela de login tem um botão para cada conta. As senhas são de seed e servem só para teste e demonstração.
@@ -348,9 +373,14 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   interface não tem script inline. Todo dado da API entra na página por `textContent`, nunca por `innerHTML`.
   `X-Frame-Options: DENY` e `frame-ancestors 'none'` impedem clickjacking. O token fica em `sessionStorage` e é
   revogado no servidor ao sair (`POST /auth/logout`).
-- **Limitações conhecidas (decisão pendente):** os tokens ficam em memória, sem expiração. O logout revoga o token, mas
-  não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem
-  persistência e deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling no login).
+- **Sessão e força bruta (RNF-05):** o token vence após 30 min sem uso ou 8 h desde o login (`401` "Sessão expirada";
+  a interface volta ao login), configurável por `edualoca.seguranca.token.inatividade-minutos` e
+  `edualoca.seguranca.token.duracao-maxima-horas`. Depois de 5 senhas erradas para o mesmo e-mail em 15 min, o login
+  desse e-mail fica bloqueado por 15 min (`429`), inclusive com a senha certa e igual para e-mail inexistente, para não
+  revelar quais contas existem (`SegurancaLoginTest`, `LoginBloqueioApiTest`).
+- **Limitações conhecidas:** tokens e contadores de tentativa ficam em memória (perdidos ao reiniciar, como o resto do
+  seed; ver "Escopo da persistência"). O bloqueio é por e-mail, não por IP: um atacante pode bloquear temporariamente o
+  login de uma conta conhecida.
   Pela API, toda escrita de cadastro, manutenção, usuário, retirada e devolução grava na auditoria o usuário do token
   como autor (RF-28); só chamadas diretas ao domínio sem ator (testes antigos) gravam autor `null`. Usuários ficam em
   memória como o resto do seed: inativação não tem reativação (o e-mail fica bloqueado) e não há troca de senha pela

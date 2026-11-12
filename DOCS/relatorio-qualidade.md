@@ -589,6 +589,19 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
 - As entregas desta etapa (inclusive a tarefa periódica) não foram medidas sob carga; a rodada 02 usou o jar de `38bbc04`.
 - Dados em memória no modo padrão ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md)).
 
+### 10.4 Atualização: segurança do login (2026-11-12, ~20:15)
+
+**A-30. Sessão com expiração e bloqueio por tentativas no login.**
+- *Evidência:* `TokenService` vence o token após 30 min sem uso ou 8 h desde o login (401 "Sessão expirada");
+  `AutenticacaoService` bloqueia por 15 min o e-mail com 5 senhas erradas em 15 min (429), também para e-mail
+  inexistente. `SegurancaLoginTest` (13 casos, relógio ajustável: bordas de 29/30/31 min, renovação por uso, 8 h em uso
+  contínuo, bloqueio e desbloqueio, janela, maiúsculas) e `LoginBloqueioApiTest` (429 em ProblemDetail). `./mvnw -B
+  verify`: **536 unitários e 19 ITs, 0 falhas**; linhas 1507/1569 = **96,05%**, ramos 576/673 = **85,59%**.
+- *Interpretação:* sai da lista de riscos a ausência de expiração e de limite contra força bruta (RNF-05).
+- *Limite:* tokens e contadores em memória; bloqueio por e-mail, não por IP (um atacante pode bloquear temporariamente
+  uma conta conhecida). Os relógios da sessão e do bloqueio são o do sistema, independentes do `Clock` de negócio que os
+  testes avançam. A persistência das demais entidades continua fora de escopo (README, "Escopo da persistência").
+
 ## Apêndice A: comandos usados
 
 ```bash

@@ -13,7 +13,8 @@ ficar sem documentação ou se houver documentação de rota inexistente (RF-39)
 
 - **Base:** `http://localhost:8080` (porta padrão do Spring Boot). A interface web é servida na mesma origem, em `/`.
 - **Autenticação:** todas as rotas, exceto `POST /auth/login`, exigem `Authorization: Bearer <token>`. O token sai do
-  login, é opaco (256 bits de `SecureRandom`) e vive em memória até o logout. Sem token, ou com token desconhecido: `401`.
+  login, é opaco (256 bits de `SecureRandom`) e vive em memória até o logout ou até vencer: 30 min sem uso ou 8 h desde o
+  login (`401` "Sessão expirada"). Sem token, ou com token desconhecido: `401`.
 - **Perfis:** `SOL` = Solicitante, `RES` = Responsável, `ADM` = Administrador. "RES competente" é o Responsável do
   local (bloco) da sala da reserva; o Administrador decide qualquer reserva.
 - **Datas:** `LocalDateTime` ISO-8601 sem fuso (`2027-03-10T08:00`), interpretadas no fuso do servidor. Intervalos são
@@ -28,13 +29,14 @@ ficar sem documentação ou se houver documentação de rota inexistente (RF-39)
 | `403` | Perfil fora do escopo, Responsável de outro local ou reserva de outro Solicitante. Id inexistente recebe o mesmo `403` que id alheio, para não revelar quais ids existem |
 | `404` | Cadastro inexistente na edição de sala, professor ou material (só o Administrador chega a essa checagem) |
 | `405` | Método não suportado pela rota |
+| `429` | Muitas senhas erradas para o mesmo e-mail (bloqueio temporário do login) |
 | `409` | Conflito de regra: sobreposição de horário, recurso em manutenção, estado da reserva incompatível com a ação, retirada com ciclo aberto, não comparecimento antes da tolerância |
 
 ## Autenticação
 
 | Método e rota | Perfil | Corpo | Resposta | Teste |
 |---|---|---|---|---|
-| `POST /auth/login` | público | `{"email", "senha"}` | `200 {"token"}`; `401` credencial inválida; `400` campo vazio | `LoginApiTest`, `MatrizAutorizacaoApiTest` |
+| `POST /auth/login` | público | `{"email", "senha"}` | `200 {"token"}`; `401` credencial inválida; `400` campo vazio; `429` depois de 5 senhas erradas para o mesmo e-mail em 15 min (bloqueio de 15 min, igual para e-mail inexistente) | `LoginApiTest`, `MatrizAutorizacaoApiTest`, `LoginBloqueioApiTest`, `SegurancaLoginTest` |
 | `POST /auth/logout` | qualquer | — | `204`, mesmo sem token válido (não revela quais tokens existem) | `InterfacePerfisApiTest` |
 | `GET /auth/eu` | autenticado | — | `200 {"id", "email", "perfil"}` | `InterfacePerfisApiTest` |
 

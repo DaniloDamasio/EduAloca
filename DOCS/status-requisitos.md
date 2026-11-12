@@ -161,3 +161,7 @@ quando a palavra acentuada era o campo) e código morto removido (relatório ant
 `RelatorioService` passou a ser testado pelo método da rota). Detalhes em [relatório de qualidade §10](relatorio-qualidade.md).
 Na seção 4: `RelatoriosTest` :: `rf34T1`, `rf35T1` **resolvidos** (testes de valor sobre `gerarUtilizacaoPorPeriodo`);
 `AutenticacaoAutorizacaoTest` :: `rf02T1`–`rf02T3` **removidos** com o método sem uso que testavam.
+
+**Segurança do login (12/11/2026, ~20:15):** token com expiração (30 min sem uso, 8 h no total) e bloqueio de 15 min
+após 5 senhas erradas para o mesmo e-mail (429). `verify` verde: 536 unitários e 19 ITs; linhas 96,05 %, ramos 85,59 %.
+P4 ("expiração de token continua pendente") passa a **feito**.

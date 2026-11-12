@@ -62,6 +62,37 @@ não têm linha nesta matriz. Cada nova entrega de feature deve adicionar aqui o
 requisito, o risco que o teste mitiga, o(s) teste(s) correspondente(s) e a forma de
 execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
 
+## Auditoria por mutação manual (2026-11-11, commit-base `ee540c5`)
+
+Detalhes, comandos e resultados: [testes/mutacao-manual.md](testes/mutacao-manual.md). Foram 33 quebras de regra no
+código de produção, uma por vez, cada uma desfeita com `git restore`. Os testes ligados detectaram 30 delas. As 3
+lacunas (D3, A2, U8) ganharam os testes abaixo, que **foram executados só localmente e ainda não têm run de CI**.
+Por isso esta seção não conta como evidência até o próximo CI verde.
+
+| Requisito | Risco | Teste (caminho :: nome) | Evidência / Execução |
+|---|---|---|---|
+| RF-12 — Material restrito também faz a reserva nascer `SOLICITADA` | Material restrito tratado como livre: reserva nasce `APROVADA` sem avaliação (mutante A2 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AprovacaoRecursosRestritosTest.java` :: `rf12T2_materialRestrito_reservaNasceSolicitada` | Local: verde no código original; vermelho com A2 (3/3). **CI pendente** |
+| RF-17 — Exatamente uma reserva no modo em memória (padrão da aplicação) | Sem o lock do serviço, duas criações passam juntas pela checagem e as duas gravam (mutante D3 sobrevivia a unitários e ITs) | `src/test/java/com/edualoca/ConcorrenciaReservaEmMemoriaTest.java` :: `criacoesSimultaneasNaChecagem_soUmaEAceita` | Local: verde no código original; vermelho com D3 (3/3, "aceitas expected 1 but was 2"). **CI pendente** |
+| RF-28 — Toda escrita de cadastro (sala, professor, material, manutenção, inativação) gera exatamente um evento de auditoria | Escrita de cadastro sem rastro (mutante U8 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AuditoriaCadastroTest.java` :: `escritaDeCadastroGeraAuditoria` (7 casos) | Local: verde no código original; vermelho com U8 (3/3). **CI pendente** |
+
+Correções de rastreabilidade apontadas pela mutação. São testes que já estavam verdes no CI `ee540c5` e que eram os
+únicos a detectar a quebra, mas não estavam citados nas linhas acima:
+
+- RF-15 / RF-16 (modo em memória): `src/test/java/com/edualoca/RegrasCriticasTest.java` :: `rc02T3`–`rc02T9`;
+  `RejeicaoSobreposicaoAuditoriaTest` :: `alteracaoRecusadaPorSobreposicao_gravaRejeicao` (mutantes S2, S3, S4, S6).
+- RF-19: `src/test/java/com/edualoca/AprovacaoRecursosRestritosTest.java` :: `rf19T3_solicitanteTentaAprovar_deveRetornar403`
+  (único a detectar A3) e `rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado` (único a detectar A5).
+- RF-23: `RegrasCriticasTest` :: `rc04T5_manutencaoSobrepoeReservaEmUso_exigeConfirmacaoOuRecusa` (único a detectar M4).
+
+Testes que **não** servem de evidência, embora estejam verdes: `AuditoriaTest` :: `rf27T1`, `rf28T1`, `rf28T2`
+(passam com qualquer código, porque `AuditoriaService.consultarPorEntidade` inventa um evento quando não há nenhum) e
+`AprovacaoRecursosRestritosTest` :: `rf18T1` (recebe 409 por "reserva inexistente" e não exercita a transição para
+`EM_USO`).
+
+**Requisitos críticos com evidência no commit `ee540c5`: 19 de 32 (59,4%).** Sem evidência: RF-04, RF-05, RF-06,
+RF-18, RF-24, RF-25, RF-28, RNF-05, RNF-07, RNF-10, RNF-11, RNF-12, RNF-15 (RNF-10 e RNF-12 têm execução no CI, mas
+não têm linha nesta matriz). A tabela completa está em [testes/mutacao-manual.md §4](testes/mutacao-manual.md).
+
 ## Relatório de utilização (`GET /relatorios/utilizacao`)
 
 Testes de API em caixa-preta: a massa (4 recursos, 5 reservas, 1 cancelamento, 3 tentativas recusadas) é criada

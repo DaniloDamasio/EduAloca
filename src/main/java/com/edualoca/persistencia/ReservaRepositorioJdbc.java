@@ -19,6 +19,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -69,6 +70,12 @@ public class ReservaRepositorioJdbc implements ReservaRepositorio {
     @Override
     public Reserva buscar(UUID id) {
         return Banco.reservas.get(id);
+    }
+
+    /** Mesma fonte de {@link #buscar}: o cache preenchido depois do commit. */
+    @Override
+    public List<Reserva> listar() {
+        return List.copyOf(Banco.reservas.values());
     }
 
     @Override

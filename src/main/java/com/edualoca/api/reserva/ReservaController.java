@@ -44,6 +44,12 @@ public class ReservaController {
                 requisicao.finalidade(), recursos(requisicao.recursos())));
     }
 
+    /** Reservas visiveis ao usuario do token (filtro por perfil e competencia em {@link ReservaService#listar}). */
+    @GetMapping
+    public List<ReservaResposta> listar(@UsuarioAutenticado Usuario usuario) {
+        return reservaService.listar(usuario).stream().map(ReservaResposta::de).toList();
+    }
+
     @GetMapping("/{id}")
     public ReservaResposta consultar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         return ReservaResposta.de(reservaService.consultar(usuario, id));
@@ -68,6 +74,12 @@ public class ReservaController {
     @PostMapping("/{id}/aprovacao")
     public ReservaResposta aprovar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         return ReservaResposta.de(reservaService.aprovar(usuario, id));
+    }
+
+    /** RF-18 / P-07: APROVADA -> EM_USO, por Responsavel competente ou Administrador. */
+    @PostMapping("/{id}/inicio-uso")
+    public ReservaResposta iniciarUso(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return ReservaResposta.de(reservaService.iniciarUso(usuario, id));
     }
 
     @PostMapping("/{id}/rejeicao")

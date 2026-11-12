@@ -4,6 +4,7 @@ import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.Intervalos;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /** Persistencia em memoria sobre {@link Banco#reservas}; comportamento original do sistema. */
@@ -17,6 +18,11 @@ public class ReservaRepositorioEmMemoria implements ReservaRepositorio {
     @Override
     public Reserva buscar(UUID id) {
         return Banco.reservas.get(id);
+    }
+
+    @Override
+    public List<Reserva> listar() {
+        return List.copyOf(Banco.reservas.values());
     }
 
     @Override

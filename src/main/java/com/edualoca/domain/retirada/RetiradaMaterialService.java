@@ -8,6 +8,8 @@ import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.usuario.Usuario;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 public class RetiradaMaterialService {
@@ -48,6 +50,21 @@ public class RetiradaMaterialService {
         registro.setDataDevolucao(dataHora);
         registro.setCondicaoDevolucao(condicao);
         return registro;
+    }
+
+    /** Registros de retirada da reserva, do mais antigo para o mais recente. */
+    public List<RegistroRetirada> listarPorReserva(UUID reservaId) {
+        Banco.seedSeNecessario();
+        return Banco.retiradas.values().stream()
+                .filter(r -> r.getReservaId().equals(reservaId))
+                .sorted(Comparator.comparing(RegistroRetirada::getDataRetirada))
+                .toList();
+    }
+
+    /** Registro de retirada pelo id, ou {@code null}. */
+    public RegistroRetirada buscar(UUID registroRetiradaId) {
+        Banco.seedSeNecessario();
+        return Banco.retiradas.get(registroRetiradaId);
     }
 
     public void sinalizarPendencias(LocalDateTime agora) {

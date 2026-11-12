@@ -11,6 +11,7 @@ import com.edualoca.domain.usuario.Usuario;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -213,6 +214,22 @@ public class ReservaService {
     }
 
     /**
+     * Reservas visiveis ao usuario, da mais proxima para a mais distante: o Solicitante ve so as proprias; o Responsavel,
+     * as que ele pode decidir (mesma regra de competencia de {@link #aprovar}); o Administrador, todas.
+     */
+    public List<Reserva> listar(Usuario autor) {
+        Banco.seedSeNecessario();
+        return repositorio.listar().stream()
+                .filter(reserva -> switch (autor.getPerfil()) {
+                    case SOLICITANTE -> reserva.getSolicitanteId().equals(autor.getId());
+                    case RESPONSAVEL -> ehDecisorCompetente(autor, reserva);
+                    case ADMINISTRADOR -> true;
+                })
+                .sorted(Comparator.comparing(Reserva::getInicio).thenComparing(r -> r.getId().toString()))
+                .toList();
+    }
+
+    /**
      * Historico auditavel da reserva, so para Responsavel e Administrador. O perfil e checado antes da existencia
      * para que o Solicitante nao descubra quais ids de reserva existem.
      */
@@ -264,17 +281,20 @@ public class ReservaService {
      * Responsavel, como antes, ate o vinculo responsavel-recurso ser modelado (registrado em DEF-010).
      */
     private static void exigirDecisorCompetente(Usuario autor, Reserva reserva, String acao) {
-        if (autor.getPerfil() == Perfil.ADMINISTRADOR) {
-            return;
-        }
-        List<Sala> salas = reserva.getRecursos().stream().map(ReservaRecurso::getRecurso)
-                .filter(Sala.class::isInstance).map(Sala.class::cast).toList();
-        boolean competente = salas.isEmpty() || salas.stream()
-                .anyMatch(sala -> autor.getId().equals(Banco.responsavelPorLocalizacao.get(sala.getLocalizacao())));
-        if (!competente) {
+        if (!ehDecisorCompetente(autor, reserva)) {
             throw new RegraNegocioException(403,
                     "Apenas o Responsavel pelo local do recurso (ou o Administrador) pode " + acao + " esta reserva");
         }
+    }
+
+    private static boolean ehDecisorCompetente(Usuario autor, Reserva reserva) {
+        if (autor.getPerfil() == Perfil.ADMINISTRADOR) {
+            return true;
+        }
+        List<Sala> salas = reserva.getRecursos().stream().map(ReservaRecurso::getRecurso)
+                .filter(Sala.class::isInstance).map(Sala.class::cast).toList();
+        return salas.isEmpty() || salas.stream()
+                .anyMatch(sala -> autor.getId().equals(Banco.responsavelPorLocalizacao.get(sala.getLocalizacao())));
     }
 
     /**

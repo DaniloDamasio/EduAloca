@@ -7,15 +7,18 @@ public class RegistroRetirada {
 
     private final UUID id;
     private final UUID reservaId;
+    /** Material retirado (RF-24, DEF-014). */
+    private final UUID itemId;
     private final UUID autorId;
     private final LocalDateTime dataRetirada;
     private LocalDateTime dataDevolucao;
     private CondicaoItem condicaoDevolucao;
     private boolean pendenciaSinalizada = false;
 
-    public RegistroRetirada(UUID id, UUID reservaId, UUID autorId, LocalDateTime dataRetirada) {
+    public RegistroRetirada(UUID id, UUID reservaId, UUID itemId, UUID autorId, LocalDateTime dataRetirada) {
         this.id = id;
         this.reservaId = reservaId;
+        this.itemId = itemId;
         this.autorId = autorId;
         this.dataRetirada = dataRetirada;
     }
@@ -26,6 +29,10 @@ public class RegistroRetirada {
 
     public UUID getReservaId() {
         return reservaId;
+    }
+
+    public UUID getItemId() {
+        return itemId;
     }
 
     public UUID getAutorId() {

@@ -1,11 +1,8 @@
 # RTM — Matriz de Rastreabilidade de Requisitos
 
-> **Status: cobertura inicial.** Este arquivo começa com os requisitos efetivamente
-> cobertos pela entrega do adapter HTTP de notificação externa (WireMock). Ele **não**
-> representa ainda 100% dos requisitos críticos listados em
-> [REQUISITOS.md](REQUISITOS/REQUISITOS.md) — RNF-11 exige essa cobertura completa, o que
-> é um trabalho incremental, não esgotado nesta entrega. Novas linhas devem ser
-> adicionadas à medida que cada requisito crítico ganha teste e evidência formal.
+> **Status (2026-11-12):** os 32 requisitos críticos de [REQUISITOS.md](REQUISITOS/REQUISITOS.md) têm linha nesta
+> matriz. A seção "Correções do relatório de qualidade" registra os 12 que faltavam; a evidência de CI dessa seção é
+> a do PR das correções.
 
 | Requisito | Risco | Teste | Evidência / Execução |
 |---|---|---|---|
@@ -57,10 +54,9 @@ não comparecimento (P-05, P-07, P-08). Todos aguardam decisão do PRD.
 
 ## Pendências de cobertura (RNF-11)
 
-Os demais RFs/RNFs críticos listados em [REQUISITOS.md](REQUISITOS/REQUISITOS.md) ainda
-não têm linha nesta matriz. Cada nova entrega de feature deve adicionar aqui o
-requisito, o risco que o teste mitiga, o(s) teste(s) correspondente(s) e a forma de
-execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
+Fechadas na seção "Correções do relatório de qualidade (2026-11-12)", abaixo. Cada nova entrega de feature continua
+devendo adicionar aqui o requisito, o risco que o teste mitiga, os testes correspondentes e a forma de
+execução/evidência.
 
 ## Auditoria por mutação manual (2026-11-11, commit-base `ee540c5`)
 
@@ -95,6 +91,33 @@ foram reescritos com ações reais, e cada um derruba um mutante de auditoria. O
 (RF-28 passou a ter teste real verde no CI, e as partes de RF-12 e RF-17 que estavam descobertas foram fechadas).
 Sem evidência: RF-04, RF-05, RF-06, RF-18, RF-24, RF-25, RNF-05, RNF-07, RNF-10, RNF-11, RNF-12, RNF-15 (RNF-10 e RNF-12 têm execução no CI, mas
 não têm linha nesta matriz). A tabela completa está em [testes/mutacao-manual.md §4](testes/mutacao-manual.md).
+
+## Correções do relatório de qualidade (2026-11-12)
+
+Origem: [relatorio-qualidade.md](relatorio-qualidade.md) (12 críticos sem evidência em `a670c68`). Auditoria por
+mutação: [testes/mutacao-manual.md §6](testes/mutacao-manual.md). Execução: `./mvnw -B verify` (Surefire/Failsafe), a
+cada PR no CI. **CI destas linhas:** run [43238556274](https://github.com/DaniloDamasio/EduAloca/actions/runs/43238556274) (`eb4b3af`, PR #13): 429 unitários (3 pulados) e 14 ITs, 0 falhas; linhas 96,96%, ramos 87,10%.
+
+| Requisito | Risco | Teste (caminho :: nome) | Commit / Evidência |
+|---|---|---|---|
+| RF-04 — CRUD de sala: criação, edição e inativação refletidas na consulta; campos obrigatórios validados | Sala editada sem refletir na busca; campo obrigatório vazio aceito; escrita sem auditoria | `src/test/java/com/edualoca/CrudRecursoTest.java` :: `SalaCrud.*`; `src/test/java/com/edualoca/CadastroConsultaTest.java` :: `rf04T1`–`rf04T6` | [DEF-015](defeitos/DEF-015-crud-de-recursos-incompleto.md) red `fd4d18c` · green `2c9b98c`; lacunas C1/C3 `7046cf0`; mutantes C1–C3, C8–C14, C24 mortos |
+| RF-05 — CRUD de professor (nome, identificador, competências) | Professor duplicado, sem nome ou sem identificador; edição/inativação sem efeito na busca | `CrudRecursoTest` :: `ProfessorCrud.*`; `CadastroConsultaTest` :: `rf05T1`–`rf05T3` | DEF-015 `fd4d18c` · `2c9b98c`; C4, C5, C15–C19 mortos |
+| RF-06 — CRUD de material (nome, tipo, quantidade, restrição) | Material sem tipo ou com quantidade ≤ 0; edição/inativação sem efeito na busca | `CrudRecursoTest` :: `MaterialCrud.*`; `CadastroConsultaTest` :: `rf06T1`–`rf06T3` | DEF-015 `fd4d18c` · `2c9b98c`; C6, C7, C20–C23 mortos |
+| RF-11 — Busca exclui recurso em manutenção, para **qualquer** tipo | Professor ou material em manutenção oferecido na busca | `src/test/java/com/edualoca/BuscaRecursoEmManutencaoTest.java` (3 casos) | [DEF-012](defeitos/DEF-012-busca-oferece-professor-e-material-em-manutencao.md) red `e16a14f` · green `69d04af` |
+| RF-18 — Só `APROVADA` vai para `EM_USO`; restrita `SOLICITADA` nunca pula a aprovação (P-07: início manual por Responsável competente ou Administrador) | Uso iniciado sem aprovação, por perfil indevido ou sem histórico/auditoria | `src/test/java/com/edualoca/InicioUsoReservaTest.java` (6 casos) | red `820e634` · green `a9fd840`; I1–I5 mortos. `rf18T1`, que não exercitava a regra, virou `rf19T5` (`e99efed`) |
+| RF-24 — Retirada vincula reserva + item + autor + instante, só em `EM_USO`, ciclo por item | Item não registrado; material de fora da reserva retirado; retirada fora de `EM_USO` | `src/test/java/com/edualoca/RetiradaVinculoItemTest.java`; `RetiradaDevolucaoMaterialTest` :: `rf24T1`–`rf24T3`; `InicioUsoReservaTest` :: `fluxoReal_permiteRetiradaSoDepoisDoInicioDoUso` | [DEF-014](defeitos/DEF-014-retirada-nao-vincula-item.md) red `109aace` · green `e5c5859`; R1–R4, R8, R9, R11 mortos |
+| RF-25 — Devolução encerra o ciclo aberto correspondente, com condição | Devolução repetida reescreve data/condição; devolução sem condição aceita | `RetiradaVinculoItemTest` :: `devolucaoDeCicloEncerrado_eRecusadaSemSobrescrever`; `RetiradaDevolucaoMaterialTest` :: `rf25T1`–`rf25T4` | DEF-014 `109aace` · `e5c5859`; R5–R7, R10 mortos |
+| RNF-05 — Senha armazenada com hash com sal, nunca em claro | Vazamento do armazenamento expõe todas as senhas | `src/test/java/com/edualoca/ArmazenamentoSenhaTest.java` (4 casos) | [DEF-013](defeitos/DEF-013-senha-armazenada-em-texto-plano.md) red `3835d8b` · green `2926f0e`; P1–P3 mortos |
+| RNF-07 — SonarCloud da `main` sem issue Critical/Blocker | Teste sem asserção passa por qualquer código; regex super-linear | Correção em `AutenticacaoAutorizacaoTest` (`rf02T1`, `rf03T1`) e nos dois ITs de concorrência | `11ba3b3`. SonarCloud do PR #13: quality gate OK, 0 issues novos, 0 hotspots. A baixa dos 2 BLOCKER só aparece na análise da `main` depois do merge |
+| RNF-10 — JaCoCo ≥ 80% linhas e ≥ 70% ramos | Cobertura cai sem ninguém notar | Gate `jacoco:check` (regra `BUNDLE`) no `pom.xml`, na fase `verify` | Run 43126611038 (`a670c68`): 96,53% linhas e 87,04% ramos ([relatório](relatorio-qualidade.md), A-03); CI destas correções: 96,96% linhas e 87,10% ramos (run 43238556274) |
+| RNF-12 — CI com build, testes e análise em todo PR, bloqueando merge | Merge sem CI verde | `.github/workflows/ci.yml`; proteção da `main` (check obrigatório "Build e Testes", `strict`, `enforce_admins`) | PRs #4–#12 com CI verde; #1–#3 anteriores ao workflow ([relatório](relatorio-qualidade.md), A-09) |
+| RNF-15 — Camadas separadas (apresentação, domínio, persistência, integração) | Domínio acoplado a framework web/JDBC ou à API | `src/test/java/com/edualoca/ArquiteturaCamadasTest.java` (4 regras) | red `d0f8ed4` · green `cbe3f53` (adaptador HTTP de notificação movido para `com.edualoca.integracao`); Q1 morto |
+| RNF-11 — 100% dos críticos com teste e evidência | RTM incompleta | Esta seção, mais as anteriores | Ver contagem abaixo |
+
+**Contagem:** com as linhas acima, os 32 requisitos críticos têm linha na RTM com risco, teste localizável e
+mutação. Pelo critério de [mutacao-manual.md §4](testes/mutacao-manual.md) (teste verde no CI), **31 de 32 estão confirmados**
+no run 43238556274. O 32º, RNF-07, depende da análise do SonarCloud da `main` depois do merge do PR #13 mostrar
+0 issues Blocker/Critical. O PR não introduz nenhum issue, e os dois BLOCKER estão corrigidos no código.
 
 ## Relatório de utilização (`GET /relatorios/utilizacao`)
 

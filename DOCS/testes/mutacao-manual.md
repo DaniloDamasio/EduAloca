@@ -217,7 +217,65 @@ entra, e RF-12 e RF-17 deixam de ter parte descoberta, então a taxa estrita tam
 2. ~~Corrigir `AuditoriaService.consultarPorEntidade` e reescrever `AuditoriaTest.rf27T1`, `rf28T1` e `rf28T2`.~~
    Feito em [DEF-011](../defeitos/DEF-011-auditoria-inventa-evento-inexistente.md) (`1826216` red, `fc5fe22` green).
    Verde no CI (run 43125582350).
-3. Excluir da busca o professor e o material em manutenção (`PesquisaRecursoService`, candidato a DEF-012).
-4. RF-18: decidir P-05 (iniciar uso) e, até lá, remover ou renomear `rf18T1`, que não testa o que o nome diz.
-5. Abrir linhas na RTM, com risco e auditoria por mutação, para RF-04/05/06, RF-24/25, RNF-05, RNF-07, RNF-10,
-   RNF-12 e RNF-15.
+3. ~~Excluir da busca o professor e o material em manutenção.~~ Feito em [DEF-012](../defeitos/DEF-012-busca-oferece-professor-e-material-em-manutencao.md) (red `e16a14f`, green `69d04af`).
+4. ~~RF-18: decidir o início de uso e renomear `rf18T1`.~~ P-07 decidida em 12/11/2026 (início manual por Responsável competente ou Administrador); `ReservaService.iniciarUso` (red `820e634`, green `a9fd840`); `rf18T1` virou `rf19T5` (`e99efed`). Ver §6.
+5. ~~Abrir linhas na RTM, com risco e auditoria por mutação, para RF-04/05/06, RF-24/25, RNF-05, RNF-07, RNF-10,
+   RNF-12 e RNF-15.~~ Feito na §6 e na [RTM](../RTM.md), seção "Correções do relatório de qualidade".
+
+## 6. Segunda rodada: requisitos críticos que estavam sem evidência (2026-11-11/12)
+
+Origem: o [relatório de qualidade](../relatorio-qualidade.md) (commit avaliado `a670c68`) apontou 12 requisitos
+críticos sem evidência. Mesmo método da §1 (uma quebra por vez em `src/main`, testes ligados, `git restore`, conferência
+de `git status --porcelain src/main`), executado por script, sempre **depois** de commitar o código sob teste.
+Commit-base da auditoria: `11ba3b3` (branch `correcoes-relatorio-qualidade`).
+
+### 6.1 Antes: testes existentes contra o código existente
+
+| Grupo | Mutantes | Mortos | Sobreviventes |
+|---|---|---|---|
+| Cadastro (RF-04/05/06), C1–C9 | 9 | 5 | **C1** nome da sala não validado; **C3/C5/C7** sala, professor ou material criado não é gravado (os testes só olhavam o objeto devolvido) |
+| Retirada/devolução (RF-24/25), R1–R7 | 7 | 4 | **R1** retirada aceita reserva fora de `EM_USO` (`rf24T2` usava reserva inexistente); **R3/R4** autor ou instante errados (nenhum teste conferia) |
+| **Total** | **16** | **9 (56,3%)** | 7 |
+
+A leitura do código achou, além disso, três defeitos sem mutação possível, porque a regra não existia:
+[DEF-014](../defeitos/DEF-014-retirada-nao-vincula-item.md) (a retirada descarta o item; a devolução reabre ciclo
+encerrado), [DEF-015](../defeitos/DEF-015-crud-de-recursos-incompleto.md) (sem edição para nenhuma entidade, sem
+inativação de professor e material, validação parcial) e a ausência de `APROVADA → EM_USO` (RF-18).
+
+### 6.2 Depois: testes novos contra o código corrigido
+
+| Grupo | IDs | Mortos | Testes novos que mataram |
+|---|---|---|---|
+| Cadastro, incluindo edição, inativação e validação | C1–C24 | 24/24 | `CadastroConsultaTest` (`rf04T5`, `rf04T6`, `rf05T3`, `rf06T3`), `CrudRecursoTest` |
+| Retirada/devolução, incluindo item, ciclo por item e devolução repetida | R1–R11 | 11/11 | `RetiradaVinculoItemTest` |
+| Início de uso (RF-18) | I1–I5 | 5/5 | `InicioUsoReservaTest`. I2 (sem checagem de perfil) só morre no caso de reserva sem sala, como o A3 da §2.3 |
+| Senha (RNF-05, DEF-013): sal fixo, `confere` sempre `true`, `confere` ignora a comparação | P1–P3 | 3/3 | `ArmazenamentoSenhaTest` |
+| Camadas (RNF-15): import de `com.edualoca.api` em `ReservaService` | Q1 | 1/1 | `ArquiteturaCamadasTest` |
+| **Total** | | **44/44** | |
+
+Exemplos de quebra (lista completa no script da rodada, reproduzível pelos trechos citados nos DEFs): C10/C11 tipo
+ou localização sem validação; C12/C17/C21 edição que não aplica; C14/C19/C23 escrita sem auditoria; C24 id
+inexistente sem 404; R8 item fora da reserva aceito; R9 ciclo por reserva; R10 devolução repetida reescreve; I1
+início fora de `APROVADA`; I3 sem checagem de competência; I5 transição sem histórico.
+
+**Limite:** como na §3, é um escore manual com mutantes escolhidos por quem escreveu os testes. Vale para estes 44
+mutantes, não para o código como um todo.
+
+### 6.3 Requisitos críticos com evidência depois da segunda rodada
+
+| Requisito | Antes (`a670c68`) | Agora | Evidência |
+|---|---|---|---|
+| RF-04 / RF-05 / RF-06 | sem evidência | com evidência local | DEF-015; `CrudRecursoTest`, `CadastroConsultaTest`; C1–C24 |
+| RF-11 | só salas | completo | DEF-012; `BuscaRecursoEmManutencaoTest` |
+| RF-18 | sem regra | com evidência local | `InicioUsoReservaTest`; I1–I5 |
+| RF-24 / RF-25 | sem evidência | com evidência local | DEF-014; `RetiradaVinculoItemTest`, `RetiradaDevolucaoMaterialTest`; R1–R11 |
+| RNF-05 | contrariado | com evidência local | DEF-013; `ArmazenamentoSenhaTest`; P1–P3 |
+| RNF-07 | 2 BLOCKER | correção local; confirmação depende da análise do SonarCloud na `main` | `11ba3b3` (S2699 e S8786) |
+| RNF-10 | sem linha na RTM | linha na RTM | gate JaCoCo no CI (relatório A-03) |
+| RNF-12 | sem linha na RTM | linha na RTM | proteção da `main` e PRs com CI verde (relatório A-09) |
+| RNF-15 | sem evidência | com evidência local | `ArquiteturaCamadasTest`; Q1; adaptador HTTP movido (`cbe3f53`) |
+| RNF-11 | não atendido | atendido quando os itens acima estiverem verdes no CI | esta tabela e a [RTM](../RTM.md) |
+
+"Com evidência local" vira "com evidência" pelo critério da §4 (teste verde no CI) quando o PR destas correções
+rodar. O run fica registrado na RTM.
+

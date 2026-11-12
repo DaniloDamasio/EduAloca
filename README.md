@@ -117,6 +117,18 @@ Isso roda toda a suíte (unitária e de integração) e o gate de cobertura do J
 sobem um servidor WireMock em porta dinâmica — não dependem de rede externa nem de
 nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
 
+Os 4 testes de integração com PostgreSQL (`*IT`, Testcontainers) precisam de um Docker acessível. Com **Colima** no
+macOS, o Testcontainers não encontra o socket sozinho e os ITs falham com "Could not find a valid Docker
+environment". Nesse caso:
+
+```
+DOCKER_HOST=unix://$HOME/.colima/default/docker.sock \
+TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+./mvnw -B verify
+```
+
+Com Docker Desktop ou no CI (`ubuntu-latest`), basta `./mvnw -B verify`.
+
 ## Especificação executável (BDD com Cucumber)
 
 Os cenários de API de [DOCS/testes/bdd-aprovacao-bloqueio.md](DOCS/testes/bdd-aprovacao-bloqueio.md)
@@ -190,6 +202,12 @@ memória; com PostgreSQL, reservas e conflitos anteriores a um reinício da apli
 
 Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de salas).
 
+- **Login e senhas (RF-01, RNF-05, DEF-013):** `POST /auth/login` troca e-mail e senha por um token. A senha
+  nunca é guardada em claro: `Banco.credenciais` guarda só `pbkdf2-sha256$600000$<sal>$<hash>` (PBKDF2-HMAC-SHA256
+  do JDK, sal aleatório de 16 bytes por conta). A conferência compara em tempo constante e, para e-mail
+  inexistente, faz a mesma derivação contra um hash fictício, de modo que a resposta (401, mesma mensagem) e o tempo
+  não revelam se a conta existe. As contas de demonstração do seed têm senha fixa no código: servem para teste e
+  demonstração, não para implantação.
 - **Autenticação:** toda rota exige `Authorization: Bearer <token>`. O token é opaco, gerado
   com `SecureRandom` (256 bits) e resolvido no servidor (`TokenService`). Sem token ou com
   token desconhecido, a resposta é 401. O token nunca vai na URL.
@@ -209,14 +227,15 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   366 dias para conter o custo da consulta.
 - **Entrada (RNF-04):** JSON malformado, data fora do formato ISO, tipo/id de recurso
   inexistente, quantidade < 1 ou mais de 50 recursos por reserva resultam em 400.
-- **Erros (RF-38, RNF-06):** corpo único `{"mensagem": ...}`, sem stacktrace, nome de classe
-  ou mensagem de framework. Erro inesperado vira 500 genérico; o detalhe fica só no log.
-- **Limitações conhecidas (decisão pendente):** ainda não há endpoint de login que emita
-  token a partir de credencial (RF-01). Os tokens ficam em memória, sem expiração nem
-  revogação, e não há rate limit. Isso vale para esta fase acadêmica sem persistência e
+- **Erros (RF-38, RNF-06, DEF-002):** `application/problem+json` (ProblemDetail, RFC 9457), sem stacktrace, nome
+  de classe ou mensagem de framework. Erro inesperado vira 500 genérico; o detalhe fica só no log.
+- **Limitações conhecidas (decisão pendente):** os tokens ficam em memória, sem expiração nem
+  revogação, e não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem persistência e
   deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling
-  no login). A auditoria do cadastro de manutenção registra autor `null` (RF-28): é um
-  comportamento herdado de `CadastroRecursoService`.
+  no login). A auditoria de cadastro (criação, edição, inativação e manutenção) registra autor
+  `null` (RF-28), porque `CadastroRecursoService` não recebe o usuário. O cadastro, a retirada/devolução e o início
+  de uso ainda não têm rota HTTP. A checagem de perfil do início de uso (RF-18) está no domínio; as de cadastro e
+  retirada só existirão quando houver rota.
 
 ## Roadmap
 

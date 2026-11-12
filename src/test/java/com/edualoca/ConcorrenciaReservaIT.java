@@ -31,6 +31,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConcorrenciaReservaIT {
 
     private static final int SOLICITACOES = 20;
+    /** Id da reserva no corpo 201. Sem ".*" nas pontas: busca linear (Sonar java:S8786). */
+    private static final Pattern ID_NA_RESPOSTA = Pattern.compile("\"id\"\\s*:\\s*\"([0-9a-f-]{36})\"");
     private static final LocalDateTime INICIO = LocalDateTime.of(2027, 3, 15, 8, 0);
     private static final LocalDateTime FIM = LocalDateTime.of(2027, 3, 15, 10, 0);
 
@@ -129,7 +133,9 @@ class ConcorrenciaReservaIT {
                         "linhas no banco para " + tipo + " " + recursoId + " em [" + INICIO + ", " + FIM + ")"),
                 () -> assertEquals(1, reservasGravadas, "linhas na tabela reserva"));
 
-        String idAceito = aceitas.getFirst().body().replaceAll(".*\"id\"\\s*:\\s*\"([0-9a-f-]{36})\".*", "$1");
+        Matcher id = ID_NA_RESPOSTA.matcher(aceitas.getFirst().body());
+        assertTrue(id.find(), "a resposta 201 deve trazer o id da reserva");
+        String idAceito = id.group(1);
         UUID idNoBanco = jdbc.queryForObject("SELECT id FROM reserva", UUID.class);
         assertEquals(idNoBanco.toString(), idAceito, "a linha gravada deve ser a da resposta 201");
     }

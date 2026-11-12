@@ -155,6 +155,29 @@ public class ReservaService {
         return reserva;
     }
 
+    /**
+     * RF-18 / P-07 (decisao de 12/11/2026: inicio manual). So {@code APROVADA} vai para {@code EM_USO}: reserva
+     * restrita {@code SOLICITADA} nunca pula a aprovacao. Mesmo controle de acesso da aprovacao: Administrador, ou
+     * Responsavel do local, checado antes do estado. Grava historico e um evento {@code INICIO_USO}.
+     */
+    public Reserva iniciarUso(Usuario ator, UUID reservaId) {
+        Banco.seedSeNecessario();
+        if (ator.getPerfil() != Perfil.RESPONSAVEL && ator.getPerfil() != Perfil.ADMINISTRADOR) {
+            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem iniciar o uso da reserva");
+        }
+        Reserva reserva = repositorio.buscar(reservaId);
+        if (reserva == null) {
+            throw new RegraNegocioException(409, "Reserva nao esta APROVADA para iniciar o uso");
+        }
+        exigirDecisorCompetente(ator, reserva, "iniciar o uso de");
+        if (reserva.getEstado() != EstadoReserva.APROVADA) {
+            throw new RegraNegocioException(409, "Reserva nao esta APROVADA para iniciar o uso");
+        }
+        transicionar(reserva, ator, "Inicio do uso", () -> reserva.setEstado(EstadoReserva.EM_USO));
+        AuditoriaService.registrar("Reserva", reserva.getId(), "INICIO_USO", ator.getId(), LocalDateTime.now(clock));
+        return reserva;
+    }
+
     public Reserva rejeitar(Usuario responsavel, UUID reservaId, String justificativa) {
         Banco.seedSeNecessario();
         if (responsavel.getPerfil() != Perfil.RESPONSAVEL && responsavel.getPerfil() != Perfil.ADMINISTRADOR) {

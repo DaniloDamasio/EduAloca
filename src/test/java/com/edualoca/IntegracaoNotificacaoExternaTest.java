@@ -1,6 +1,6 @@
 package com.edualoca;
 
-import com.edualoca.domain.notificacao.NotificacaoHttpAdapter;
+import com.edualoca.integracao.NotificacaoHttpAdapter;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;

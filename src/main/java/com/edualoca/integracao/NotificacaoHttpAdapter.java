@@ -1,5 +1,6 @@
-package com.edualoca.domain.notificacao;
+package com.edualoca.integracao;
 
+import com.edualoca.domain.notificacao.NotificacaoService;
 import com.edualoca.domain.reserva.Reserva;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.JdkClientHttpRequestFactory;

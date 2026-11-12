@@ -2,7 +2,9 @@ package com.edualoca;
 
 import com.edualoca.domain.auditoria.AuditoriaEvento;
 import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.CadastroRecursoService;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.reserva.ReservaRecurso;
@@ -26,42 +28,81 @@ class AuditoriaTest {
     private final AuditoriaService auditoriaService = new AuditoriaService();
 
     @Test
-    @DisplayName("RF-27-T1: qualquer transicao de estado de reserva deve gerar registro de auditoria correspondente")
+    @DisplayName("DEF-011: entidade sem nenhum evento devolve lista vazia, sem evento inventado")
+    void def011_entidadeSemEventos_devolveListaVazia() {
+        // arrange
+        UUID reservaQueNuncaExistiu = UUID.randomUUID();
+        UUID salaQueNuncaExistiu = UUID.randomUUID();
+
+        // act
+        List<AuditoriaEvento> eventosReserva = auditoriaService.consultarPorEntidade("Reserva", reservaQueNuncaExistiu);
+        List<AuditoriaEvento> eventosSala = auditoriaService.consultarPorEntidade("Sala", salaQueNuncaExistiu);
+
+        // assert
+        assertTrue(eventosReserva.isEmpty(), "eventos inventados para reserva: " + eventosReserva);
+        assertTrue(eventosSala.isEmpty(), "eventos inventados para sala: " + eventosSala);
+    }
+
+    /** Reescrito (DEF-011): antes consultava um id aleatorio e so passava pelo evento inventado na consulta. */
+    @Test
+    @DisplayName("RF-27-T1: aprovacao real de reserva gera evento APROVACAO com o Responsavel como autor")
     void rf27T1_transicaoDeEstadoDeReserva_deveGerarAuditoria() {
         // arrange
-        UUID reservaId = UUID.randomUUID();
+        ReservaService reservaService = new ReservaService();
+        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
+        Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
+        Sala salaRestrita = new Sala(UUID.randomUUID(), "Sala restrita", "aula", 20, "Bloco A", true);
+        Reserva reserva = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 12, 10, 0),
+                LocalDateTime.of(2026, 3, 12, 12, 0), "Aula especial", List.of(new ReservaRecurso(salaRestrita, 1)));
 
         // act
-        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", reservaId);
+        reservaService.aprovar(responsavel, reserva.getId());
+        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", reserva.getId());
 
         // assert
-        assertFalse(eventos.isEmpty());
+        assertEquals(1, eventos.stream().filter(e -> "APROVACAO".equals(e.getAcao())
+                && responsavel.getId().equals(e.getAutorId())).count());
     }
 
+    /** Reescrito (DEF-011): antes consultava um id aleatorio e so passava pelo evento inventado na consulta. */
     @Test
-    @DisplayName("RF-28-T1: alteracao de cadastro (sala/professor/material/usuario/manutencao) deve gerar entrada de auditoria")
+    @DisplayName("RF-28-T1: cadastro real de sala gera entrada de auditoria CRIACAO para a sala")
     void rf28T1_alteracaoDeCadastro_deveGerarAuditoria() {
         // arrange
-        UUID salaId = UUID.randomUUID();
+        CadastroRecursoService cadastro = new CadastroRecursoService();
 
         // act
-        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Sala", salaId);
+        Sala sala = cadastro.cadastrarSala("Lab auditado", "laboratorio", 25, "Bloco C", false);
+        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Sala", sala.getId());
 
         // assert
-        assertFalse(eventos.isEmpty());
+        assertEquals(List.of("CRIACAO"), eventos.stream().map(AuditoriaEvento::getAcao).toList());
     }
 
+    /** Reescrito (DEF-011): antes consultava um id aleatorio e so passava pelo evento inventado na consulta. */
     @Test
-    @DisplayName("RF-28-T2 [gap/inconsistencia Q21, assumindo valor REJEICAO_SOBREPOSICAO]: rejeicao automatica por sobreposicao deve gravar acao REJEICAO_SOBREPOSICAO")
+    @DisplayName("RF-28-T2: rejeicao real por sobreposicao grava REJEICAO_SOBREPOSICAO com quem tentou como autor")
     void rf28T2_rejeicaoAutomaticaPorSobreposicao_deveGravarAcaoEspecifica() {
         // arrange
-        UUID reservaRejeitadaPorSobreposicaoId = UUID.randomUUID();
+        ReservaService reservaService = new ReservaService();
+        Usuario primeiro = new Usuario(UUID.randomUUID(), "primeiro@example.com", "hash", Perfil.SOLICITANTE);
+        Usuario segundo = new Usuario(UUID.randomUUID(), "segundo@example.com", "hash", Perfil.SOLICITANTE);
+        Sala sala = new Sala(UUID.randomUUID(), "Sala disputada", "aula", 30, "Bloco B", false);
+        LocalDateTime inicio = LocalDateTime.of(2026, 3, 13, 10, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 3, 13, 12, 0);
+        reservaService.criar(primeiro, inicio, fim, "Primeira", List.of(new ReservaRecurso(sala, 1)));
 
         // act
-        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", reservaRejeitadaPorSobreposicaoId);
+        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
+                () -> reservaService.criar(segundo, inicio, fim, "Segunda", List.of(new ReservaRecurso(sala, 1))));
 
         // assert
-        assertEquals("REJEICAO_SOBREPOSICAO", eventos.get(0).getAcao());
+        assertEquals(409, ex.getStatusHttp());
+        AuditoriaEvento rejeicao = Banco.auditoria.stream()
+                .filter(e -> "REJEICAO_SOBREPOSICAO".equals(e.getAcao()) && segundo.getId().equals(e.getAutorId()))
+                .findFirst().orElseThrow(() -> new AssertionError("rejeicao por sobreposicao nao auditada"));
+        List<AuditoriaEvento> eventos = auditoriaService.consultarPorEntidade("Reserva", rejeicao.getEntidadeId());
+        assertEquals(List.of("REJEICAO_SOBREPOSICAO"), eventos.stream().map(AuditoriaEvento::getAcao).toList());
     }
 
     @Test

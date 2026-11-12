@@ -105,6 +105,63 @@ Runs de validação do pipeline (PR [#4](https://github.com/DaniloDamasio/EduAlo
 | [40528813431](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528813431) | ❌ vermelho | Asserção quebrada de propósito para validar falha do CI |
 | [40528932207](https://github.com/DaniloDamasio/EduAloca/actions/runs/40528932207) | ✅ verde | Após reverter a quebra, pipeline volta a passar |
 
+## Executando a Aplicação e a Interface Web
+
+Pré-requisito: JDK 21. O modo padrão guarda os dados em memória e não precisa de banco nem de Docker.
+
+```
+./mvnw -B package -DskipTests
+java -jar target/edualoca-0.0.1-SNAPSHOT.jar
+```
+
+Abra <http://localhost:8080/>. A interface (HTML, CSS e JavaScript puros, sem dependências) é servida pela própria
+aplicação a partir de [src/main/resources/static](src/main/resources/static), adapta-se a celular e desktop e consome
+só a API pública abaixo. Os dados voltam ao seed a cada reinício.
+
+### Contas de demonstração
+
+A tela de login tem um botão para cada conta. As senhas são de seed e servem só para teste e demonstração.
+
+| Perfil | E-mail | Senha | O que vê na interface |
+|---|---|---|---|
+| Solicitante | `usuario@example.com` | `senhaValida123` | Buscar e reservar; Minhas reservas (alterar horário, cancelar) |
+| Solicitante (2º) | `novo@example.com` | `minhaSenha123` | Idem, para mostrar que um não vê a reserva do outro |
+| Responsável (Bloco A) | `responsavel@example.com` | `senhaResponsavel123` | Aprovações e uso (aprovar, rejeitar, iniciar uso, retirada/devolução, histórico); Relatório |
+| Responsável (Bloco B) | `responsavel.b@example.com` | `senhaResponsavelB123` | Idem, só para reservas com sala do Bloco B |
+| Administrador | `admin@example.com` | `senhaAdmin123` | Tudo do Responsável, em qualquer bloco, mais Cadastro e manutenção |
+
+### Roteiro de demonstração (cerca de 5 minutos)
+
+1. **Administrador** → *Cadastro e manutenção*: cadastre a sala "Lab de Robótica" no Bloco A marcada como **restrita** e o
+   material "Kit Arduino" (5 unidades). O seed não tem recurso restrito, então é esse passo que habilita o fluxo de aprovação.
+2. **Solicitante** → *Buscar e reservar*: busque salas do Bloco A, adicione o Lab de Robótica; troque o tipo para
+   Material, busque `kit` e adicione 2 unidades; informe a finalidade e solicite. A reserva nasce **Solicitada**.
+3. Ainda como Solicitante, tente reservar a mesma sala no mesmo horário: a interface mostra o 409 de sobreposição.
+   Tente também fim antes do início (400).
+4. **Responsável (Bloco B)**: a lista vem vazia, porque a sala é do Bloco A (competência por local).
+5. **Responsável (Bloco A)** → *Aprovações e uso*: aprove, troque o filtro para *Todos*, **inicie o uso**, abra
+   *Retirada e devolução*, registre a retirada do kit e depois a devolução; abra o *Histórico* (Solicitada → Aprovada → Em uso).
+6. **Responsável** → *Relatório*: horas por recurso, carga por professor e conflitos evitados no período.
+7. **Administrador** → *Bloquear para manutenção*: bloqueie uma sala num horário; como Solicitante, ela some da busca
+   nesse horário.
+
+### Rotas usadas pela interface
+
+| Rota | Perfis | Observação |
+|---|---|---|
+| `POST /auth/login`, `POST /auth/logout`, `GET /auth/eu` | todos | `eu` devolve id, e-mail e perfil do token; `logout` revoga o token (204) |
+| `GET /recursos` | todos | catálogo ativo: salas, professores, materiais |
+| `GET /salas/disponiveis`, `GET /professores/disponiveis`, `GET /materiais/disponiveis` | todos | busca por tipo, capacidade, localização, competência, quantidade e horário |
+| `GET /reservas` | todos | Solicitante: as próprias; Responsável: as do seu bloco; Administrador: todas |
+| `POST /reservas`, `PUT /reservas/{id}`, `POST /reservas/{id}/cancelamento` | Solicitante (dono) | criar, alterar horário, cancelar |
+| `POST /reservas/{id}/aprovacao`, `/rejeicao`, `/inicio-uso`, `GET /reservas/{id}/historico` | Responsável competente, Administrador | |
+| `GET`/`POST /reservas/{id}/retiradas`, `POST /retiradas/{id}/devolucao` | Responsável competente, Administrador | retirada só com reserva `EM_USO`; condição `INTEGRO` ou `DANIFICADO` |
+| `GET /relatorios/utilizacao` | Responsável, Administrador | ver seção do relatório |
+| `POST /salas`, `/professores`, `/materiais`, `POST /{salas\|professores\|materiais}/{id}/inativacao`, `POST /manutencoes` | Administrador | |
+
+Testes das rotas acima: [InterfacePerfisApiTest](src/test/java/com/edualoca/InterfacePerfisApiTest.java) (caixa-preta,
+token do login real), além de [MatrizAutorizacaoApiTest](src/test/java/com/edualoca/MatrizAutorizacaoApiTest.java).
+
 ## Executando a Suíte Localmente
 
 ```
@@ -229,13 +286,21 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   inexistente, quantidade < 1 ou mais de 50 recursos por reserva resultam em 400.
 - **Erros (RF-38, RNF-06, DEF-002):** `application/problem+json` (ProblemDetail, RFC 9457), sem stacktrace, nome
   de classe ou mensagem de framework. Erro inesperado vira 500 genérico; o detalhe fica só no log.
-- **Limitações conhecidas (decisão pendente):** os tokens ficam em memória, sem expiração nem
-  revogação, e não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem persistência e
-  deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling
-  no login). A auditoria de cadastro (criação, edição, inativação e manutenção) registra autor
-  `null` (RF-28), porque `CadastroRecursoService` não recebe o usuário. O cadastro, a retirada/devolução e o início
-  de uso ainda não têm rota HTTP. A checagem de perfil do início de uso (RF-18) está no domínio; as de cadastro e
-  retirada só existirão quando houver rota.
+- **Cadastro, início de uso e retirada:** cadastro e inativação de sala, professor e material são exclusivos do
+  Administrador (checagem na borda, `Perfis.exigir`, antes de ler o corpo). Textos têm no máximo 120 caracteres e um
+  professor tem no máximo 20 competências. Início de uso e retirada/devolução aceitam só Responsável competente pelo
+  local ou Administrador. Reserva alheia ou inexistente recebe o mesmo 403. Data e autor da retirada vêm do servidor e
+  do token.
+- **Interface web:** a CSP (`CabecalhosSegurancaFiltro`) só aceita script, estilo e conexão da própria origem, e a
+  interface não tem script inline. Todo dado da API entra na página por `textContent`, nunca por `innerHTML`.
+  `X-Frame-Options: DENY` e `frame-ancestors 'none'` impedem clickjacking. O token fica em `sessionStorage` e é
+  revogado no servidor ao sair (`POST /auth/logout`).
+- **Limitações conhecidas (decisão pendente):** os tokens ficam em memória, sem expiração. O logout revoga o token, mas
+  não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem
+  persistência e deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling no login).
+  A auditoria de cadastro (criação, edição, inativação e manutenção) registra autor `null` (RF-28), porque
+  `CadastroRecursoService` não recebe o usuário. A retirada/devolução não gera evento de auditoria. A edição de
+  recursos (RF-04 a RF-06) existe no domínio, mas não tem rota.
 
 ## Roadmap
 
@@ -248,6 +313,7 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] Análise estática (SonarCloud, JaCoCo)
 - [x] Adapter HTTP de notificação externa isolado via WireMock (RF-31/32/33, RNF-16)
 - [x] BDD executável com Cucumber-JVM sobre a API (MockMvc + token por perfil)
-- [ ] Testes de integração com persistência real, concorrência, e2e
-- [ ] Teste de carga (JMeter)
+- [x] Testes de integração com persistência real (Testcontainers) e concorrência entre instâncias
+- [x] Teste de carga (JMeter, rodada 01 em [DOCS/performance/resultado-01.md](DOCS/performance/resultado-01.md))
+- [x] Interface web responsiva para os três perfis (HTML, CSS e JS puros em `src/main/resources/static`)
 - [x] RTM (Requirements Traceability Matrix) — cobertura inicial, ver [DOCS/RTM.md](DOCS/RTM.md)

@@ -10,6 +10,7 @@ import com.edualoca.domain.reserva.ReservaRepositorio;
 import com.edualoca.domain.reserva.ReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.reserva.Transacao;
+import com.edualoca.domain.retirada.RetiradaMaterialService;
 import com.edualoca.domain.usuario.AutenticacaoService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -63,6 +64,11 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public RelatorioService relatorioService(Clock clock) {
         return new RelatorioService(clock.getZone());
+    }
+
+    @Bean
+    public RetiradaMaterialService retiradaMaterialService() {
+        return new RetiradaMaterialService();
     }
 
     @Override

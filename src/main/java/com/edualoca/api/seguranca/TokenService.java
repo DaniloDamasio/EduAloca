@@ -45,6 +45,13 @@ public class TokenService {
         return usuario;
     }
 
+    /** Logout: o token deixa de valer imediatamente. Token ausente ou desconhecido e ignorado. */
+    public void revogar(String cabecalhoAuthorization) {
+        if (cabecalhoAuthorization != null && cabecalhoAuthorization.startsWith(PREFIXO)) {
+            usuarioPorToken.remove(cabecalhoAuthorization.substring(PREFIXO.length()).trim());
+        }
+    }
+
     private static RegraNegocioException naoAutenticado() {
         return new RegraNegocioException(401, "Autenticacao necessaria: informe um token de acesso valido");
     }

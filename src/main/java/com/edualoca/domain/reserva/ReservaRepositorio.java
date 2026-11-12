@@ -1,6 +1,7 @@
 package com.edualoca.domain.reserva;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,6 +15,9 @@ public interface ReservaRepositorio {
 
     /** Retorna a reserva ou {@code null} se nao existir. */
     Reserva buscar(UUID id);
+
+    /** Todas as reservas conhecidas, sem ordem definida. */
+    List<Reserva> listar();
 
     /** Persiste mudancas de estado, intervalo ou justificativa feitas na reserva. */
     void atualizar(Reserva reserva);

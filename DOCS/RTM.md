@@ -96,7 +96,7 @@ não têm linha nesta matriz). A tabela completa está em [testes/mutacao-manual
 
 Origem: [relatorio-qualidade.md](relatorio-qualidade.md) (12 críticos sem evidência em `a670c68`). Auditoria por
 mutação: [testes/mutacao-manual.md §6](testes/mutacao-manual.md). Execução: `./mvnw -B verify` (Surefire/Failsafe), a
-cada PR no CI. **CI destas linhas: CI_PENDENTE.**
+cada PR no CI. **CI destas linhas:** run [43238556274](https://github.com/DaniloDamasio/EduAloca/actions/runs/43238556274) (`eb4b3af`, PR #13): 429 unitários (3 pulados) e 14 ITs, 0 falhas; linhas 96,96%, ramos 87,10%.
 
 | Requisito | Risco | Teste (caminho :: nome) | Commit / Evidência |
 |---|---|---|---|
@@ -108,16 +108,16 @@ cada PR no CI. **CI destas linhas: CI_PENDENTE.**
 | RF-24 — Retirada vincula reserva + item + autor + instante, só em `EM_USO`, ciclo por item | Item não registrado; material de fora da reserva retirado; retirada fora de `EM_USO` | `src/test/java/com/edualoca/RetiradaVinculoItemTest.java`; `RetiradaDevolucaoMaterialTest` :: `rf24T1`–`rf24T3`; `InicioUsoReservaTest` :: `fluxoReal_permiteRetiradaSoDepoisDoInicioDoUso` | [DEF-014](defeitos/DEF-014-retirada-nao-vincula-item.md) red `109aace` · green `e5c5859`; R1–R4, R8, R9, R11 mortos |
 | RF-25 — Devolução encerra o ciclo aberto correspondente, com condição | Devolução repetida reescreve data/condição; devolução sem condição aceita | `RetiradaVinculoItemTest` :: `devolucaoDeCicloEncerrado_eRecusadaSemSobrescrever`; `RetiradaDevolucaoMaterialTest` :: `rf25T1`–`rf25T4` | DEF-014 `109aace` · `e5c5859`; R5–R7, R10 mortos |
 | RNF-05 — Senha armazenada com hash com sal, nunca em claro | Vazamento do armazenamento expõe todas as senhas | `src/test/java/com/edualoca/ArmazenamentoSenhaTest.java` (4 casos) | [DEF-013](defeitos/DEF-013-senha-armazenada-em-texto-plano.md) red `3835d8b` · green `2926f0e`; P1–P3 mortos |
-| RNF-07 — SonarCloud da `main` sem issue Critical/Blocker | Teste sem asserção passa por qualquer código; regex super-linear | Correção em `AutenticacaoAutorizacaoTest` (`rf02T1`, `rf03T1`) e nos dois ITs de concorrência | `11ba3b3`. Evidência: análise do SonarCloud da `main` depois do merge (SONAR_PENDENTE) |
-| RNF-10 — JaCoCo ≥ 80% linhas e ≥ 70% ramos | Cobertura cai sem ninguém notar | Gate `jacoco:check` (regra `BUNDLE`) no `pom.xml`, na fase `verify` | Run 43126611038 (`a670c68`): 96,53% linhas e 87,04% ramos ([relatório](relatorio-qualidade.md), A-03); CI destas correções: CI_PENDENTE |
+| RNF-07 — SonarCloud da `main` sem issue Critical/Blocker | Teste sem asserção passa por qualquer código; regex super-linear | Correção em `AutenticacaoAutorizacaoTest` (`rf02T1`, `rf03T1`) e nos dois ITs de concorrência | `11ba3b3`. SonarCloud do PR #13: quality gate OK, 0 issues novos, 0 hotspots. A baixa dos 2 BLOCKER só aparece na análise da `main` depois do merge |
+| RNF-10 — JaCoCo ≥ 80% linhas e ≥ 70% ramos | Cobertura cai sem ninguém notar | Gate `jacoco:check` (regra `BUNDLE`) no `pom.xml`, na fase `verify` | Run 43126611038 (`a670c68`): 96,53% linhas e 87,04% ramos ([relatório](relatorio-qualidade.md), A-03); CI destas correções: 96,96% linhas e 87,10% ramos (run 43238556274) |
 | RNF-12 — CI com build, testes e análise em todo PR, bloqueando merge | Merge sem CI verde | `.github/workflows/ci.yml`; proteção da `main` (check obrigatório "Build e Testes", `strict`, `enforce_admins`) | PRs #4–#12 com CI verde; #1–#3 anteriores ao workflow ([relatório](relatorio-qualidade.md), A-09) |
 | RNF-15 — Camadas separadas (apresentação, domínio, persistência, integração) | Domínio acoplado a framework web/JDBC ou à API | `src/test/java/com/edualoca/ArquiteturaCamadasTest.java` (4 regras) | red `d0f8ed4` · green `cbe3f53` (adaptador HTTP de notificação movido para `com.edualoca.integracao`); Q1 morto |
 | RNF-11 — 100% dos críticos com teste e evidência | RTM incompleta | Esta seção, mais as anteriores | Ver contagem abaixo |
 
 **Contagem:** com as linhas acima, os 32 requisitos críticos têm linha na RTM com risco, teste localizável e
-mutação. **32 de 32** passam a contar pelo critério de [mutacao-manual.md §4](testes/mutacao-manual.md) quando o CI
-deste PR estiver verde (CI_PENDENTE) e, no caso do RNF-07, quando a análise do SonarCloud da `main` mostrar 0 issues
-Blocker/Critical (SONAR_PENDENTE). Até lá, a situação verificada no CI continua sendo 20 de 32.
+mutação. Pelo critério de [mutacao-manual.md §4](testes/mutacao-manual.md) (teste verde no CI), **31 de 32 estão confirmados**
+no run 43238556274. O 32º, RNF-07, depende da análise do SonarCloud da `main` depois do merge do PR #13 mostrar
+0 issues Blocker/Critical. O PR não introduz nenhum issue, e os dois BLOCKER estão corrigidos no código.
 
 ## Relatório de utilização (`GET /relatorios/utilizacao`)
 

@@ -344,16 +344,16 @@ críticos com evidência.
 ## 8. Correções após a avaliação (2026-11-12)
 
 As seções 1 a 7 descrevem o commit `a670c68` e **não foram alteradas**. Esta seção registra o que mudou no branch
-`correcoes-relatorio-qualidade` (PR PR_PENDENTE), com o mesmo formato: evidência, interpretação e limite.
+`correcoes-relatorio-qualidade` (PR [#13](https://github.com/DaniloDamasio/EduAloca/pull/13), CI run [43238556274](https://github.com/DaniloDamasio/EduAloca/actions/runs/43238556274), commit `eb4b3af`), com o mesmo formato: evidência, interpretação e limite.
 
 ### 8.1 Resultado por meta
 
 | Meta | `a670c68` | Depois das correções | Situação |
 |---|---|---|---|
-| Linhas ≥ 80% | 96,53% (CI) | local: 1112/1147 = **96,95%**; CI: CI_PENDENTE | Atende |
-| Ramos ≥ 70% | 87,04% (CI) | local: 405/465 = **87,10%**; CI: CI_PENDENTE | Atende |
-| Críticos na RTM com evidência | 20/32 | **32/32 com linha, teste e mutação**; contam como "verde no CI" quando o run do PR terminar | Atende com evidência local; CI pendente |
-| Zero bugs/vulnerabilidades críticas | 0 no Sonar, mas senha em claro (A-11) | DEF-013 corrigido; Sonar do PR: SONAR_PR_PENDENTE | Ver A-19 |
+| Linhas ≥ 80% | 96,53% (CI) | CI: 1115/1150 = **96,96%** (local: 1112/1147 = 96,95%) | Atende |
+| Ramos ≥ 70% | 87,04% (CI) | CI e local: 405/465 = **87,10%** | Atende |
+| Críticos na RTM com evidência | 20/32 | 32/32 com linha, teste e mutação; **31/32 verdes no CI** (run 43238556274). Falta o RNF-07, que depende da análise da `main` | Atende após o merge |
+| Zero bugs/vulnerabilidades críticas | 0 no Sonar, mas senha em claro (A-11) | DEF-013 corrigido; SonarCloud do PR #13: gate OK, 0 issues, 0 hotspots | Ver A-19 |
 | RNF-07 (0 Blocker/Critical) | 2 BLOCKER | issues corrigidos no código (`11ba3b3`); análise da `main` só existe depois do merge | Pendente de merge |
 
 ### 8.2 Afirmações
@@ -409,7 +409,8 @@ As seções 1 a 7 descrevem o commit `a670c68` e **não foram alteradas**. Esta 
 - *Evidência:* `./mvnw -B verify` local com Docker no `HEAD` do branch: 429 unitários (3 pulados), 14 ITs, gate
   atendido. O README documenta as variáveis do Colima (A-01) e a nota de segurança foi corrigida: dizia que não
   existia login e que os erros saíam como `{"mensagem"}`.
-- *Limite:* CI do PR: CI_PENDENTE.
+- *Evidência (CI):* run 43238556274 (`eb4b3af`): 429 unitários (3 pulados) e 14 ITs, 0 falhas, todos os passos `success`, incluindo o SonarCloud. Os 9 testes novos ou alterados aparecem verdes no artefato `test-reports`.
+- *Limite:* a contagem de linhas difere entre CI (1150) e local (1147), como na A-03. A causa não foi investigada.
 
 ### 8.3 Riscos residuais que continuam
 
@@ -422,9 +423,10 @@ As seções 1 a 7 descrevem o commit `a670c68` e **não foram alteradas**. Esta 
 
 ### 8.4 Recomendação revisada
 
-**Aceite**, condicionado só à confirmação externa: (1) run de CI verde no PR destas correções e (2) análise do
-SonarCloud da `main` depois do merge com 0 issues Blocker/Critical. Atendidos os dois, as quatro metas do relatório
-ficam atendidas com evidência: cobertura, 32/32 críticos na RTM, zero bugs/vulnerabilidades críticas e RNF-07.
+**Aceite**, condicionado só a uma confirmação externa: a análise do SonarCloud da `main`, depois do merge do PR #13,
+mostrar 0 issues Blocker/Critical. O CI do PR já está verde (run 43238556274), e o PR não introduz nenhum issue.
+Com essa confirmação, as quatro metas do relatório ficam atendidas com evidência: cobertura, 32/32 críticos na RTM,
+zero bugs/vulnerabilidades críticas e RNF-07.
 
 ---
 

@@ -106,6 +106,15 @@
             <version>3.13.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- E2E em navegador real (Chromium headless) sobre a interface em static/. Versao fixa; sem vulnerabilidade
+             conhecida no OSV em 12/11/2026. Os navegadores ficam no cache do Playwright, fora do repositorio. -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.64.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -31,6 +31,10 @@ jobs:
           java-version: '21'
           cache: maven
 
+      # E2E (FluxoCompletoNavegadorIT): Chromium headless na mesma versao do Playwright do pom.xml.
+      - name: Instalar Chromium para o E2E (Playwright 1.64.0)
+        run: npx --yes playwright@1.64.0 install --with-deps chromium
+
       - name: Build e testes (verify)
         run: ./mvnw -B verify
 

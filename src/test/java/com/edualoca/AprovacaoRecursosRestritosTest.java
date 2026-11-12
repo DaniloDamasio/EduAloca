@@ -2,6 +2,7 @@ package com.edualoca;
 
 import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
@@ -135,5 +136,25 @@ class AprovacaoRecursosRestritosTest {
 
         // assert
         assertEquals(400, ex.getStatusHttp());
+    }
+
+    /**
+     * Lacuna achada na mutacao manual A2 (docs/testes/mutacao-manual.md): com "material restrito conta como nao
+     * restrito" toda a suite ficava verde, porque nenhum teste reservava material restrito.
+     */
+    @Test
+    @DisplayName("RF-12-T2: reserva com material restrito (mesmo junto de sala livre nao restrita) nasce SOLICITADA")
+    void rf12T2_materialRestrito_reservaNasceSolicitada() {
+        // arrange
+        Sala salaLivre = new Sala(UUID.randomUUID(), "Sala comum", "aula", 20, "Bloco A", false);
+        Material projetorRestrito = new Material(UUID.randomUUID(), "Projetor 4K", "projetor", 1, true);
+
+        // act
+        Reserva reserva = reservaService.criar(solicitante(), LocalDateTime.of(2026, 3, 11, 10, 0),
+                LocalDateTime.of(2026, 3, 11, 12, 0), "Defesa de TCC",
+                List.of(new ReservaRecurso(salaLivre, 1), new ReservaRecurso(projetorRestrito, 1)));
+
+        // assert
+        assertEquals(EstadoReserva.SOLICITADA, reserva.getEstado());
     }
 }

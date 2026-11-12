@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** (red registrado; correção em andamento) |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, commit desta correção; red `e16a14f`) |
 | Severidade | Média: a busca oferece recurso indisponível (contra o RF-11), mas a criação da reserva continua recusando com 409 (mutante M5 morto), então não há reserva indevida |
 | Prioridade | Média |
 | Requisitos | RF-11, RF-22 |
@@ -41,6 +41,24 @@ BuscaRecursoEmManutencaoTest.materialEmManutencao_naoApareceNaBusca:54   Expecti
 
 - Java 21.0.9 (Temurin), Spring Boot 4.1.1, perfil padrão em memória
 - Teste de unidade sobre `CadastroRecursoService` e `PesquisaRecursoService`
+
+## Causa raiz
+
+`PesquisaRecursoService.disponivel` tinha o teste de manutenção dentro de `if (recurso instanceof Sala sala)`, e
+`buscarMateriais` não consultava manutenção. `Manutencao` já guarda o próprio recurso (sala, professor ou material),
+e a criação de reserva (`ReservaService`) já bloqueava os três tipos.
+
+## Correção
+
+Novo `emManutencao(recurso, inicio, fim)`, igual para os três tipos e com a mesma regra semiaberta de
+`Intervalos.sobrepoe`. `disponivel()` passa a usá-lo para qualquer recurso, e `buscarMateriais` filtra por ele antes
+de calcular a quantidade livre.
+
+## Reteste
+
+- `BuscaRecursoEmManutencaoTest`: 3 de 3 verdes (antes: 2 falhas).
+- Testes de busca e manutenção já existentes (`PesquisaDisponibilidadeTest`, `RegrasCriticasTest`,
+  `AprovacaoBloqueioFeatureTest`): verdes.
 
 ## Limite
 

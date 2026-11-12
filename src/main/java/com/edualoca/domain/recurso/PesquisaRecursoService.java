@@ -44,6 +44,7 @@ public class PesquisaRecursoService {
         return Banco.materiais.values().stream()
                 .filter(Material::isAtivo)
                 .filter(m -> tipo == null || tipo.equalsIgnoreCase(m.getTipo()))
+                .filter(m -> !emManutencao(m, inicio, fim))
                 .filter(m -> quantidadeLivre(m, inicio, fim) >= quantidadeDesejada)
                 .toList();
     }
@@ -54,18 +55,21 @@ public class PesquisaRecursoService {
         }
     }
 
+    /** RF-11: recurso com reserva ativa sobreposta ou em manutencao no intervalo nao esta disponivel (DEF-012). */
     private boolean disponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim) {
-        if (recurso instanceof Sala sala) {
-            boolean emManutencao = Banco.manutencoes.values().stream()
-                    .anyMatch(m -> m.getRecurso() == sala && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
-            if (emManutencao) {
-                return false;
-            }
+        if (emManutencao(recurso, inicio, fim)) {
+            return false;
         }
         return Banco.reservas.values().stream()
                 .filter(r -> r.getEstado().isAtiva())
                 .filter(r -> envolveRecurso(r, recurso))
                 .noneMatch(r -> Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()));
+    }
+
+    /** Vale para sala, professor e material: a manutencao guarda o proprio recurso. */
+    private static boolean emManutencao(Object recurso, LocalDateTime inicio, LocalDateTime fim) {
+        return Banco.manutencoes.values().stream()
+                .anyMatch(m -> m.getRecurso() == recurso && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
     }
 
     private int quantidadeLivre(Material material, LocalDateTime inicio, LocalDateTime fim) {

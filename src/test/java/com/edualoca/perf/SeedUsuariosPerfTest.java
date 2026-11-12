@@ -1,6 +1,7 @@
 package com.edualoca.perf;
 
 import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.usuario.AutenticacaoService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +45,9 @@ class SeedUsuariosPerfTest {
 
         new SeedUsuariosPerf(csv).run(null);
 
-        assertEquals("Senha-1", Banco.credenciais.get("valido@edualoca.test"), "e-mail e senha sem espacos nas pontas");
+        assertEquals("valido@edualoca.test",
+                new AutenticacaoService().autenticar("valido@edualoca.test", "Senha-1").getEmail(),
+                "e-mail e senha sem espacos nas pontas");
         assertFalse(Banco.credenciais.containsKey("sem-virgula@edualoca.test"));
         assertFalse(Banco.credenciais.containsKey("sem-senha@edualoca.test"));
         assertFalse(Banco.credenciais.containsValue("senha-sem-email"));

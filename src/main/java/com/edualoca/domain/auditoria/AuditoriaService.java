@@ -9,16 +9,6 @@ import java.util.UUID;
 
 public class AuditoriaService {
 
-    private final Clock clock;
-
-    public AuditoriaService() {
-        this(Clock.systemDefaultZone());
-    }
-
-    public AuditoriaService(Clock clock) {
-        this.clock = clock;
-    }
-
     /**
      * Mantido apenas por compatibilidade com testes legados que registram eventos diretamente.
      * Codigo de producao deve usar a sobrecarga com {@code dataHora} obtida de um {@link Clock} injetado.
@@ -32,15 +22,14 @@ public class AuditoriaService {
         Banco.auditoria.add(new AuditoriaEvento(UUID.randomUUID(), entidade, entidadeId, acao, autorId, dataHora));
     }
 
+    /**
+     * Eventos registrados para a entidade, na ordem de registro. Entidade sem eventos devolve lista vazia: a ausencia de
+     * registro e informacao de auditoria e nao pode ser mascarada por um evento fabricado (DEF-011).
+     */
     public List<AuditoriaEvento> consultarPorEntidade(String entidade, UUID entidadeId) {
         Banco.seedSeNecessario();
-        List<AuditoriaEvento> eventos = Banco.auditoria.stream()
+        return Banco.auditoria.stream()
                 .filter(e -> e.getEntidade().equals(entidade) && e.getEntidadeId().equals(entidadeId))
                 .toList();
-        if (!eventos.isEmpty()) {
-            return eventos;
-        }
-        String acaoPadrao = "Reserva".equals(entidade) ? "REJEICAO_SOBREPOSICAO" : "CRIACAO";
-        return List.of(new AuditoriaEvento(UUID.randomUUID(), entidade, entidadeId, acaoPadrao, UUID.randomUUID(), LocalDateTime.now(clock)));
     }
 }

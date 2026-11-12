@@ -36,15 +36,15 @@ class AprovacaoRecursosRestritosTest {
     }
 
     @Test
-    @DisplayName("RF-18-T1: reserva restrita nao pode transicionar diretamente de SOLICITADA para EM_USO, pulando APROVADA")
-    void rf18T1_transicaoDiretaSolicitadaParaEmUso_deveSerBloqueada() {
+    @DisplayName("RF-19-T5: aprovar reserva inexistente responde 409 (antes rotulado RF-18-T1; nao exercita EM_USO, pendencia P-07)")
+    void rf19T5_aprovarReservaInexistente_deveRetornar409() {
         // arrange
         Usuario responsavel = new Usuario(Banco.RESPONSAVEL_BLOCO_A_ID, "resp@example.com", "hash", Perfil.RESPONSAVEL);
-        UUID reservaSolicitadaComRecursoRestritoId = UUID.randomUUID();
+        UUID reservaInexistenteId = UUID.randomUUID();
 
         // act
         RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> reservaService.aprovar(responsavel, reservaSolicitadaComRecursoRestritoId));
+                () -> reservaService.aprovar(responsavel, reservaInexistenteId));
 
         // assert
         assertEquals(409, ex.getStatusHttp());

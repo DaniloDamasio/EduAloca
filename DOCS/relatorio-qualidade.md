@@ -352,9 +352,9 @@ As seções 1 a 7 descrevem o commit `a670c68` e **não foram alteradas**. Esta 
 |---|---|---|---|
 | Linhas ≥ 80% | 96,53% (CI) | CI: 1115/1150 = **96,96%** (local: 1112/1147 = 96,95%) | Atende |
 | Ramos ≥ 70% | 87,04% (CI) | CI e local: 405/465 = **87,10%** | Atende |
-| Críticos na RTM com evidência | 20/32 | 32/32 com linha, teste e mutação; **31/32 verdes no CI** (run 43238556274). Falta o RNF-07, que depende da análise da `main` | Atende após o merge |
+| Críticos na RTM com evidência | 20/32 | **32/32** (31 por teste verde no CI; RNF-07 pela análise do SonarCloud da `main` em `a9d419f`) | **Atende** |
 | Zero bugs/vulnerabilidades críticas | 0 no Sonar, mas senha em claro (A-11) | DEF-013 corrigido; SonarCloud do PR #13: gate OK, 0 issues, 0 hotspots | Ver A-19 |
-| RNF-07 (0 Blocker/Critical) | 2 BLOCKER | issues corrigidos no código (`11ba3b3`); análise da `main` só existe depois do merge | Pendente de merge |
+| RNF-07 (0 Blocker/Critical) | 2 BLOCKER | SonarCloud da `main` (`a9d419f`, 2026-11-12T18:04:40Z): **0 issues** de qualquer severidade; gate OK | **Atende** |
 
 ### 8.2 Afirmações
 
@@ -423,10 +423,14 @@ As seções 1 a 7 descrevem o commit `a670c68` e **não foram alteradas**. Esta 
 
 ### 8.4 Recomendação revisada
 
-**Aceite**, condicionado só a uma confirmação externa: a análise do SonarCloud da `main`, depois do merge do PR #13,
-mostrar 0 issues Blocker/Critical. O CI do PR já está verde (run 43238556274), e o PR não introduz nenhum issue.
-Com essa confirmação, as quatro metas do relatório ficam atendidas com evidência: cobertura, 32/32 críticos na RTM,
-zero bugs/vulnerabilidades críticas e RNF-07.
+**Aceite.** A condição externa foi confirmada depois do merge do PR #13: o CI da `main` (run
+[43275743971](https://github.com/DaniloDamasio/EduAloca/actions/runs/43275743971), `a9d419f`) tem 429 unitários e 14
+ITs sem falhas, linhas 1115/1150 = 96,96% e ramos 405/465 = 87,10%, e a análise do SonarCloud da `main` no mesmo commit
+tem 0 issues de qualquer severidade, 0 bugs, 0 vulnerabilidades e 0 hotspots, com gate OK. As quatro metas estão
+atendidas com evidência: cobertura, 32/32 críticos na RTM, zero bugs/vulnerabilidades críticas e RNF-07.
+
+*Limite:* "aceite" vale para as metas do projeto, medidas no CI e na análise estática. Os riscos residuais da §8.3
+continuam, e o desempenho só foi medido na rodada 01, anterior a estas correções.
 
 ---
 

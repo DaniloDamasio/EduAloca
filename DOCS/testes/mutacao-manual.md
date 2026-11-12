@@ -164,7 +164,7 @@ sem autor a investigação "quem fez" não é possível.
 
 Depois dos testes novos, os 33 mutantes são mortos (D3, A2 e U8 repetidos 3 vezes cada, sempre vermelhos), e
 `./mvnw -B verify` local fica verde: 386 unitários (3 pulados, os `@bloqueado`), 14 ITs, gate JaCoCo atendido.
-**Os três testes novos ainda não têm execução no CI:** só existirão no CI depois de commit e push.
+No CI, os três testes novos estão verdes (run [43125582350](https://github.com/DaniloDamasio/EduAloca/actions/runs/43125582350), commit `d69901d`, PR #12: 398 casos, 0 falhas, 3 pulados).
 
 ## 4. Auditoria da RTM: requisitos críticos com evidência
 
@@ -190,7 +190,7 @@ caminho e nome (conferido no código), e o teste aparece verde no relatório do 
 | RF-22 | sim | sim | sim | Com evidência |
 | RF-24 / RF-25 (retirada e devolução) | não | não na RTM (`RetiradaDevolucaoMaterialTest` existe, não auditado) | — | **Sem evidência** (2 requisitos) |
 | RF-27 | sim | sim | sim | Com evidência |
-| RF-28 | parcial (a linha cobre só `REJEICAO_SOBREPOSICAO`) | `AuditoriaCadastroTest` (novo) | **não** | **Sem evidência no CI**: executado só localmente |
+| RF-28 | sim (linha nova na RTM) | `AuditoriaCadastroTest` e `AuditoriaTest.rf28T1/T2` reescritos | não no `ee540c5`; sim no `d69901d` | Sem evidência no `ee540c5`; **com evidência no `d69901d`** |
 | RF-29 | sim | sim | sim | Com evidência |
 | RF-30 | sim | sim | sim | Com evidência |
 | RF-38 | sim | sim | sim | Com evidência |
@@ -204,17 +204,19 @@ caminho e nome (conferido no código), e o teste aparece verde no relatório do 
 | RNF-12 (CI bloqueia merge) | não | — | run verde e `main` exige o check "Build e Testes" (proteção de branch conferida) | **Sem evidência na RTM** |
 | RNF-15 (MVC em camadas) | não | — | — | **Sem evidência** |
 
-**Resultado: 19 de 32 requisitos críticos com evidência = 59,4%.** Dois deles (RF-12 e RF-17) tinham uma parte da
-regra sem teste, já fechada pelos testes novos, mas essa parte ainda não tem execução no CI. Contando só os
-requisitos sem nenhuma parte descoberta no commit `ee540c5`, a taxa estrita é **17 de 32 = 53,1%**.
+**Resultado no commit-base `ee540c5`: 19 de 32 requisitos críticos com evidência = 59,4%.** Dois deles (RF-12 e
+RF-17) tinham uma parte da regra sem teste. Contando só os requisitos sem nenhuma parte descoberta, a taxa estrita
+era **17 de 32 = 53,1%**.
+
+**Resultado depois deste trabalho (commit `d69901d`, PR #12, run 43125582350 verde): 20 de 32 = 62,5%.** O RF-28
+entra, e RF-12 e RF-17 deixam de ter parte descoberta, então a taxa estrita também fica em 20 de 32.
 
 ## 5. Pendências
 
-1. Commitar os três testes novos e obter um run de CI verde. Até lá, RF-28 e as partes novas de RF-12 e RF-17 não
-   contam como evidência.
+1. ~~Commitar os três testes novos e obter um run de CI verde.~~ Feito: run 43125582350 (`d69901d`).
 2. ~~Corrigir `AuditoriaService.consultarPorEntidade` e reescrever `AuditoriaTest.rf27T1`, `rf28T1` e `rf28T2`.~~
    Feito em [DEF-011](../defeitos/DEF-011-auditoria-inventa-evento-inexistente.md) (`1826216` red, `fc5fe22` green).
-   CI pendente.
+   Verde no CI (run 43125582350).
 3. Excluir da busca o professor e o material em manutenção (`PesquisaRecursoService`, candidato a DEF-012).
 4. RF-18: decidir P-05 (iniciar uso) e, até lá, remover ou renomear `rf18T1`, que não testa o que o nome diz.
 5. Abrir linhas na RTM, com risco e auditoria por mutação, para RF-04/05/06, RF-24/25, RNF-05, RNF-07, RNF-10,

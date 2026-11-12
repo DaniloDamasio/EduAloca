@@ -66,14 +66,13 @@ execução/evidência, até atingir 100% dos requisitos marcados "Crítico".
 
 Detalhes, comandos e resultados: [testes/mutacao-manual.md](testes/mutacao-manual.md). Foram 33 quebras de regra no
 código de produção, uma por vez, cada uma desfeita com `git restore`. Os testes ligados detectaram 30 delas. As 3
-lacunas (D3, A2, U8) ganharam os testes abaixo, que **foram executados só localmente e ainda não têm run de CI**.
-Por isso esta seção não conta como evidência até o próximo CI verde.
+lacunas (D3, A2, U8) ganharam os testes abaixo, verdes no CI (run [43125582350](https://github.com/DaniloDamasio/EduAloca/actions/runs/43125582350), commit `d69901d`, PR #12).
 
 | Requisito | Risco | Teste (caminho :: nome) | Evidência / Execução |
 |---|---|---|---|
-| RF-12 — Material restrito também faz a reserva nascer `SOLICITADA` | Material restrito tratado como livre: reserva nasce `APROVADA` sem avaliação (mutante A2 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AprovacaoRecursosRestritosTest.java` :: `rf12T2_materialRestrito_reservaNasceSolicitada` | Local: verde no código original; vermelho com A2 (3/3). **CI pendente** |
-| RF-17 — Exatamente uma reserva no modo em memória (padrão da aplicação) | Sem o lock do serviço, duas criações passam juntas pela checagem e as duas gravam (mutante D3 sobrevivia a unitários e ITs) | `src/test/java/com/edualoca/ConcorrenciaReservaEmMemoriaTest.java` :: `criacoesSimultaneasNaChecagem_soUmaEAceita` | Local: verde no código original; vermelho com D3 (3/3, "aceitas expected 1 but was 2"). **CI pendente** |
-| RF-28 — Toda escrita de cadastro (sala, professor, material, manutenção, inativação) gera exatamente um evento de auditoria | Escrita de cadastro sem rastro (mutante U8 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AuditoriaCadastroTest.java` :: `escritaDeCadastroGeraAuditoria` (7 casos) | Local: verde no código original; vermelho com U8 (3/3). **CI pendente** |
+| RF-12 — Material restrito também faz a reserva nascer `SOLICITADA` | Material restrito tratado como livre: reserva nasce `APROVADA` sem avaliação (mutante A2 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AprovacaoRecursosRestritosTest.java` :: `rf12T2_materialRestrito_reservaNasceSolicitada` | Local: verde no código original; vermelho com A2 (3/3). CI: verde no run 43125582350 (`d69901d`) |
+| RF-17 — Exatamente uma reserva no modo em memória (padrão da aplicação) | Sem o lock do serviço, duas criações passam juntas pela checagem e as duas gravam (mutante D3 sobrevivia a unitários e ITs) | `src/test/java/com/edualoca/ConcorrenciaReservaEmMemoriaTest.java` :: `criacoesSimultaneasNaChecagem_soUmaEAceita` | Local: verde no código original; vermelho com D3 (3/3, "aceitas expected 1 but was 2"). CI: verde no run 43125582350 (`d69901d`) |
+| RF-28 — Toda escrita de cadastro (sala, professor, material, manutenção, inativação) gera exatamente um evento de auditoria | Escrita de cadastro sem rastro (mutante U8 sobrevivia à suíte inteira) | `src/test/java/com/edualoca/AuditoriaCadastroTest.java` :: `escritaDeCadastroGeraAuditoria` (7 casos) | Local: verde no código original; vermelho com U8 (3/3). CI: verde no run 43125582350 (`d69901d`) |
 
 Correções de rastreabilidade apontadas pela mutação. São testes que já estavam verdes no CI `ee540c5` e que eram os
 únicos a detectar a quebra, mas não estavam citados nas linhas acima:
@@ -87,13 +86,14 @@ Correções de rastreabilidade apontadas pela mutação. São testes que já est
 No commit `ee540c5`, `AuditoriaTest` :: `rf27T1`, `rf28T1` e `rf28T2` passavam com qualquer código, porque
 `AuditoriaService.consultarPorEntidade` inventava um evento quando não havia nenhum. Isso foi corrigido em
 [DEF-011](defeitos/DEF-011-auditoria-inventa-evento-inexistente.md) (red `1826216`, green `fc5fe22`): os três testes
-foram reescritos com ações reais, e cada um derruba um mutante de auditoria. A execução foi local, e o CI está
-pendente. Continua sem servir de evidência, embora esteja verde,
+foram reescritos com ações reais, e cada um derruba um mutante de auditoria. Os três estão verdes no CI (run
+43125582350, `d69901d`). Continua sem servir de evidência, embora esteja verde,
 `AprovacaoRecursosRestritosTest` :: `rf18T1` (recebe 409 por "reserva inexistente" e não exercita a transição para
 `EM_USO`).
 
-**Requisitos críticos com evidência no commit `ee540c5`: 19 de 32 (59,4%).** Sem evidência: RF-04, RF-05, RF-06,
-RF-18, RF-24, RF-25, RF-28, RNF-05, RNF-07, RNF-10, RNF-11, RNF-12, RNF-15 (RNF-10 e RNF-12 têm execução no CI, mas
+**Requisitos críticos com evidência: 19 de 32 (59,4%) no commit `ee540c5`; 20 de 32 (62,5%) no commit `d69901d`**
+(RF-28 passou a ter teste real verde no CI, e as partes de RF-12 e RF-17 que estavam descobertas foram fechadas).
+Sem evidência: RF-04, RF-05, RF-06, RF-18, RF-24, RF-25, RNF-05, RNF-07, RNF-10, RNF-11, RNF-12, RNF-15 (RNF-10 e RNF-12 têm execução no CI, mas
 não têm linha nesta matriz). A tabela completa está em [testes/mutacao-manual.md §4](testes/mutacao-manual.md).
 
 ## Relatório de utilização (`GET /relatorios/utilizacao`)

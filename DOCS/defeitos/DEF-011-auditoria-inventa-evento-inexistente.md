@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Corrigido** (reteste local aprovado em 11/11/2026; CI pendente) |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026, local e no CI: run 43125582350, commit `d69901d`) |
 | Severidade | Alta: a trilha de auditoria afirma ações que nunca aconteceram (`REJEICAO_SOBREPOSICAO` ou `CRIACAO`, com autor aleatório) e esconde a ausência de registro, que é justamente o que a auditoria precisa revelar |
 | Prioridade | Alta |
 | Requisitos | RF-27, RF-28, RF-29 |
@@ -67,4 +67,5 @@ reserva restrita, cadastrar uma sala, provocar uma rejeição por sobreposição
 | Cadastro de sala sem auditoria | `rf28T1_alteracaoDeCadastro_deveGerarAuditoria` |
 | Rejeição por sobreposição sem auditoria | `rf28T2_rejeicaoAutomaticaPorSobreposicao_deveGravarAcaoEspecifica` |
 
-Execução no CI pendente até o PR.
+No CI (PR #12, run 43125582350, commit `d69901d`), `def011`, `rf27T1`, `rf28T1` e `rf28T2` estão verdes; a suíte
+teve 398 casos, 0 falhas e 3 pulados.

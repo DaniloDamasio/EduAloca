@@ -4,6 +4,11 @@ Referência das rotas públicas da aplicação (RF-14 do enunciado). Vale para o
 A fonte de verdade são os controllers em `src/main/java/com/edualoca/api/`. Os testes de API que exercitam cada rota estão
 na coluna "Teste".
 
+A mesma API está descrita em **OpenAPI 3** em [`src/main/resources/static/openapi.yaml`](../src/main/resources/static/openapi.yaml),
+servido pela aplicação em `/openapi.yaml` (sem token), com parâmetros, corpos, respostas e exemplos de cada operação.
+O teste `DocumentacaoOpenApiTest` compara esse arquivo com as rotas registradas no Spring MVC e falha se alguma rota
+ficar sem documentação ou se houver documentação de rota inexistente (RF-39).
+
 ## Convenções
 
 - **Base:** `http://localhost:8080` (porta padrão do Spring Boot). A interface web é servida na mesma origem, em `/`.
@@ -51,10 +56,12 @@ As senhas estão no [README](../README.md).
 | `POST /materiais` | ADM | `{"nome", "tipo", "quantidadeTotal", "restrito"}` | `201`; `400` quantidade ≤ 0 | `InterfacePerfisApiTest` |
 | `PUT /materiais/{id}` | ADM | idem | `200`; `400`; `404` | `EdicaoCadastroApiTest` |
 | `POST /materiais/{id}/inativacao` | ADM | — | `204`; `404` | `InterfacePerfisApiTest` |
-| `POST /manutencoes` | ADM | `{"tipoRecurso": "SALA"\|"PROFESSOR"\|"MATERIAL", "recursoId", "inicio", "fim", "motivo"}` | `201`; `409` colide com reserva `APROVADA`/`EM_USO` | `ApiSegurancaTest`, `aprovacao-bloqueio.feature` |
+| `GET /manutencoes` | ADM | — | `200 [{"id", "tipoRecurso", "recursoId", "recursoNome", "inicio", "fim", "motivo"}]` em ordem de início | `AdministracaoApiTest` |
+| `POST /manutencoes` | ADM | `{"tipoRecurso": "SALA"\|"PROFESSOR"\|"MATERIAL", "recursoId", "inicio", "fim", "motivo", "confirmarColisao"}` | `201`; sem confirmação, `409` se colide com reserva `APROVADA`/`EM_USO` (RF-23). Com `"confirmarColisao": true`, as reservas `APROVADA` do período são canceladas (histórico, evento `CANCELAMENTO_POR_MANUTENCAO`, aviso ao Solicitante) e a manutenção entra; reserva `EM_USO` no período continua `409` | `ApiSegurancaTest`, `aprovacao-bloqueio.feature`, `AdministracaoApiTest` |
+| `POST /manutencoes/{id}/encerramento` | ADM | — | `200` manutenção encerrada; o bloqueio deixa de valer na hora e o recurso volta à busca; evento `ENCERRAMENTO`; `404` inexistente ou já encerrada | `AdministracaoApiTest` |
 
-Toda escrita de cadastro gera um evento de auditoria (`CRIACAO`, `ATUALIZACAO`, `INATIVACAO`). Limite conhecido: o
-evento grava `autorId = null`.
+Toda escrita de cadastro e de manutenção gera um evento de auditoria (`CRIACAO`, `ATUALIZACAO`, `INATIVACAO`,
+`ENCERRAMENTO`) com o Administrador do token como `autorId` (RF-28).
 
 ## Busca de disponibilidade (RF-08 a RF-11)
 
@@ -62,7 +69,7 @@ evento grava `autorId = null`.
 |---|---|---|---|---|
 | `GET /salas/disponiveis` | autenticado | `inicio`, `fim` (obrigatórios); `tipo`, `capacidadeMinima` (≥ 0), `localizacao` | `200 [sala]`, sem reserva ativa sobreposta nem manutenção | `MatrizAutorizacaoApiTest`, `aprovacao-bloqueio.feature` |
 | `GET /professores/disponiveis` | autenticado | `competencia`, `inicio`, `fim` | `200 [professor]` | `InterfacePerfisApiTest`, `EdicaoCadastroApiTest` |
-| `GET /materiais/disponiveis` | autenticado | `inicio`, `fim`; `tipo`, `quantidade` (padrão 1) | `200 [material]` com a quantidade livre pedida | `InterfacePerfisApiTest`, `EdicaoCadastroApiTest` |
+| `GET /materiais/disponiveis` | autenticado | `inicio`, `fim`; `tipo`, `quantidade` (padrão 1) | `200 [material]` sem reserva ativa sobreposta nem manutenção e com `quantidadeTotal` ≥ `quantidade` (material exclusivo no intervalo, DEF-016) | `InterfacePerfisApiTest`, `EdicaoCadastroApiTest` |
 
 ## Reservas (RF-12 a RF-20, RF-27 a RF-30)
 
@@ -80,8 +87,8 @@ Solicitante (simulada por padrão; ver "Notificação").
 | `POST /reservas/{id}/rejeicao` | RES competente, ADM | `{"justificativa"}` (obrigatória) | `SOLICITADA → REJEITADA`; justificativa visível ao Solicitante | `aprovacao-bloqueio.feature` |
 | `POST /reservas/{id}/inicio-uso` | RES competente, ADM | — | `APROVADA → EM_USO` (RF-18: restrita nunca pula a aprovação) | `InterfacePerfisApiTest`, `ConclusaoNaoComparecimentoApiTest` |
 | `POST /reservas/{id}/conclusao` | RES competente, ADM | — | `EM_USO → CONCLUIDA` | `ConclusaoNaoComparecimentoApiTest` |
-| `POST /reservas/{id}/nao-comparecimento` | RES competente, ADM | — | `APROVADA → NAO_COMPARECEU`, só a partir de início + 15 min (`409` antes) | `ConclusaoNaoComparecimentoApiTest` |
-| `POST /reservas/{id}/cancelamento` | SOL dono | `{"motivo"}` (obrigatório) | `SOLICITADA`/`APROVADA → CANCELADA` | `aprovacao-bloqueio.feature`, `MatrizAutorizacaoApiTest` |
+| `POST /reservas/{id}/nao-comparecimento` | RES competente, ADM | — | `APROVADA → NAO_COMPARECEU`, só a partir de início + 15 min (`409` antes). Além do registro manual, o sistema encerra sozinho como `NAO_COMPARECEU` a reserva que chega ao **fim do horário** ainda `APROVADA` (tarefa a cada 60 s, autor `sistema`) | `ConclusaoNaoComparecimentoApiTest`, `NaoComparecimentoAutomaticoTest` |
+| `POST /reservas/{id}/cancelamento` | SOL dono | `{"motivo"}` (obrigatório) | `SOLICITADA`/`APROVADA`/`EM_USO → CANCELADA` (RF-14: qualquer estado anterior a `CONCLUIDA`) | `aprovacao-bloqueio.feature`, `MatrizAutorizacaoApiTest` |
 | `DELETE /reservas/{id}` | qualquer | — | sempre `403`: nenhuma reserva é apagada (RF-30); para encerrar, cancele | `aprovacao-bloqueio.feature`, `MatrizAutorizacaoApiTest` |
 | `GET /reservas/{id}/historico` | RES, ADM | — | `200 [{"estadoAnterior", "estadoNovo", "usuarioId", "instante", "motivo"}]`; sem rota de escrita | `HistoricoReservaApiTest` |
 
@@ -92,6 +99,8 @@ Solicitante (simulada por padrão; ver "Notificação").
 | `GET /reservas/{id}/retiradas` | RES competente, ADM | — | `200 [retirada]` | `InterfacePerfisApiTest` |
 | `POST /reservas/{id}/retiradas` | RES competente, ADM | `{"materialId"}` | `201`; só com a reserva `EM_USO` e material da reserva; `409` ciclo aberto do mesmo material | `InterfacePerfisApiTest` |
 | `POST /retiradas/{id}/devolucao` | RES competente, ADM | `{"condicao": "INTEGRO"\|"DANIFICADO"}` | `200`; `409` ciclo já encerrado | `InterfacePerfisApiTest` |
+| (auditoria) | — | — | retirada grava `RETIRADA` e devolução grava `DEVOLUCAO_INTEGRO` ou `DEVOLUCAO_DANIFICADO`, entidade `Retirada`, com o autor do token | `AdministracaoApiTest` |
+| `GET /retiradas/pendentes` | RES competente, ADM | — | `200 [retirada]` com `"pendente": true`: material retirado e não devolvido depois do fim da reserva (RF-26). A sinalização roda na mesma tarefa periódica do não comparecimento | `AdministracaoApiTest` |
 
 ## Relatório (RF-34 a RF-36)
 
@@ -101,6 +110,18 @@ Solicitante (simulada por padrão; ver "Notificação").
 
 Detalhes de cálculo (recorte na borda do período, canceladas não contam): seção "API — Relatório de utilização" do
 [README](../README.md).
+
+## Usuários e auditoria (Administrador; RF-28, RF-29)
+
+| Método e rota | Perfil | Corpo / parâmetros | Resposta | Teste |
+|---|---|---|---|---|
+| `GET /usuarios` | ADM | — | `200 [{"id", "email", "perfil", "ativo", "localizacao"}]`; nunca traz senha nem hash | `AdministracaoApiTest` |
+| `POST /usuarios` | ADM | `{"email", "senha", "perfil", "localizacao"}` (local obrigatório para RES) | `201`; e-mail em minúsculas; senha de 8 a 120 caracteres guardada com PBKDF2; `409` e-mail repetido ou local que já tem Responsável | `AdministracaoApiTest` |
+| `POST /usuarios/{id}/inativacao` | ADM | — | `200`; a credencial é apagada, os tokens da conta são revogados e o Responsável deixa de responder pelo local; `409` para a própria conta; `404` conta ativa inexistente | `AdministracaoApiTest` |
+| `GET /auditoria` | ADM | `entidade`, `acao` (opcionais, sem diferença de maiúsculas), `limite` (1 a 500, padrão 100) | `200 [{"entidade", "entidadeId", "acao", "autorId", "dataHora"}]`, do mais recente ao mais antigo; sem rota de escrita (`405`) | `AdministracaoApiTest` |
+
+Eventos de usuário (`CRIACAO`, `INATIVACAO`) gravam o Administrador como autor. Eventos automáticos gravam
+`00000000-0000-0000-0000-00000000005e` (sistema).
 
 ## Notificação (RF-31 a RF-33)
 

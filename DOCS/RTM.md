@@ -138,6 +138,61 @@ Execução: `./mvnw -B verify` (Surefire), a cada PR no CI.
 | RF-28 / RF-35 — Recusa por sobreposição grava `REJEICAO_SOBREPOSICAO` (uma por tentativa, autor e instante do `Clock`) | Recusa sem rastro; recusa pela constraint do banco ou na alteração não contada; recusa por manutenção contada como conflito | `src/test/java/com/edualoca/RejeicaoSobreposicaoAuditoriaTest.java` :: `criacaoRecusadaPorSobreposicao_gravaRejeicao`, `recusaDaConstraintNoBanco_gravaRejeicao`, `alteracaoRecusadaPorSobreposicao_gravaRejeicao`, `recusaPorManutencao_naoGravaRejeicao`, `semSobreposicao_naoGravaRejeicao` | red `09577bd` · green `faba0a3` |
 | RF-36 / RF-01 — Só Responsável e Administrador; 401 sem token; 403 para Solicitante | Solicitante ou anônimo lê dados de uso | `src/test/java/com/edualoca/RelatorioUtilizacaoApiTest.java` :: `relatorioDoMes` (RESPONSAVEL e ADMINISTRADOR → 200), `semToken401`, `tokenDesconhecido401`, `solicitante403`, `solicitanteComParametroInvalido403` | red `09577bd` · green `faba0a3` |
 
+## Funções do Administrador, transições automáticas e documentação da API (2026-11-12)
+
+**Evidência pendente:** as linhas abaixo estão na árvore de trabalho e os testes compilam (verificado pelo compilador do
+IDE), mas **ainda não foram executados**. A execução do `./mvnw -B verify` ficou para depois da rodada 02 de carga, para não
+disputar CPU com a medição. Até lá, a coluna de evidência não conta para a meta de 100 % dos críticos.
+
+**Execução local conjunta (12/11/2026, ~19:24, depois da rodada 02):** `./mvnw -B verify` sobre a árvore de trabalho com
+estas alterações e as da seção seguinte. Unitários: 517 casos, 513 verdes e **4 erros, todos em
+`SobreposicaoMaterialTest.mesmoMaterial`** (o `@CsvSource` passa horas como `"08"`/`"09"`, que o JUnit não converte para
+`int`). Integração e E2E: 18/18 verdes, incluindo `extremosDeViewport_todasAsAbasDosTresPerfis`. Gate JaCoCo atendido
+(linhas 96,01 %, ramos 85,54 %). As demais linhas desta seção ficaram verdes **localmente**; CI ainda não executado.
+
+| Requisito | Risco | Teste | Evidência / Execução |
+|---|---|---|---|
+| P-08 automático (complementa RF-18/RF-27) — `APROVADA` que chega ao fim do horário vira `NAO_COMPARECEU` | Reserva sem uso bloqueia o recurso para sempre, ou a transição automática duplica histórico e auditoria | `NaoComparecimentoAutomaticoTest`: borda inclusiva no fim (-1/0/+1 min), histórico e auditoria com autor `sistema`, só `APROVADA` vencida, idempotente, manual antes do automático | Pendente (não executado) |
+| RF-23 — Manutenção sobre reserva `APROVADA`/`EM_USO` exige confirmação explícita | Manutenção registrada por cima de reserva aprovada sem ninguém decidir, ou reserva em uso interrompida | `AdministracaoApiTest.Manutencoes`: sem confirmação → 409 e reserva intacta; com `confirmarColisao` → reserva cancelada com motivo e evento `CANCELAMENTO_POR_MANUTENCAO`, sala bloqueada; `EM_USO` no período → 409 sem cancelar nada; motivo vazio → 400 sem cancelar. BDD-R3-06 segue cobrindo o caminho sem confirmação | Pendente (não executado) |
+| RF-21 — Consulta das manutenções cadastradas | Administrador sem visão dos bloqueios vigentes | `AdministracaoApiTest.Manutencoes.listagem` (recurso, período e motivo; 403 para Solicitante e Responsável) | Pendente (não executado) |
+| RF-26 — Sinalizar material retirado e não devolvido após o fim da reserva | Material some sem que o Responsável perceba | `AdministracaoApiTest.Pendencias`: antes da sinalização não aparece; depois aparece para o Responsável do local e para o Administrador, não para o de outro local; 403 para Solicitante; some após a devolução | Pendente (não executado) |
+| RF-28 / RF-29 — Auditoria consultável e somente leitura | Auditoria existe mas ninguém consegue ver; ou pode ser alterada | `AdministracaoApiTest.Auditoria`: ordem do mais recente, filtros por entidade e ação, limite 1..500, 403 para Solicitante e Responsável, `POST /auditoria` → 405 | Pendente (não executado) |
+| Escopo do Administrador (enunciado: "gerencia ... usuários") e RF-28 para usuário | Contas só por seed; conta comprometida sem como bloquear | `AdministracaoApiTest.Usuarios`: Responsável cadastrado faz login e decide só o próprio local; senha com PBKDF2; validação (e-mail, senha, perfil, local); duplicidade 409; inativação revoga token, bloqueia login e recadastro; Administrador não se inativa; 403 para outros perfis antes do corpo | Pendente (não executado) |
+| RF-39 — 100 % dos endpoints públicos documentados (OpenAPI) | Documentação desatualizada em relação ao código | `DocumentacaoOpenApiTest`: rotas do Spring MVC = operações do `static/openapi.yaml` nos dois sentidos; resumo e respostas em cada operação; arquivo servido em `/openapi.yaml`. Conferência estática: 39 rotas no código e 39 operações no YAML, 0 referências quebradas | Pendente (não executado) |
+| RF-37 — Interface de 360 a 1920 px sem quebra | Layout com rolagem horizontal nos extremos | `FluxoCompletoNavegadorIT.extremosDeViewport_todasAsAbasDosTresPerfis` (360 e 1920 px, todas as abas dos três perfis) | Pendente (não executado) |
+| RNF-15 — Camadas | Tarefa periódica acoplada à API ou à persistência | `ArquiteturaCamadasTest`: nova regra para `agendamento` | Pendente (não executado) |
+
+## Entrega final: notificação nos fluxos, ciclo completo de estados, edição de cadastro, E2E e carga (2026-11-12)
+
+Branch `entrega-final-pendencias`. Os commits citados são locais (sem push, por decisão do autor). Itens marcados
+"não commitado" estão só na árvore de trabalho. **Evidência:** verde no `./mvnw -B verify` local conjunto de 12/11
+(~19:24; ver nota da seção anterior). CI ainda não executado, então pelo critério de
+[mutacao-manual.md §4](testes/mutacao-manual.md) estas linhas contam como evidência **local** até o CI rodar.
+
+| Requisito | Risco | Teste (caminho :: nome) | Commit / Evidência |
+|---|---|---|---|
+| RF-31 — Toda transição de estado notifica o Solicitante, **no fluxo real** | Serviço de notificação testado isolado, mas nunca chamado pela aplicação (era o caso até 12/11) | `src/test/java/com/edualoca/NotificacaoNosFluxosTest.java` :: `cadaTransicao_notificaOSolicitante`, `transicaoRecusada_naoNotifica`; `FluxoCompletoNavegadorIT` (notificações do fluxo pela tela) | red `bd42a1e` · green `257bc02`; mutantes N1–N3 mortos |
+| RF-32 — Reserva restrita criada notifica o Responsável competente | Responsável não fica sabendo da pendência | `NotificacaoNosFluxosTest` :: `criacaoRestrita_notificaResponsavelCompetente` | red `bd42a1e` · green `257bc02` |
+| RF-33 — Falha do provedor externo não desfaz a transição | Provedor fora do ar derruba a aprovação | `NotificacaoNosFluxosTest` :: `falhaDoProvedor_naoReverteTransicao`; `src/test/java/com/edualoca/NotificacaoExternaIntegradaApiTest.java` (aplicação montada pelo Spring + WireMock: POST com a chave; 500 não desfaz) | green `257bc02`; refactor `e111e5f` (bean em `IntegracaoConfig`) |
+| P-07 / P-05 / P-08 — `EM_USO → CONCLUIDA` e `APROVADA → NAO_COMPARECEU` (só a partir de início + 15 min), manuais, por Responsável competente ou Administrador | Ciclo de estados do enunciado incompleto; falta registrada antes da tolerância; perfil indevido encerra reserva | `src/test/java/com/edualoca/ConclusaoNaoComparecimentoTest.java` (borda 14/15/16 min, 403, 409); `src/test/java/com/edualoca/ConclusaoNaoComparecimentoApiTest.java` (rotas, ProblemDetail, relógio controlado) | red `2c37613` · green `2f3ba18`; mutantes K1–K7 mortos |
+| BDD-R4-01 — "iniciar uso", "concluir" e "registrar não comparecimento" executáveis | Cenários do enunciado parados em `@bloqueado` | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Transição permitida muda o estado e gera auditoria* (3 linhas liberadas); `AprovacaoBloqueioSteps` (EM_USO pela rota real, auditoria só da ação do cenário) | **não commitado**; 0 casos pulados no verify conjunto |
+| Máquina de estados — transições permitidas e proibidas com reservas reais | `MaquinaEstadosReservaTest` usava UUID inexistente e passava com qualquer código ([status-requisitos §4](status-requisitos.md)) | `src/test/java/com/edualoca/MaquinaEstadosReservaTest.java` :: `estT2`, `estT3`, `estT7`, `estT8`, `estT10`–`estT13` | **não commitado**; verde no verify conjunto |
+| RF-04 / RF-05 / RF-06 — Edição pela API e pela tela (antes só no domínio) | CRUD sem "U" na aplicação | `src/test/java/com/edualoca/EdicaoCadastroApiTest.java`; `FluxoCompletoNavegadorIT` (edição da capacidade pela tela) | `17a2f8f`; mutação da checagem de Administrador detectada |
+| Enunciado: testes end-to-end | Interface sem teste automatizado | `src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java` :: `fluxoCompletoDosTresPerfis`, `celular_semRolagemHorizontal_eErroCompreensivel` (Playwright, Chromium headless) | `dc070ab`; passo de instalação do Chromium no CI |
+| RF-39 / enunciado #14 — Documentação das rotas | Rotas sem contrato documentado | [api.md](api.md) (todas as rotas, perfis, corpos, códigos e o teste de cada uma); complementado pelo `openapi.yaml` da seção anterior | `1397f13` |
+| RNF-01 / RNF-02 / RNF-03 / RF-17 sob carga | Desempenho e correção sob carga medidos numa versão sem commit | Rodada 02 ([performance/resultado-02.md](performance/resultado-02.md)) | jar do commit `38bbc04`; ver seção "Desempenho sob carga" |
+
+**Execução final (12/11/2026, ~19:46):** `./mvnw -B verify` verde: 523 unitários e 19 ITs, 0 falhas, 0 pulados; linhas
+95,93 %, ramos 85,65 %. As linhas desta seção e da seção anterior marcadas "Pendente" passam a ter **execução local verde**
+(CI e SonarCloud no PR). Linhas acrescentadas nesta execução:
+
+| Requisito | Risco | Teste | Evidência / Execução |
+|---|---|---|---|
+| RF-11 / RF-10 — Busca não oferece material que a criação recusaria ([DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md), opção A) | Material aparece na busca e a reserva volta com 409 | `BuscaMaterialExclusivaTest` (10 casos); `PesquisaDisponibilidadeTest.rf10T2_materialParcialmenteReservado_naoApareceNaBusca` | Red com 5 falhas; green local em ~19:46 |
+| Regra crítica "mesmo recurso não se sobrepõe" — material × material | Duas reservas do mesmo material no mesmo horário | `SobreposicaoMaterialTest` (10 casos) | Verde local em ~19:46 |
+| RF-21 / RF-23 / RF-28 pela interface | Telas do Administrador sem verificação de ponta a ponta | `FluxoCompletoNavegadorIT.telasDoAdministradorEDoResponsavel` | Verde local em ~19:46 |
+| RF-34 a RF-36 no domínio, pelo método da rota | Testes do relatório antigo (sem rota) davam falsa evidência | `RelatoriosTest` (7 casos sobre `gerarUtilizacaoPorPeriodo`) | Verde local em ~19:46 |
+
 ## Concorrência de reservas (PostgreSQL real via Testcontainers)
 
 | Requisito | Risco | Teste | Evidência / Execução |
@@ -147,19 +202,19 @@ Execução: `./mvnw -B verify` (Surefire), a cada PR no CI.
 
 ## Desempenho sob carga (JMeter)
 
-Plano: [performance/rnf.md](performance/rnf.md) (requisitos propostos, modelo de carga e regras de
-execução) e `perf/reservas.jmx`. Execução: `jmeter -n -t perf/reservas.jmx -l
-perf/resultados/rodada-01.jtl -e -o perf/relatorio-01`, **somente local e manual** (não roda no CI).
-Os números valem só para a máquina local descrita no resultado e não dizem nada sobre produção.
+Plano: [performance/rnf.md](performance/rnf.md) (requisitos propostos, modelo de carga e regras de execução),
+`perf/reservas.jmx` e o script versionado `perf/executar-rodada-02.sh`, **somente local e manual** (não roda no CI).
+**Resultado vigente: [performance/resultado-02.md](performance/resultado-02.md)** (12/11/2026, commit `38bbc04`, jar
+`d66c57130a04e87f`). A [rodada 01](performance/resultado-01.md) fica como histórico. Os números valem só para a máquina
+local descrita no resultado e não dizem nada sobre produção.
 
-| Requisito | Risco | Plano | Resultado | Situação |
+| Requisito | Risco | Plano | Resultado (rodada 02, fase estável) | Situação |
 |---|---|---|---|---|
-| RNF-01 (oficial: p95 ≤ 2 s) / RNF-01-P (proposta: p95 ≤ 300 ms, erro < 1 %) | Busca de disponibilidade lenta com 50 usuários. | [rnf.md §2–3](performance/rnf.md): `GET /salas/disponiveis`, 50 usuários, 5 min estáveis | [resultado-01.md](performance/resultado-01.md): p95 2 ms, 0 erros em 7.938 | Atende na rodada 01, com ressalvas* |
-| RNF-02 (oficial: p95 ≤ 3 s) / RNF-02-P (proposta: p95 ≤ 500 ms com 201 + 409) | Criação lenta sob disputa pelo mesmo recurso. | [rnf.md §2–3](performance/rnf.md): `POST /reservas`, sala única, ~10 tentativas por janela | [resultado-01.md](performance/resultado-01.md): p95 8 ms (201: 11 ms; 409: 6 ms), 0 erros reais em 1.987 | Atende na rodada 01, com ressalvas* |
-| RNF-03 / RNF-03-P: ≥ 100 criações/min, 0 × 5xx | Condição de corrida que gera 500 no pico. | [rnf.md §2](performance/rnf.md): asserções "somente 201 ou 409" e "nunca 5xx" | [resultado-01.md](performance/resultado-01.md): 397,4/min, 0 × 5xx | Atende na rodada 01, com ressalvas* |
-| RF-17 sob carga: no máximo uma reserva aceita por recurso e intervalo | Dupla reserva sob carga sustentada, e não só no teste de 20 requisições. | [rnf.md §3](performance/rnf.md): disputa por janela, asserção "Sem dupla reserva" | [resultado-01.md §3.1](performance/resultado-01.md): 217 janelas, cada uma com 1 × 201; no banco, 217 linhas, máx. 1 por (recurso, intervalo) e 0 pares sobrepostos | Atende na rodada 01 |
+| RNF-01 (oficial: p95 ≤ 2 s) / RNF-01-P (proposta: p95 ≤ 300 ms, erro < 1 %) | Busca de disponibilidade lenta com 50 usuários. | [rnf.md §2–3](performance/rnf.md): `GET /salas/disponiveis`, 5 min estáveis | p95 de **2 ms** em 6 execuções de 50 usuários; no máximo 3 ms até 400 usuários; 0 erros em até 63.478 consultas | Atende |
+| RNF-02 (oficial: p95 ≤ 3 s) / RNF-02-P (proposta: p95 ≤ 500 ms com 201 + 409) | Criação lenta sob disputa pelo mesmo recurso. | [rnf.md §2–3](performance/rnf.md): `POST /reservas`, sala única ou 10 salas, ~10 tentativas por janela | p95 de **11–12 ms** com 50 usuários (201: 14–15 ms; 409: 6–7 ms); 8–12 ms até 400 usuários; 0 erros reais | Atende |
+| RNF-03 / RNF-03-P: ≥ 100 criações/min, 0 × 5xx | Condição de corrida que gera 500 no pico. | [rnf.md §2](performance/rnf.md): asserções "somente 201 ou 409" e "nunca 5xx" | 395–398 criações/min com 50 usuários, 3.174/min com 400; **0 × 5xx** nos 11 cenários | Atende |
+| RF-17 sob carga: no máximo uma reserva aceita por recurso e intervalo | Dupla reserva sob carga sustentada. | [rnf.md §3](performance/rnf.md): disputa por janela, asserção "Sem dupla reserva", conferência SQL ao fim de cada cenário | 6.308 janelas nos 8 cenários principais (+ 655 nas repetições), todas com exatamente 1 × 201; **0 pares sobrepostos no banco** | Atende |
 
-\* Ressalvas (detalhes em [resultado-01.md §4](performance/resultado-01.md)): (1) jar gerado a
-partir de `0cf9518` **mais alterações não commitadas**, então a evidência não é reproduzível pelo
-git até a rodada 02; (2) as metas RNF-0x-P ainda são **proposta** não validada pelo grupo; (3) uma
-única rodada, com gerador, aplicação e banco na mesma máquina.
+Limites (detalhes em [resultado-02.md §8](performance/resultado-02.md)): gerador, aplicação e banco na mesma máquina; a
+vazão foi limitada pelo tempo de pensamento do modelo, então o ponto de saturação **não foi encontrado**; as metas
+RNF-0x-P continuam como proposta.

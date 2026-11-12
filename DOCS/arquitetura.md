@@ -476,8 +476,8 @@ sequenceDiagram
     alt perfil == SOLICITANTE
         API-->>ADM: HTTP 403 (RF-36)
     end
-    API->>SRV: gerarRelatorioUtilizacao(intervalo)
-    SRV->>DB: SELECT reservas WHERE estado IN (CONCLUIDA, EM_USO)<br/>AND intervalo sobrepõe [inicio, fim] — agregado por recurso
+    API->>SRV: gerarUtilizacaoPorPeriodo(intervalo)
+    SRV->>DB: SELECT reservas WHERE estado IN (APROVADA, EM_USO, CONCLUIDA)<br/>AND intervalo sobrepõe [inicio, fim] — agregado por recurso
     SRV->>DB: SELECT auditoria_evento WHERE acao = 'REJEICAO_SOBREPOSICAO'<br/>AND dataHora BETWEEN inicio AND fim [RF-35, conflitos evitados]
     DB-->>SRV: linhas agregadas
     SRV-->>API: relatório (utilização, carga horária, conflitos evitados)
@@ -531,6 +531,9 @@ sequenceDiagram
 > que não exista literalmente em REQUISITOS.md/enunciado.md está marcada como **"hipótese
 > pendente"** e não deve ser tratada como fato nem usada como critério de aceite até
 > confirmação do responsável pelo projeto.
+>
+> **Autoria:** trabalho individual. "Equipe avaliadora" é o papel previsto pelo método ATAM; aqui ele foi exercido
+> pelo próprio autor do projeto (Danilo Damasio), numa leitura separada da escrita das seções 1–18.
 
 ### 19.1 Reconfirmação dos business drivers
 
@@ -786,7 +789,7 @@ utility tree:
 
 ---
 
-*Seção 19 acrescentada pela equipe avaliadora ATAM independente, a partir da leitura
+*Seção 19 acrescentada pelo autor no papel de equipe avaliadora ATAM, a partir da leitura
 integral de `DOCS/enunciado.md`, `DOCS/PERSONAS/*.md`, `DOCS/REQUISITOS/*.md` e das seções
 1–18 deste documento. Nenhuma evidência anterior foi removida ou alterada; nenhum requisito
 foi modificado; nenhum código foi implementado ou executado.*

@@ -14,7 +14,7 @@ Nenhum número foi estimado. O que não pôde ser medido aparece como **não med
 | Repositório | `github.com/DaniloDamasio/EduAloca` |
 | Commit avaliado | `a670c6882687eb657b327b63f7ef8f4a2d96f149` (`main`, merge do PR #12). A árvore é idêntica à de `c55a31d` (branch `auditoria-mutacao`): as duas têm o tree `94e49e0`. |
 | Data da avaliação | 2026-11-11 (UTC−3). Os runs de CI estão registrados em UTC, em 2026-11-12, entre 00:16 e 00:23. |
-| Integrantes | **Não registrado no repositório.** Nenhum documento (README, enunciado, objetivos) lista integrantes. O histórico do git tem um único autor de commits: Danilo Damasio (98 commits). Se o grupo tiver outros integrantes, preencha esta linha antes da entrega. |
+| Integrantes | **Danilo Damasio (DaniloDamasio), trabalho individual.** Único autor dos commits do repositório e único integrante que atuou no projeto. Sem outro integrante, a revisão por pares foi substituída por verificações automáticas que bloqueiam o merge (README, "Autoria e revisão"). |
 | Autor deste relatório | Engenharia de qualidade, a partir das fontes da seção 1.1 |
 
 ### 1.1 Ambiente e fontes
@@ -145,7 +145,7 @@ não foi investigada. Este relatório usa o número do Maven como total e os arq
 - *Evidência:* `grep -c "| Crítico |" DOCS/REQUISITOS/REQUISITOS.md` retorna 32. São 23 RFs (01–06, 11, 12,
   14–19, 21, 22, 24, 25, 27–30, 38) e 9 RNFs (04–08, 10–12, 15).
 - *Interpretação:* é o denominador da meta.
-- *Limite:* a classificação "Crítico" é do próprio grupo. Este relatório não a reavaliou.
+- *Limite:* a classificação "Crítico" é do próprio autor. Este relatório não a reavaliou.
 
 **A-05. 20 de 32 requisitos críticos (62,5%) têm linha na RTM com risco, teste localizável e execução verde no CI.
 A meta de 100% não é atendida.**
@@ -171,7 +171,7 @@ A meta de 100% não é atendida.**
   `ConcorrenciaReservaEmMemoriaTest`, `AprovacaoRecursosRestritosTest.rf12T2_…` e `AuditoriaCadastroTest` matam
   os três (3/3 execuções cada) e estão verdes no CI (A-02).
 - *Interpretação:* para as regras críticas, os testes verificam o comportamento e não só executam o código.
-- *Limite:* é um escore manual, com mutantes escolhidos pelo próprio grupo. Não é amostra aleatória nem exaustiva,
+- *Limite:* é um escore manual, com mutantes escolhidos pelo próprio autor. Não é amostra aleatória nem exaustiva,
   e **não é comparável a um escore PIT**. O escore depois das correções (33/33) vale para esses 33 mutantes, não
   para o código como um todo. Mutação automatizada: **não medida** (sem ferramenta configurada).
 
@@ -203,6 +203,9 @@ A meta de 100% não é atendida.**
 
 ### 4.6 Desempenho
 
+> **Resultado vigente: [rodada 02](performance/resultado-02.md)** (A-23, seção 9). A A-09a abaixo descreve a rodada 01, como
+> estava no commit avaliado `a670c68`, e fica como histórico.
+
 **A-09a. Na rodada 01, RNF-01, RNF-02 e RNF-03 foram atendidos nas condições medidas.**
 - *Evidência:* [resultado-01.md §3–4](performance/resultado-01.md), fase estável de 300 s com 50 usuários:
   `GET /salas/disponiveis` p95 = 2 ms (n = 7.938, 0 erros); `POST /reservas` p95 = 8 ms (n = 1.987, 0 erros
@@ -215,7 +218,7 @@ A meta de 100% não é atendida.**
 - *Limite:* (1) o jar medido veio de `0cf9518` **mais alterações não commitadas**, então o resultado não é
   reproduzível pelo git nem corresponde ao commit avaliado aqui; (2) foi uma rodada só, com gerador, aplicação e
   banco na mesma máquina, sem rede e com o banco quase vazio; (3) CPU, memória, GC e pool Hikari **não foram
-  medidos**; (4) as metas propostas RNF-0x-P ainda não foram validadas pelo grupo; (5) o teste não roda no CI.
+  medidos**; (4) as metas propostas RNF-0x-P ainda não foram validadas pelo autor; (5) o teste não roda no CI.
   Nada disso permite afirmar algo sobre produção.
 
 ### 4.7 Processo (CI)
@@ -234,7 +237,7 @@ A meta de 100% não é atendida.**
 
 ## 5. Defeitos por severidade e situação
 
-**Fonte:** campos "Severidade" e "Status" de cada arquivo em [defeitos/](defeitos/). A escala usada pelo grupo é
+**Fonte:** campos "Severidade" e "Status" de cada arquivo em [defeitos/](defeitos/). A escala usada no projeto é
 Alta, Média e Baixa. **Nenhum defeito foi classificado como "Crítico"**, porque a escala não tem esse nível.
 
 | Severidade | Corrigido | Aberto | Defeitos |
@@ -259,7 +262,7 @@ Alta, Média e Baixa. **Nenhum defeito foi classificado como "Crítico"**, porqu
 ## 6. Riscos residuais
 
 Achados que não estão em [defeitos/](defeitos/), mais limitações conhecidas. A severidade aqui é proposta por este
-relatório, na escala do grupo.
+relatório, na escala do projeto.
 
 **A-11. Senhas ficam em texto plano na memória, contrariando o RNF-05 (proposta: Alta, segurança).**
 - *Evidência:* `Banco.credenciais` (`domain/comum/Banco.java:34`, seed nas linhas 96–97 e 110) é um
@@ -433,6 +436,158 @@ atendidas com evidência: cobertura, 32/32 críticos na RTM, zero bugs/vulnerabi
 continuam, e o desempenho só foi medido na rodada 01, anterior a estas correções.
 
 ---
+
+## 9. Estado em 2026-11-12 (noite): entregas da branch `entrega-final-pendencias`
+
+As seções 1 a 8 não foram alteradas, exceto a linha "Integrantes" da seção 1 (trabalho individual). Esta seção separa o
+que foi **medido** do que está **só na árvore de trabalho**.
+
+### 9.1 Medido
+
+**A-22. A suíte inteira passa no commit `38bbc04` (com uma alteração local em `MaquinaEstadosReservaTest`).**
+- *Evidência:* `./mvnw -B verify` local com Colima: 468 unitários (3 pulados por `@bloqueado`) e 16 ITs (PostgreSQL e E2E
+  em Chromium), 0 falhas, `All coverage checks have been met`; `jacoco.xml`: linhas 1303/1343 = **97,02%**, ramos
+  458/524 = **87,40%**.
+- *Interpretação:* as metas de cobertura continuam atendidas depois de notificação integrada, conclusão, não
+  comparecimento manual, edição de cadastro e E2E.
+- *Limite:* essa execução **coincidiu com o cenário 50-b da rodada 02 de carga** (cerca de 40 s de CPU disputada e o jar
+  em `target/` regravado com o mesmo conteúdo). O 50-b foi mantido como **suspeito**, e as três repetições de 50 usuários
+  foram refeitas na tomada com o mesmo jar, sem interferência (A-23). O resultado da suíte não é afetado.
+  Ainda não há run de CI para esse commit (a branch não foi publicada).
+
+**A-23. Rodada 02 de carga: atende com margem até 400 usuários, sem saturar.**
+- *Evidência:* [performance/resultado-02.md](performance/resultado-02.md), **resultado vigente** (a rodada 01 vira
+  histórico). Jar do commit `38bbc04` (SHA-256 `d66c57130a04e87f`), PostgreSQL, banco e aplicação recriados por cenário.
+  São 8 cenários (50 ×3, 100, 200, 400, e 200 e 400 com a disputa em 10 salas) mais 3 repetições de 50 na tomada. Em todos:
+  0 erros reais, 0 respostas 5xx, consulta com p95 de 1–3 ms, criação com p95 de 8–12 ms, e **6.308 janelas disputadas
+  nos 8 cenários principais, todas com exatamente uma reserva aceita e 0 pares sobrepostos no banco**. Vazão de até
+  264,5 req/s (3.174 criações/min). CPU da aplicação no máximo 47,5% de um núcleo, pool Hikari com no máximo 1 conexão
+  ativa e nenhuma espera, maior pausa de GC de 13,7 ms.
+- *Interpretação:* RNF-01, RNF-02, RNF-03 e RF-17 sob carga atendem com duas ordens de grandeza de folga. A hipótese da
+  rodada 01 (o lock por recurso seria o primeiro gargalo) **não se confirmou nessa faixa**: o sistema não saturou, e a
+  vazão foi limitada pelo tempo de pensamento do modelo de carga (lei de Little: 266,6 previstos contra 264,5 medidos).
+- *Limite:* gerador, aplicação e banco na mesma máquina, com a CPU do JMeter não medida; ponto de saturação não
+  encontrado; na variante de 10 salas, as respostas de consulta ficaram 2,9 vezes maiores, uma variável a mais nessa
+  comparação; o 50-b teve um build em paralelo (sem efeito visível nos números). A primeira tentativa (16:24–18:03)
+  foi descartada por suspensão da máquina (tampa fechada). Sem rede e com banco vazio.
+
+**A-24. Suíte conjunta (esta branch + as entregas da 9.2): 4 erros, todos num teste novo; integração e E2E verdes.**
+- *Evidência:* `./mvnw -B verify` local em 12/11 (~19:24), depois da rodada 02, sobre a árvore de trabalho completa.
+  Unitários: 517 casos, 513 verdes e 4 erros em `SobreposicaoMaterialTest.mesmoMaterial` (o `@CsvSource` passa horas como
+  `"08"`/`"09"`, que o JUnit não converte para `int`). Com `-Dmaven.test.failure.ignore=true`: integração e E2E **18/18
+  verdes**, gate JaCoCo atendido (linhas 1490/1552 = **96,01%**, ramos 556/650 = **85,54%**). As 3 linhas de BDD-R4-01
+  antes `@bloqueado` rodaram (0 casos pulados).
+- *Interpretação:* as entregas da 9.2 passam a estar **verificadas localmente**, exceto `SobreposicaoMaterialTest`, que
+  precisa de correção nos dados de entrada. Como o build parou nos unitários, o `verify` padrão continua vermelho até essa
+  correção.
+- *Limite:* execução local, sem CI nem SonarCloud (a branch não foi publicada).
+
+### 9.2 Na árvore de trabalho, sem execução
+
+Feito sem rodar build, aplicação, Docker ou navegador, para não interferir na rodada 02. Os arquivos Java compilam pelo
+compilador do IDE (0 erros); o JavaScript passa em `node --check`; o `openapi.yaml` foi lido por um parser YAML e tem
+39 operações para 39 rotas, sem referências quebradas. **Nada disso substitui a execução da suíte.**
+
+| Entrega | Requisito | Teste escrito |
+|---|---|---|
+| Não comparecimento automático no fim do horário (tarefa a cada 60 s, autor `sistema`; desligada na suíte) | P-08 | `NaoComparecimentoAutomaticoTest` |
+| Confirmação explícita de manutenção sobre reserva aprovada e lista de manutenções | RF-23, RF-21 | `AdministracaoApiTest` |
+| Devoluções em atraso (sinalização periódica e `GET /retiradas/pendentes`) | RF-26 | `AdministracaoApiTest` |
+| Consulta de auditoria somente leitura | RF-28, RF-29 | `AdministracaoApiTest` |
+| Gestão de usuários (cadastro com perfil e local, inativação com revogação de token) | Escopo do Administrador | `AdministracaoApiTest` |
+| OpenAPI 3 com teste de sincronia | RF-39 | `DocumentacaoOpenApiTest` |
+| Telas: busca para Responsável e Administrador, catálogo somente leitura, usuários, auditoria, manutenções, pendências, cancelar `EM_USO` | RF-07 a RF-10, RF-14, RF-37 | `FluxoCompletoNavegadorIT` (360 e 1920 px) |
+| Autor na auditoria de cadastro de recurso e de manutenção (`CadastroRecursoService.por(usuario)`), antes `null` | RF-28 | `AdministracaoApiTest` |
+| Auditoria de retirada e devolução (`RETIRADA`, `DEVOLUCAO_<condição>`) | RF-28 | `AdministracaoApiTest` |
+| Encerramento de manutenção (`POST /manutencoes/{id}/encerramento`, botão na lista) | RF-21 | `AdministracaoApiTest`; `DocumentacaoOpenApiTest` (40 operações) |
+| Sobreposição material × material na criação | Regra crítica "mesmo recurso não se sobrepõe" | `SobreposicaoMaterialTest` |
+
+**Decisões tomadas nesta etapa** (registradas em [bdd-aprovacao-bloqueio.md](testes/bdd-aprovacao-bloqueio.md)):
+P-08 ganhou o complemento automático no fim do horário; P-06 foi fechada pelo texto do RF-14 (cancelar em uso é
+permitido); no RF-23, confirmar cancela as reservas `APROVADA` do período, e reserva `EM_USO` continua impedindo.
+
+### 9.3 Riscos residuais e pendências
+
+- **Verificação:** feita localmente (A-24): falta corrigir `SobreposicaoMaterialTest` ("08"/"09"), rodar de novo e
+  publicar a branch para o CI e o SonarCloud.
+- **Desempenho:** feito (A-23). As repetições usaram o jar guardado da rodada, sem compilar a árvore de trabalho. As
+  entregas da 9.2 (inclusive a tarefa periódica de não comparecimento automático) **não foram medidas sob carga**.
+- **[DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md), aberto (Média):** a busca de
+  material conta unidades livres e a criação trata o material como exclusivo; a busca oferece material que a criação
+  recusa com 409. Aguarda decisão entre material exclusivo (recomendado para a entrega) e material por quantidade.
+- **E2E das telas novas do Administrador** (usuários, auditoria, manutenções, confirmação de colisão): não escrito; só
+  a checagem de layout em 360 e 1920 px. A lógica está coberta pelos testes de API.
+- **Mensagens sem acentuação** ("Usuario nao autorizado…"): não corrigidas, porque vários testes conferem trechos dessas
+  mensagens; trocar sem rodar a suíte é arriscado.
+- Continuam: tokens sem expiração e login sem limite de tentativas; usuário inativado sem reativação nem troca de senha;
+  sem tela do Swagger UI (o `openapi.yaml` pode ser aberto no Swagger Editor); dados em memória (ADR-010).
+
+## 10. Verificação final antes do commit (2026-11-12, ~19:46)
+
+As seções anteriores não foram alteradas; esta seção resolve as pendências de verificação da 9.3.
+
+### 10.1 Resultado por meta
+
+| Meta | Alvo | Medido (local, `./mvnw -B verify`) | Situação |
+|---|---|---|---|
+| Cobertura de linhas | ≥ 80% | 1463/1525 = **95,93%** | Atende |
+| Cobertura de ramos | ≥ 70% | 543/634 = **85,65%** | Atende |
+| Críticos na RTM | 100% | 32/32 (linhas novas da RTM com execução verde, A-25) | Atende |
+| Zero bugs/vulnerabilidades críticas | 0 | 0 defeitos abertos ([DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md) corrigido); SonarCloud **a confirmar no CI do PR** | Atende localmente |
+
+### 10.2 Afirmações
+
+**A-25. A suíte inteira passa com todas as alterações da branch, sem caso pulado.**
+- *Evidência:* `./mvnw -B verify` local com Colima, 12/11 ~19:46: **523 unitários e 19 ITs (PostgreSQL com
+  Testcontainers, concorrência em 1 e 2 JVMs, E2E em Chromium), 0 falhas, 0 pulados**, `All coverage checks have been met`.
+  Uma execução anterior (~19:40) teve 2 falhas em `HistoricoReservaTransacaoIT`, que ainda esperavam os motivos de
+  histórico sem acento; corrigidas antes desta.
+- *Interpretação:* as entregas da 9.2 e os itens abaixo estão verificados localmente, inclusive contra PostgreSQL real.
+- *Limite:* execução local; CI e SonarCloud ficam para o PR. A cobertura de linhas variou de 96,01% (A-24) para 95,93%,
+  com código removido (A-27) e código novo no mesmo intervalo; a causa da variação não foi isolada.
+
+**A-26. DEF-016 corrigido pela opção A (material exclusivo no intervalo).**
+- *Evidência:* red com 5 falhas (`BuscaMaterialExclusivaTest` e `rf10T2` reescrito), green depois de `buscarMateriais`
+  passar a usar a mesma regra de disponibilidade de sala e professor. `SobreposicaoMaterialTest` corrigido (horas sem zero
+  à esquerda: o JUnit usa `Integer.decode`, que lê `"08"` como octal inválido), 10/10.
+- *Interpretação:* o que a busca oferece, a criação aceita; o defeito visível na demonstração saiu.
+- *Limite:* deixa de existir o uso de várias unidades do mesmo material por reservas diferentes no mesmo horário (opção B
+  registrada como evolução).
+
+**A-27. Código morto removido e testes fracos substituídos.**
+- *Evidência:* saíram `RelatorioService.gerarRelatorioUtilizacao`, `contarRejeicoesPorSobreposicao` e a classe
+  `RelatorioUtilizacao` (relatório antigo, sem rota e com regra diferente da rota), `AutenticacaoService.autorizar` (sem
+  chamada em produção; a autorização fica em `ReservaService` e `Perfis`) e quatro imports sem uso. `RelatoriosTest`
+  passou a testar `gerarUtilizacaoPorPeriodo`, o método da rota: os antigos `rf34T1`/`rf35T1`, que só conferiam `>= 0`,
+  viraram testes de valor (minutos por sala e estado; conflitos por entidade, ação e período semiaberto). Os três
+  `rf02T*`, que só exercitavam `autorizar`, saíram; o RF-02 segue coberto por `MatrizAutorizacaoApiTest` com token real.
+  No JavaScript, nenhuma função sem uso e nenhum id inexistente.
+- *Limite:* a busca de código morto foi por referência textual a métodos públicos; getters de objetos de domínio usados
+  só por testes foram mantidos como parte do modelo.
+
+**A-28. Mensagens acentuadas, sem perder o nome do campo.**
+- *Evidência:* 114 textos (mensagens de erro, títulos de ProblemDetail, motivos de histórico e notificações) passaram a ter acento.
+  Identificadores (entidades da auditoria como `Manutencao` e `Usuario`, nomes de campo, enums, SQL e chaves) ficaram
+  iguais. Onde a palavra acentuada era o nome do campo, a mensagem passou a citar o campo da API (ex.: "fim deve ser
+  posterior ao início (campos 'inicio' e 'fim')"), para manter a regra do DEF-008 que `MatrizAutorizacaoApiTest` e
+  `CrudRecursoTest` conferem. Os testes que conferiam os textos antigos (API, domínio, IT com PostgreSQL e E2E) foram
+  atualizados. O histórico gravado no PostgreSQL preserva os acentos.
+- *Limite:* comentários e mensagens de log continuam sem acento (não aparecem ao usuário).
+
+**A-29. E2E das telas novas do Administrador e do Responsável.**
+- *Evidência:* `FluxoCompletoNavegadorIT.telasDoAdministradorEDoResponsavel`: manutenção sobre reserva aprovada pede
+  confirmação e cancela a reserva; encerramento libera a sala; cadastro e inativação de usuário; auditoria filtrada com o
+  Administrador como autor; Responsável busca sem montar reserva e vê o catálogo somente leitura. O E2E tem 5 testes, todos
+  verdes.
+
+### 10.3 O que continua em aberto
+
+- **CI e SonarCloud** do PR desta branch (local verde não substitui).
+- Tokens sem expiração e login sem limite de tentativas; usuário inativado sem reativação nem troca de senha.
+- Alteração de reserva muda só o horário, não os recursos.
+- Sem tela do Swagger UI (o `openapi.yaml` abre no Swagger Editor).
+- As entregas desta etapa (inclusive a tarefa periódica) não foram medidas sob carga; a rodada 02 usou o jar de `38bbc04`.
+- Dados em memória no modo padrão ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md)).
 
 ## Apêndice A: comandos usados
 

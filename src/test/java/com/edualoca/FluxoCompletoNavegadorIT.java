@@ -9,15 +9,19 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.SelectOption;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -196,7 +200,7 @@ class FluxoCompletoNavegadorIT {
         // Efeito colateral do fluxo real: Responsavel notificado da pendencia e Solicitante a cada transicao (RF-31/32).
         assertThat(Banco.notificacoes.values()).filteredOn(n -> n.getStatus() == StatusNotificacao.ENVIADA)
                 .extracting(n -> n.getMensagem())
-                .contains("Nova solicitacao restrita pendente de aprovacao", "Sua reserva mudou para APROVADA",
+                .contains("Nova solicitação restrita pendente de aprovação", "Sua reserva mudou para APROVADA",
                         "Sua reserva mudou para EM_USO", "Sua reserva mudou para CONCLUIDA");
     }
 
@@ -215,8 +219,140 @@ class FluxoCompletoNavegadorIT {
         busca.locator("[name=inicio]").fill("2027-11-08T16:00");
         busca.locator("[name=fim]").fill("2027-11-08T14:00");
         busca.locator("button[type=submit]").click();
-        avisoContem("fim deve ser posterior ao inicio");
+        avisoContem("fim deve ser posterior ao início");
         assertThat(pagina.locator("#aviso")).not().containsText("Exception");
         assertThat((Boolean) pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth")).isTrue();
+    }
+
+    private boolean semRolagemHorizontal() {
+        return (Boolean) pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth");
+    }
+
+    @ParameterizedTest(name = "{0} x {1} px")
+    @CsvSource({"360, 740", "1920, 1080"})
+    @DisplayName("E2E (RF-37): nos extremos de 360 e 1920 px, nenhuma aba de nenhum perfil tem rolagem horizontal")
+    void extremosDeViewport_todasAsAbasDosTresPerfis(int largura, int altura) {
+        abrir(largura, altura);
+        assertThat(semRolagemHorizontal()).as("login").isTrue();
+
+        for (String conta : List.of("Solicitante", "Responsável (Bloco A)", "Administrador")) {
+            entrarComo(conta);
+            List<String> abas = pagina.locator(".aba").allTextContents();
+            assertThat(abas).as("abas de %s", conta).isNotEmpty();
+            for (String nome : abas) {
+                aba(nome);
+                assertThat(pagina.locator("[role=tab][aria-selected=true]")).hasText(nome);
+                assertThat(semRolagemHorizontal()).as("%s, aba %s, %d px", conta, nome, largura).isTrue();
+            }
+            sair();
+        }
+    }
+
+    @Test
+    @DisplayName("E2E: Administrador confirma manutencao sobre reserva aprovada, encerra a manutencao, gerencia usuario e consulta a auditoria; Responsavel busca e ve o catalogo")
+    void telasDoAdministradorEDoResponsavel() {
+        String sufixo = UUID.randomUUID().toString().substring(0, 8);
+        String sala = "Lab Admin " + sufixo;
+        String finalidade = "Aula Admin " + sufixo;
+        String email = "resp." + sufixo + "@example.com";
+        abrir(1280, 900);
+
+        // Administrador cadastra uma sala comum.
+        entrarComo("Administrador");
+        aba("Cadastro e manutenção");
+        Locator formSala = pagina.locator("#form-sala");
+        formSala.locator("[name=nome]").fill(sala);
+        formSala.locator("[name=tipo]").fill("laboratorio");
+        formSala.locator("[name=capacidade]").fill("20");
+        formSala.locator("[name=localizacao]").selectOption("Bloco A");
+        formSala.locator("button[type=submit]").click();
+        avisoContem("Sala cadastrada");
+        sair();
+
+        // Solicitante reserva a sala: nasce aprovada.
+        entrarComo("Solicitante");
+        Locator busca = pagina.locator("#form-busca");
+        busca.locator("[name=inicio]").fill("2027-10-05T08:00");
+        busca.locator("[name=fim]").fill("2027-10-05T10:00");
+        busca.locator("#busca-recurso").selectOption("SALA");
+        busca.locator("[name=localizacao]").fill("Bloco A");
+        busca.locator("button[type=submit]").click();
+        pagina.locator("#resultado-busca li").filter(new Locator.FilterOptions().setHasText(sala))
+                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Adicionar")).click();
+        pagina.locator("#form-reserva [name=finalidade]").fill(finalidade);
+        pagina.locator("#form-reserva button[type=submit]").click();
+        avisoContem("aprovada automaticamente");
+        sair();
+
+        // RF-23: manutencao sobre a reserva aprovada pede confirmacao; confirmar cancela a reserva e bloqueia a sala.
+        entrarComo("Administrador");
+        aba("Cadastro e manutenção");
+        Locator formManutencao = pagina.locator("#form-manutencao");
+        formManutencao.locator("#manutencao-recurso").selectOption(new SelectOption().setLabel("Sala · " + sala));
+        formManutencao.locator("[name=inicio]").fill("2027-10-05T07:00");
+        formManutencao.locator("[name=fim]").fill("2027-10-05T12:00");
+        formManutencao.locator("[name=motivo]").fill("vazamento " + sufixo);
+        formManutencao.locator("button[type=submit]").click();
+        assertThat(pagina.locator("#dialogo-titulo")).hasText("Há reserva aprovada nesse período");
+        pagina.locator("#dialogo [name=aviso]").selectOption("sim");
+        pagina.locator("#dialogo-confirmar").click();
+        avisoContem("Manutenção registrada");
+        Locator linhaManutencao = pagina.locator("#lista-manutencoes tr").filter(new Locator.FilterOptions().setHasText(sala));
+        assertThat(linhaManutencao).containsText("vazamento " + sufixo);
+
+        // Encerrar a manutencao (RF-21) tira a linha da lista.
+        linhaManutencao.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Encerrar")).click();
+        pagina.locator("#dialogo-confirmar").click();
+        avisoContem("Manutenção encerrada");
+        assertThat(linhaManutencao).hasCount(0);
+
+        // Usuarios: cadastra Responsavel do Bloco C e inativa a conta.
+        aba("Usuários");
+        Locator formUsuario = pagina.locator("#form-usuario");
+        formUsuario.locator("[name=email]").fill(email);
+        formUsuario.locator("[name=senha]").fill("senhaForte123");
+        formUsuario.locator("#usuario-perfil-novo").selectOption("RESPONSAVEL");
+        assertThat(pagina.locator("#usuario-local")).isVisible();
+        formUsuario.locator("[name=localizacao]").fill("Bloco C");
+        formUsuario.locator("button[type=submit]").click();
+        avisoContem("Usuário cadastrado");
+        Locator conta = pagina.locator("#lista-usuarios li").filter(new Locator.FilterOptions().setHasText(email));
+        assertThat(conta).containsText("Responde por Bloco C");
+        conta.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Inativar")).click();
+        pagina.locator("#dialogo-confirmar").click();
+        avisoContem("Conta inativada");
+        assertThat(conta).containsText("inativa");
+
+        // Auditoria (RF-28): eventos de usuario com o Administrador como autor.
+        aba("Auditoria");
+        pagina.locator("#form-auditoria [name=entidade]").selectOption("Usuario");
+        pagina.locator("#form-auditoria button[type=submit]").click();
+        Locator auditoria = pagina.locator("#resultado-auditoria");
+        assertThat(auditoria).containsText("INATIVACAO");
+        assertThat(auditoria).containsText("CRIACAO");
+        assertThat(auditoria).containsText("admin@example.com");
+        sair();
+
+        // Solicitante ve a reserva cancelada pela manutencao.
+        entrarComo("Solicitante");
+        aba("Minhas reservas");
+        pagina.locator("#filtro-estado").selectOption("");
+        assertThat(cartaoDaReserva(finalidade).locator(".selo")).hasText("Cancelada");
+        sair();
+
+        // Responsavel: busca disponivel (sem montar reserva) e catalogo somente leitura (RF-07 a RF-10).
+        entrarComo("Responsável (Bloco A)");
+        aba("Buscar disponibilidade");
+        assertThat(pagina.locator("#cartao-nova-reserva")).isHidden();
+        Locator buscaResp = pagina.locator("#form-busca");
+        buscaResp.locator("[name=inicio]").fill("2027-10-06T08:00");
+        buscaResp.locator("[name=fim]").fill("2027-10-06T10:00");
+        buscaResp.locator("button[type=submit]").click();
+        Locator resultado = pagina.locator("#resultado-busca li").filter(new Locator.FilterOptions().setHasText(sala));
+        assertThat(resultado).hasCount(1);
+        assertThat(resultado.getByRole(AriaRole.BUTTON)).hasCount(0);
+        aba("Catálogo");
+        assertThat(pagina.locator("#catalogo-consulta")).containsText(sala);
+        assertThat(pagina.locator("#catalogo-consulta button")).hasCount(0);
     }
 }

@@ -172,7 +172,7 @@ class InterfacePerfisApiTest {
             String muitas = "[" + String.join(",", java.util.Collections.nCopies(21, "\"c\"")) + "]";
             chamar(json(post("/professores"), "{\"nome\":\"P\",\"identificadorInstitucional\":\"X-1\",\"competencias\":" + muitas + "}"), ADMIN)
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.detail").value(containsString("no maximo 20")));
+                    .andExpect(jsonPath("$.detail").value(containsString("no máximo 20")));
             chamar(json(post("/professores"), "{\"nome\":\"P\",\"identificadorInstitucional\":\"X-2\",\"competencias\":[\" \"]}"), ADMIN)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.detail").value(containsString("'competencias'")));

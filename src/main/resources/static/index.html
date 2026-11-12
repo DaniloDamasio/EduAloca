@@ -55,7 +55,7 @@
         <nav class="abas" id="abas" aria-label="Seções"></nav>
 
         <!-- Solicitante: buscar e reservar -->
-        <section class="painel" id="painel-buscar" data-perfis="SOLICITANTE" data-titulo="Buscar e reservar" hidden>
+        <section class="painel" id="painel-buscar" data-perfis="SOLICITANTE RESPONSAVEL ADMINISTRADOR" data-titulo="Buscar e reservar" hidden>
             <div class="grade">
                 <div class="cartao">
                     <h2>Buscar disponibilidade</h2>
@@ -88,7 +88,7 @@
                     <ul class="lista" id="resultado-busca"></ul>
                 </div>
 
-                <div class="cartao">
+                <div class="cartao" id="cartao-nova-reserva">
                     <h2>Nova reserva</h2>
                     <p class="dica">Adicione recursos a partir da busca. O horário usado é o da busca.</p>
                     <ul class="lista" id="carrinho"></ul>
@@ -122,6 +122,7 @@
                         <button type="button" class="botao botao--secundario" id="atualizar-reservas">Atualizar</button>
                     </div>
                 </div>
+                <div id="pendencias" class="pendencias" hidden></div>
                 <div id="lista-reservas" class="reservas"></div>
             </div>
         </section>
@@ -177,6 +178,7 @@
             <div class="grade">
                 <form class="cartao formulario" id="form-manutencao">
                     <h2>Bloquear para manutenção</h2>
+                    <p class="dica">Se houver reserva aprovada no período, o sistema pede confirmação: confirmar cancela essas reservas e avisa os solicitantes.</p>
                     <label>Recurso <select name="recurso" id="manutencao-recurso" required></select></label>
                     <div class="linha">
                         <label>Início <input type="datetime-local" name="inicio" required></label>
@@ -189,6 +191,75 @@
                     <h2>Catálogo ativo</h2>
                     <div id="catalogo"></div>
                 </div>
+            </div>
+            <div class="cartao">
+                <div class="cabecalho-cartao">
+                    <h2>Manutenções cadastradas</h2>
+                    <button type="button" class="botao botao--secundario" id="atualizar-manutencoes">Atualizar</button>
+                </div>
+                <div id="lista-manutencoes"></div>
+            </div>
+        </section>
+
+        <!-- Catalogo somente leitura (Solicitante e Responsavel, RF-07) -->
+        <section class="painel" id="painel-catalogo" data-perfis="SOLICITANTE RESPONSAVEL" data-titulo="Catálogo" hidden>
+            <div class="cartao">
+                <h2>Salas, professores e materiais ativos</h2>
+                <div id="catalogo-consulta"></div>
+            </div>
+        </section>
+
+        <!-- Usuarios (Administrador) -->
+        <section class="painel" id="painel-usuarios" data-perfis="ADMINISTRADOR" data-titulo="Usuários" hidden>
+            <div class="grade">
+                <form class="cartao formulario" id="form-usuario">
+                    <h2>Novo usuário</h2>
+                    <label>E-mail <input type="email" name="email" required maxlength="120" autocomplete="off"></label>
+                    <label>Senha inicial (mínimo 8 caracteres)
+                        <input type="password" name="senha" required minlength="8" maxlength="120" autocomplete="new-password">
+                    </label>
+                    <label>Perfil
+                        <select name="perfil" id="usuario-perfil-novo">
+                            <option value="SOLICITANTE">Solicitante</option>
+                            <option value="RESPONSAVEL">Responsável</option>
+                            <option value="ADMINISTRADOR">Administrador</option>
+                        </select>
+                    </label>
+                    <label id="usuario-local" hidden>Local sob responsabilidade
+                        <input name="localizacao" maxlength="120" placeholder="ex.: Bloco C">
+                    </label>
+                    <button type="submit" class="botao">Cadastrar usuário</button>
+                </form>
+                <div class="cartao">
+                    <h2>Contas</h2>
+                    <div id="lista-usuarios"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Auditoria (Administrador, RF-28/RF-29) -->
+        <section class="painel" id="painel-auditoria" data-perfis="ADMINISTRADOR" data-titulo="Auditoria" hidden>
+            <div class="cartao">
+                <h2>Auditoria (somente leitura)</h2>
+                <form id="form-auditoria" class="formulario">
+                    <div class="linha">
+                        <label>Entidade
+                            <select name="entidade">
+                                <option value="">Todas</option>
+                                <option>Reserva</option>
+                                <option>Sala</option>
+                                <option>Professor</option>
+                                <option>Material</option>
+                                <option>Manutencao</option>
+                                <option>Usuario</option>
+                            </select>
+                        </label>
+                        <label>Ação <input name="acao" maxlength="60" placeholder="ex.: CRIACAO"></label>
+                        <label>Máximo de eventos <input type="number" name="limite" min="1" max="500" value="100"></label>
+                    </div>
+                    <button type="submit" class="botao">Consultar</button>
+                </form>
+                <div id="resultado-auditoria"></div>
             </div>
         </section>
     </section>

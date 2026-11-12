@@ -104,7 +104,7 @@ class HistoricoReservaTransacaoIT {
                 () -> assertEquals(AGORA, ((Timestamp) aprovacao.get("instante")).toInstant()),
                 () -> assertEquals("SOLICITADA", aprovacao.get("estado_anterior")),
                 () -> assertEquals("APROVADA", aprovacao.get("estado_novo")),
-                () -> assertEquals("Aprovacao da solicitacao", aprovacao.get("motivo")),
+                () -> assertEquals("Aprovação da solicitação", aprovacao.get("motivo")),
                 () -> assertNull(linhas.get(0).get("estado_anterior")),
                 () -> assertEquals("SOLICITADA", linhas.get(0).get("estado_novo")));
         assertEquals(List.of(EstadoReserva.SOLICITADA, EstadoReserva.APROVADA),
@@ -163,7 +163,7 @@ class HistoricoReservaTransacaoIT {
                         "UPDATE reserva_historico SET motivo = 'adulterado' WHERE reserva_id = ?", reserva.getId())),
                 () -> assertThrows(DataAccessException.class, () -> jdbc.update(
                         "DELETE FROM reserva_historico WHERE reserva_id = ?", reserva.getId())));
-        assertEquals("Criacao: recurso restrito aguarda aprovacao", historicoNoBanco(reserva.getId()).get(0).get("motivo"));
+        assertEquals("Criação: recurso restrito aguarda aprovação", historicoNoBanco(reserva.getId()).get(0).get("motivo"));
     }
 
     private ReservaService servico(HistoricoReservaRepositorio repositorioHistorico) {

@@ -34,7 +34,7 @@ public class TratadorDeErros {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> corpoIlegivel(HttpMessageNotReadableException e) {
-        return problema(400, "Requisicao invalida: verifique os campos e o formato das datas (aaaa-mm-ddThh:mm)");
+        return problema(400, "Requisição inválida: verifique os campos e o formato das datas (aaaa-mm-ddThh:mm)");
     }
 
     /**
@@ -48,8 +48,8 @@ public class TratadorDeErros {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> parametroInvalido(MethodArgumentTypeMismatchException e) {
-        return problema(400, "Valor invalido para '" + e.getName()
-                + "': use numero inteiro, UUID ou data no formato aaaa-mm-ddThh:mm, conforme o campo");
+        return problema(400, "Valor inválido para '" + e.getName()
+                + "': use número inteiro, UUID ou data no formato aaaa-mm-ddThh:mm, conforme o campo");
     }
 
     @ExceptionHandler(Exception.class)
@@ -60,7 +60,7 @@ public class TratadorDeErros {
             return problema(status, mensagemPara(status));
         }
         LOG.error("Erro inesperado ao processar requisicao", e);
-        return problema(500, "Nao foi possivel concluir a operacao. Tente novamente mais tarde.");
+        return problema(500, "Não foi possível concluir a operação. Tente novamente mais tarde.");
     }
 
     private static ResponseEntity<ProblemDetail> problema(int status, String mensagem) {
@@ -72,24 +72,24 @@ public class TratadorDeErros {
 
     private static String tituloPara(int status) {
         return switch (status) {
-            case 400 -> "Requisicao invalida";
-            case 401 -> "Autenticacao necessaria";
+            case 400 -> "Requisição inválida";
+            case 401 -> "Autenticação necessária";
             case 403 -> "Acesso negado";
-            case 404 -> "Nao encontrado";
-            case 405 -> "Operacao nao permitida";
+            case 404 -> "Não encontrado";
+            case 405 -> "Operação não permitida";
             case 409 -> "Conflito";
-            case 415 -> "Formato nao suportado";
+            case 415 -> "Formato não suportado";
             case 500 -> "Erro interno";
-            default -> "Requisicao nao atendida";
+            default -> "Requisição não atendida";
         };
     }
 
     private static String mensagemPara(int status) {
         return switch (status) {
-            case 404 -> "Endereco da API nao encontrado";
-            case 405 -> "Operacao nao permitida para este endereco";
-            case 415 -> "Formato da requisicao nao suportado: envie JSON";
-            default -> "Requisicao nao pode ser atendida";
+            case 404 -> "Endereço da API não encontrado";
+            case 405 -> "Operação não permitida para este endereço";
+            case 415 -> "Formato da requisição não suportado: envie JSON";
+            default -> "Requisição não pode ser atendida";
         };
     }
 }

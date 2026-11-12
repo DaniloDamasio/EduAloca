@@ -102,9 +102,9 @@ class ApiSegurancaTest {
     void errosDoFramework_mantemStatusSemDetalheInterno() throws Exception {
         api.perform(get("/nao-existe").header("Authorization", "Bearer " + tokenSolicitante))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").value("Endereco da API nao encontrado"));
+                .andExpect(jsonPath("$.mensagem").value("Endereço da API não encontrado"));
         api.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/manutencoes"))
                 .andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.mensagem").value("Operacao nao permitida para este endereco"));
+                .andExpect(jsonPath("$.mensagem").value("Operação não permitida para este endereço"));
     }
 }

@@ -135,6 +135,7 @@ function dialogo(titulo, campos, textoConfirmar = 'Confirmar') {
 const estado = {
     usuario: null,
     carrinho: [],          // [{ tipo, id, nome, quantidade }]
+    usuarios: null,        // contas (so Administrador), para mostrar e-mail no lugar do id na auditoria
     periodoBusca: null,    // { inicio, fim } da ultima busca
     reservas: [],
     catalogo: { salas: [], professores: [], materiais: [] },
@@ -165,16 +166,26 @@ async function iniciarSessao() {
     $('#titulo-reservas').textContent = perfil() === 'SOLICITANTE' ? 'Minhas reservas'
         : perfil() === 'RESPONSAVEL' ? 'Reservas sob sua responsabilidade' : 'Todas as reservas';
     $('#filtro-estado').value = ehDecisor() ? 'SOLICITADA' : '';
-    await Promise.all([carregarReservas(), carregarCatalogo()]);
+    // Busca para todos (RF-08 a RF-10); montar e pedir reserva so o Solicitante (RF-12, DEF-009).
+    $('#cartao-nova-reserva').hidden = perfil() !== 'SOLICITANTE';
+    const cargas = [carregarReservas(), carregarCatalogo()];
+    if (ehDecisor()) cargas.push(carregarPendencias());
+    if (perfil() === 'ADMINISTRADOR') cargas.push(carregarManutencoes(), carregarUsuarios());
+    await Promise.all(cargas);
 }
 
 function montarAbas() {
     const paineis = $$('.painel').filter((p) => p.dataset.perfis.split(' ').includes(perfil()));
+    if (perfil() !== 'SOLICITANTE') {
+        // Responsavel e Administrador comecam pelas aprovacoes; o Solicitante, pela busca.
+        paineis.sort((a, b) => (b.id === 'painel-reservas') - (a.id === 'painel-reservas'));
+    }
     $$('.painel').forEach((p) => { p.hidden = true; });
     const abas = paineis.map((painel) => el('button', {
         type: 'button', class: 'aba', role: 'tab', 'aria-controls': painel.id,
         text: painel.id === 'painel-reservas' && perfil() !== 'SOLICITANTE' ? 'Aprovações e uso'
-            : painel.id === 'painel-reservas' ? 'Minhas reservas' : painel.dataset.titulo,
+            : painel.id === 'painel-reservas' ? 'Minhas reservas'
+                : painel.id === 'painel-buscar' && perfil() !== 'SOLICITANTE' ? 'Buscar disponibilidade' : painel.dataset.titulo,
         onclick: () => selecionarAba(painel.id),
     }));
     $('#abas').replaceChildren(...abas);
@@ -184,7 +195,12 @@ function montarAbas() {
 function selecionarAba(idPainel) {
     $$('.aba').forEach((aba) => aba.setAttribute('aria-selected', String(aba.getAttribute('aria-controls') === idPainel)));
     $$('.painel').forEach((p) => { p.hidden = p.id !== idPainel; });
-    if (idPainel === 'painel-reservas') carregarReservas();
+    if (idPainel === 'painel-reservas') {
+        carregarReservas();
+        if (ehDecisor()) carregarPendencias();
+    }
+    if (idPainel === 'painel-usuarios') carregarUsuarios();
+    if (idPainel === 'painel-cadastro') carregarManutencoes();
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -239,10 +255,10 @@ function renderizarResultadoBusca(tipo, itens, quantidade) {
     }
     lista.replaceChildren(...itens.map((r) => el('li', {},
         el('div', {}, el('strong', { text: r.nome }), el('div', { class: 'dica', text: descreverRecurso(tipo, r) })),
-        el('button', {
+        perfil() === 'SOLICITANTE' ? el('button', {
             type: 'button', class: 'botao botao--pequeno', text: 'Adicionar',
             onclick: () => adicionarAoCarrinho({ tipo, id: r.id, nome: r.nome, quantidade, restrito: !!r.restrito }),
-        }))));
+        }) : null)));
 }
 
 function adicionarAoCarrinho(item) {
@@ -323,9 +339,11 @@ function cartaoReserva(r) {
     const botao = (texto, classe, acao) => el('button', { type: 'button', class: 'botao botao--pequeno ' + classe, text: texto, onclick: acao });
 
     if (perfil() === 'SOLICITANTE' && (r.estado === 'SOLICITADA' || r.estado === 'APROVADA')) {
-        acoes.append(
-            botao('Alterar horário', 'botao--secundario', (e) => alterarHorario(e.target, r)),
-            botao('Cancelar', 'botao--perigo', (e) => cancelar(e.target, r)));
+        acoes.append(botao('Alterar horário', 'botao--secundario', (e) => alterarHorario(e.target, r)));
+    }
+    // RF-14 / P-06: o Solicitante cancela em qualquer estado anterior a CONCLUIDA, inclusive EM_USO.
+    if (perfil() === 'SOLICITANTE' && ['SOLICITADA', 'APROVADA', 'EM_USO'].includes(r.estado)) {
+        acoes.append(botao('Cancelar', 'botao--perigo', (e) => cancelar(e.target, r)));
     }
     if (ehDecisor()) {
         if (r.estado === 'SOLICITADA') {
@@ -476,6 +494,21 @@ async function carregarCatalogo() {
     if (!catalogo) return;
     estado.catalogo = catalogo;
     if (perfil() === 'ADMINISTRADOR') renderizarCatalogo();
+    else renderizarCatalogoConsulta();
+}
+
+/** RF-07: consulta somente leitura dos recursos ativos, agrupada por tipo. */
+function renderizarCatalogoConsulta() {
+    const grupos = [['SALA', 'Salas'], ['PROFESSOR', 'Professores'], ['MATERIAL', 'Materiais']];
+    const itens = itensDoCatalogo();
+    $('#catalogo-consulta').replaceChildren(...grupos.flatMap(([tipo, titulo]) => {
+        const doTipo = itens.filter((i) => i.tipo === tipo);
+        return [el('h3', { text: titulo + ' (' + doTipo.length + ')' }),
+            doTipo.length
+                ? el('ul', { class: 'lista' }, doTipo.map((i) => el('li', {},
+                    el('div', {}, el('strong', { text: i.nome }), el('div', { class: 'dica', text: i.detalhe })))))
+                : el('p', { class: 'dica', text: 'Nenhum cadastro ativo.' })];
+    }));
 }
 
 function itensDoCatalogo() {
@@ -539,14 +572,154 @@ function ligarCadastro(idForm, montarCorpo, chamar, mensagem) {
     });
 }
 
+/**
+ * RF-21/RF-23: se a manutencao colide com reserva aprovada, a API recusa (409) e a tela pede confirmacao explicita;
+ * confirmar reenvia com confirmarColisao, o que cancela as reservas aprovadas do periodo e avisa os solicitantes.
+ */
 async function registrarManutencao(evento) {
     evento.preventDefault();
+    const botao = evento.target.querySelector('button[type=submit]');
     const f = evento.target.elements;
     const [tipoRecurso, recursoId] = f.recurso.value.split('|');
-    const criada = await executar(evento.target.querySelector('button[type=submit]'),
-        () => Api.cadastrarManutencao({ tipoRecurso, recursoId, inicio: f.inicio.value, fim: f.fim.value, motivo: f.motivo.value.trim() }),
-        'Manutenção registrada: o recurso fica bloqueado no período.');
-    if (criada) f.motivo.value = '';
+    const corpo = { tipoRecurso, recursoId, inicio: f.inicio.value, fim: f.fim.value, motivo: f.motivo.value.trim() };
+    botao.disabled = true;
+    try {
+        await Api.cadastrarManutencao(corpo);
+    } catch (e) {
+        if (!(e.status === 409 && /confirma/i.test(e.message))) {
+            aviso(e.message || 'Erro inesperado', 'erro');
+            return;
+        }
+        const confirmar = await dialogo('Há reserva aprovada nesse período', [{
+            nome: 'aviso', rotulo: 'Confirmar cancela as reservas aprovadas do período e avisa os solicitantes. Reserva já em uso impede a manutenção.',
+            tipo: 'select', opcoes: [['nao', 'Não, manter as reservas'], ['sim', 'Sim, cancelar e bloquear']],
+        }], 'Continuar');
+        if (!confirmar || confirmar.aviso !== 'sim') return;
+        try {
+            await Api.cadastrarManutencao({ ...corpo, confirmarColisao: true });
+        } catch (e2) {
+            aviso(e2.message || 'Erro inesperado', 'erro');
+            return;
+        }
+    } finally {
+        botao.disabled = false;
+    }
+    aviso('Manutenção registrada: o recurso fica bloqueado no período.', 'ok');
+    f.motivo.value = '';
+    await carregarManutencoes();
+}
+
+async function carregarManutencoes() {
+    if (perfil() !== 'ADMINISTRADOR') return;
+    const lista = await executar(null, () => Api.manutencoes());
+    if (!lista) return;
+    $('#lista-manutencoes').replaceChildren(lista.length
+        ? el('div', { class: 'tabela-rolagem' }, el('table', {},
+            el('thead', {}, el('tr', {}, ['Recurso', 'Período', 'Motivo', ''].map((t) => el('th', { text: t })))),
+            el('tbody', {}, lista.map((m) => el('tr', {},
+                el('td', { text: (ROTULO_TIPO[m.tipoRecurso] || m.tipoRecurso) + ' · ' + (m.recursoNome || '—') }),
+                el('td', { text: formatarPeriodo(m.inicio, m.fim) }),
+                el('td', { text: m.motivo }),
+                el('td', {}, el('button', { type: 'button', class: 'botao botao--perigo botao--pequeno', text: 'Encerrar',
+                    onclick: (e) => encerrarManutencao(e.target, m) })))))))
+        : el('p', { class: 'dica', text: 'Nenhuma manutenção cadastrada.' }));
+}
+
+/** RF-21: encerrar (ou cancelar) a manutencao libera o recurso na hora; fica registrado na auditoria. */
+async function encerrarManutencao(botao, m) {
+    const ok = await dialogo('Encerrar a manutenção de "' + (m.recursoNome || 'recurso') + '"?', [], 'Encerrar');
+    if (ok && await executar(botao, () => Api.encerrarManutencao(m.id), 'Manutenção encerrada: o recurso está liberado.')) {
+        await carregarManutencoes();
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Devolucoes em atraso (Responsavel e Administrador, RF-26)
+// ---------------------------------------------------------------------------------------------------------------
+
+async function carregarPendencias() {
+    const pendentes = await executar(null, () => Api.retiradasPendentes());
+    const area = $('#pendencias');
+    if (!pendentes || !pendentes.length) {
+        area.hidden = true;
+        area.replaceChildren();
+        return;
+    }
+    const nomeDoMaterial = (id) => {
+        const m = estado.catalogo.materiais.find((x) => x.id === id);
+        return m ? m.nome : 'material ' + idCurto(id);
+    };
+    area.replaceChildren(el('h3', { text: 'Devoluções em atraso (' + pendentes.length + ')' }),
+        el('ul', { class: 'lista' }, pendentes.map((p) => el('li', {},
+            el('span', { text: nomeDoMaterial(p.materialId) + ' · retirado em ' + formatarData(p.dataRetirada)
+                + ' · reserva ' + idCurto(p.reservaId) })))));
+    area.hidden = false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Usuarios e auditoria (Administrador)
+// ---------------------------------------------------------------------------------------------------------------
+
+async function carregarUsuarios() {
+    if (perfil() !== 'ADMINISTRADOR') return;
+    const contas = await executar(null, () => Api.usuarios());
+    if (!contas) return;
+    estado.usuarios = contas;
+    $('#lista-usuarios').replaceChildren(el('ul', { class: 'lista' }, contas.map((c) => el('li', {},
+        el('div', {},
+            el('span', { class: 'selo', text: ROTULO_PERFIL[c.perfil] || c.perfil }), ' ', el('strong', { text: c.email }),
+            el('div', { class: 'dica', text: (c.localizacao ? 'Responde por ' + c.localizacao + ' · ' : '') + (c.ativo ? 'ativa' : 'inativa') })),
+        c.ativo && c.id !== estado.usuario.id
+            ? el('button', { type: 'button', class: 'botao botao--perigo botao--pequeno', text: 'Inativar', onclick: (e) => inativarUsuario(e.target, c) })
+            : null))));
+}
+
+async function cadastrarUsuario(evento) {
+    evento.preventDefault();
+    const form = evento.target;
+    const f = form.elements;
+    const corpo = { email: f.email.value.trim(), senha: f.senha.value, perfil: f.perfil.value,
+        localizacao: f.perfil.value === 'RESPONSAVEL' ? f.localizacao.value.trim() : null };
+    const criada = await executar(form.querySelector('button[type=submit]'), () => Api.cadastrarUsuario(corpo), 'Usuário cadastrado.');
+    if (criada) {
+        form.reset();
+        $('#usuario-local').hidden = true;
+        await carregarUsuarios();
+    }
+}
+
+async function inativarUsuario(botao, conta) {
+    const ok = await dialogo('Inativar a conta ' + conta.email + '?', [], 'Inativar');
+    if (ok && await executar(botao, () => Api.inativarUsuario(conta.id), 'Conta inativada: o acesso foi encerrado.')) {
+        await carregarUsuarios();
+    }
+}
+
+/** Autor de um evento: e-mail conhecido, "sistema" para transicoes automaticas ou o inicio do id. */
+function nomeDoAutor(id) {
+    if (!id) return '—';
+    if (id === '00000000-0000-0000-0000-00000000005e') return 'sistema';
+    const conta = (estado.usuarios || []).find((c) => c.id === id);
+    return conta ? conta.email : idCurto(id);
+}
+
+async function consultarAuditoria(evento) {
+    evento.preventDefault();
+    const f = evento.target.elements;
+    if (!estado.usuarios) await carregarUsuarios();
+    const eventos = await executar(evento.target.querySelector('button[type=submit]'),
+        () => Api.auditoria({ entidade: f.entidade.value, acao: f.acao.value, limite: f.limite.value }));
+    if (!eventos) return;
+    $('#resultado-auditoria').replaceChildren(eventos.length
+        ? el('div', { class: 'tabela-rolagem' }, el('table', {},
+            el('thead', {}, el('tr', {}, ['Quando', 'Entidade', 'Ação', 'Autor', 'Registro'].map((t) => el('th', { text: t })))),
+            el('tbody', {}, eventos.map((e) => el('tr', {},
+                el('td', { text: formatarData(e.dataHora) }),
+                el('td', { text: e.entidade }),
+                el('td', { text: e.acao }),
+                el('td', { text: nomeDoAutor(e.autorId) }),
+                el('td', { text: idCurto(e.entidadeId) }))))))
+        : el('p', { class: 'dica', text: 'Nenhum evento com esses filtros.' }));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -577,6 +750,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         await Api.sair().catch(() => {});
         estado.carrinho = [];
         estado.periodoBusca = null;
+        estado.usuarios = null;
+        $('#resultado-auditoria').replaceChildren();
+        $('#resultado-busca').replaceChildren();
         mostrarLogin();
     });
 
@@ -587,6 +763,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#atualizar-reservas').addEventListener('click', carregarReservas);
     $('#form-relatorio').addEventListener('submit', gerarRelatorio);
     $('#form-manutencao').addEventListener('submit', registrarManutencao);
+    $('#atualizar-manutencoes').addEventListener('click', carregarManutencoes);
+    $('#form-usuario').addEventListener('submit', cadastrarUsuario);
+    $('#usuario-perfil-novo').addEventListener('change', (e) => { $('#usuario-local').hidden = e.target.value !== 'RESPONSAVEL'; });
+    $('#form-auditoria').addEventListener('submit', consultarAuditoria);
 
     ligarCadastro('#form-sala', (f) => ({
         nome: f.nome.value, tipo: f.tipo.value, capacidade: Number(f.capacidade.value),

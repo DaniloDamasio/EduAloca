@@ -81,7 +81,7 @@ class HistoricoReservaApiTest {
                 .andExpect(jsonPath("$[1].usuarioId").value(responsavel.getId().toString()))
                 .andExpect(jsonPath("$[1].estadoAnterior").value("SOLICITADA"))
                 .andExpect(jsonPath("$[1].estadoNovo").value("APROVADA"))
-                .andExpect(jsonPath("$[1].motivo").value("Aprovacao da solicitacao"))
+                .andExpect(jsonPath("$[1].motivo").value("Aprovação da solicitação"))
                 .andExpect(jsonPath("$[1].instante").isString());
     }
 

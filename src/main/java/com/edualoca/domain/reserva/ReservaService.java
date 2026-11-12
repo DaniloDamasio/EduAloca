@@ -5,7 +5,6 @@ import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.Intervalos;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.notificacao.NotificacaoService;
-import com.edualoca.domain.recurso.Manutencao;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
@@ -67,7 +66,7 @@ public class ReservaService {
         }
         validarIntervalo(inicio, fim);
         if (finalidade == null || finalidade.isBlank()) {
-            throw new RegraNegocioException(400, "Finalidade da reserva e obrigatoria");
+            throw new RegraNegocioException(400, "Finalidade da reserva é obrigatória");
         }
         if (recursos == null || recursos.isEmpty()) {
             throw new RegraNegocioException(400, "Reserva deve ter ao menos um recurso vinculado");
@@ -85,7 +84,7 @@ public class ReservaService {
 
             Reserva reserva = new Reserva(reservaId, solicitante.getId(), inicio, fim,
                     finalidade, recursos, estadoInicial);
-            String motivo = algumRestrito ? "Criacao: recurso restrito aguarda aprovacao" : "Criacao: aprovada automaticamente";
+            String motivo = algumRestrito ? "Criação: recurso restrito aguarda aprovação" : "Criação: aprovada automaticamente";
             auditandoRecusaDoBanco(reservaId, solicitante, () -> transacao.executar(() -> {
                 repositorio.inserir(reserva);
                 historico.registrar(registro(reserva, solicitante, null, motivo));
@@ -106,10 +105,10 @@ public class ReservaService {
         validarIntervalo(novoInicio, novoFim);
         Reserva reserva = repositorio.buscar(reservaId);
         if (!ehDono(autor, reserva)) {
-            throw new RegraNegocioException(403, "Usuario nao autorizado a alterar reserva de outro solicitante");
+            throw new RegraNegocioException(403, "Usuário não autorizado a alterar reserva de outro solicitante");
         }
         if (reserva.getEstado() != EstadoReserva.SOLICITADA && reserva.getEstado() != EstadoReserva.APROVADA) {
-            throw new RegraNegocioException(409, "Reserva em estado incompativel com alteracao");
+            throw new RegraNegocioException(409, "Reserva em estado incompatível com alteração");
         }
         List<ReentrantLock> locksAdquiridos = adquirirLocksOrdenados(reserva.getRecursos());
         try {
@@ -138,35 +137,59 @@ public class ReservaService {
     public Reserva cancelar(Usuario autor, UUID reservaId, String motivo) {
         Banco.seedSeNecessario();
         if (motivo == null || motivo.isBlank()) {
-            throw new RegraNegocioException(400, "Motivo do cancelamento e obrigatorio");
+            throw new RegraNegocioException(400, "Motivo do cancelamento é obrigatório");
         }
         Reserva reserva = repositorio.buscar(reservaId);
         if (!ehDono(autor, reserva)) {
-            throw new RegraNegocioException(403, "Usuario nao autorizado a cancelar reserva de outro solicitante");
+            throw new RegraNegocioException(403, "Usuário não autorizado a cancelar reserva de outro solicitante");
         }
         if (reserva.getEstado() == EstadoReserva.CONCLUIDA || reserva.getEstado() == EstadoReserva.CANCELADA
                 || reserva.getEstado() == EstadoReserva.REJEITADA || reserva.getEstado() == EstadoReserva.NAO_COMPARECEU) {
-            throw new RegraNegocioException(409, "Reserva em estado terminal nao pode ser cancelada");
+            throw new RegraNegocioException(409, "Reserva em estado terminal não pode ser cancelada");
         }
         transicionar(reserva, autor, motivo, () -> reserva.setEstado(EstadoReserva.CANCELADA));
         AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO", autor.getId(), LocalDateTime.now(clock));
         return reserva;
     }
 
+    /**
+     * RF-23 (confirmacao explicita): ao confirmar uma manutencao que colide com reserva {@code APROVADA}, o
+     * Administrador cancela essa reserva. Grava historico com o motivo, um evento {@code CANCELAMENTO_POR_MANUTENCAO} e
+     * notifica o Solicitante. Reserva {@code EM_USO} nao e cancelada aqui (409): o recurso ja esta em uso.
+     */
+    public Reserva cancelarPorManutencao(Usuario administrador, UUID reservaId, String motivoManutencao) {
+        Banco.seedSeNecessario();
+        if (administrador.getPerfil() != Perfil.ADMINISTRADOR) {
+            throw new RegraNegocioException(403, "Apenas o Administrador pode cancelar reservas para manutenção");
+        }
+        if (motivoManutencao == null || motivoManutencao.isBlank()) {
+            throw new RegraNegocioException(400, "Motivo da manutenção é obrigatório");
+        }
+        Reserva reserva = repositorio.buscar(reservaId);
+        if (reserva == null || reserva.getEstado() != EstadoReserva.APROVADA) {
+            throw new RegraNegocioException(409, "Só reserva APROVADA pode ser cancelada para manutenção");
+        }
+        transicionar(reserva, administrador, "Cancelada para manutenção: " + motivoManutencao.strip(),
+                () -> reserva.setEstado(EstadoReserva.CANCELADA));
+        AuditoriaService.registrar("Reserva", reserva.getId(), "CANCELAMENTO_POR_MANUTENCAO", administrador.getId(),
+                LocalDateTime.now(clock));
+        return reserva;
+    }
+
     public Reserva aprovar(Usuario responsavel, UUID reservaId) {
         Banco.seedSeNecessario();
         if (responsavel.getPerfil() != Perfil.RESPONSAVEL && responsavel.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem aprovar reservas");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem aprovar reservas");
         }
         Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
+            throw new RegraNegocioException(409, "Reserva não está em estado SOLICITADA para aprovação");
         }
         exigirDecisorCompetente(responsavel, reserva, "aprovar");
         if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
-            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para aprovacao");
+            throw new RegraNegocioException(409, "Reserva não está em estado SOLICITADA para aprovação");
         }
-        transicionar(reserva, responsavel, "Aprovacao da solicitacao", () -> reserva.setEstado(EstadoReserva.APROVADA));
+        transicionar(reserva, responsavel, "Aprovação da solicitação", () -> reserva.setEstado(EstadoReserva.APROVADA));
         AuditoriaService.registrar("Reserva", reserva.getId(), "APROVACAO", responsavel.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -179,17 +202,17 @@ public class ReservaService {
     public Reserva iniciarUso(Usuario ator, UUID reservaId) {
         Banco.seedSeNecessario();
         if (ator.getPerfil() != Perfil.RESPONSAVEL && ator.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem iniciar o uso da reserva");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem iniciar o uso da reserva");
         }
         Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva nao esta APROVADA para iniciar o uso");
+            throw new RegraNegocioException(409, "Reserva não está APROVADA para iniciar o uso");
         }
         exigirDecisorCompetente(ator, reserva, "iniciar o uso de");
         if (reserva.getEstado() != EstadoReserva.APROVADA) {
-            throw new RegraNegocioException(409, "Reserva nao esta APROVADA para iniciar o uso");
+            throw new RegraNegocioException(409, "Reserva não está APROVADA para iniciar o uso");
         }
-        transicionar(reserva, ator, "Inicio do uso", () -> reserva.setEstado(EstadoReserva.EM_USO));
+        transicionar(reserva, ator, "Início do uso", () -> reserva.setEstado(EstadoReserva.EM_USO));
         AuditoriaService.registrar("Reserva", reserva.getId(), "INICIO_USO", ator.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -203,7 +226,7 @@ public class ReservaService {
      */
     public Reserva concluir(Usuario ator, UUID reservaId) {
         Reserva reserva = decisorSobreReserva(ator, reservaId, "concluir", EstadoReserva.EM_USO);
-        transicionar(reserva, ator, "Conclusao do uso", () -> reserva.setEstado(EstadoReserva.CONCLUIDA));
+        transicionar(reserva, ator, "Conclusão do uso", () -> reserva.setEstado(EstadoReserva.CONCLUIDA));
         AuditoriaService.registrar("Reserva", reserva.getId(), "CONCLUSAO", ator.getId(), LocalDateTime.now(clock));
         return reserva;
     }
@@ -213,24 +236,58 @@ public class ReservaService {
      * Administrador, so quando o relogio do servidor ja passou de inicio + {@link #TOLERANCIA_NAO_COMPARECIMENTO}.
      */
     public Reserva registrarNaoComparecimento(Usuario ator, UUID reservaId) {
-        Reserva reserva = decisorSobreReserva(ator, reservaId, "registrar o nao comparecimento de", EstadoReserva.APROVADA);
+        Reserva reserva = decisorSobreReserva(ator, reservaId, "registrar o não comparecimento de", EstadoReserva.APROVADA);
         if (LocalDateTime.now(clock).isBefore(reserva.getInicio().plus(TOLERANCIA_NAO_COMPARECIMENTO))) {
-            throw new RegraNegocioException(409, "Nao comparecimento so pode ser registrado "
-                    + TOLERANCIA_NAO_COMPARECIMENTO.toMinutes() + " minutos depois do inicio da reserva");
+            throw new RegraNegocioException(409, "Não comparecimento só pode ser registrado "
+                    + TOLERANCIA_NAO_COMPARECIMENTO.toMinutes() + " minutos depois do início da reserva");
         }
-        transicionar(reserva, ator, "Nao comparecimento", () -> reserva.setEstado(EstadoReserva.NAO_COMPARECEU));
+        transicionar(reserva, ator, "Não comparecimento", () -> reserva.setEstado(EstadoReserva.NAO_COMPARECEU));
         AuditoriaService.registrar("Reserva", reserva.getId(), "NAO_COMPARECIMENTO", ator.getId(), LocalDateTime.now(clock));
         return reserva;
+    }
+
+    /**
+     * P-08 (decisao de 12/11/2026, complemento automatico): reserva que chega ao fim do horario ainda {@code APROVADA}
+     * (o uso nunca foi iniciado) vira {@code NAO_COMPARECEU} sem acao humana. O registro manual continua valendo antes
+     * disso, a partir de inicio + {@link #TOLERANCIA_NAO_COMPARECIMENTO}. A borda e inclusiva: no instante {@code fim}
+     * a reserva ja e encerrada. O autor do historico e da auditoria e {@link Banco#SISTEMA_ID}.
+     *
+     * <p>Chamado periodicamente pelo agendador ({@code com.edualoca.agendamento}); seguro para chamar de novo, porque so
+     * mexe em reservas ainda {@code APROVADA}.
+     *
+     * @return as reservas encerradas nesta passada
+     */
+    public List<Reserva> registrarNaoComparecimentosVencidos() {
+        Banco.seedSeNecessario();
+        LocalDateTime agora = LocalDateTime.now(clock);
+        Usuario sistema = new Usuario(Banco.SISTEMA_ID, "sistema", null, Perfil.ADMINISTRADOR);
+        List<Reserva> encerradas = new java.util.ArrayList<>();
+        for (Reserva reserva : repositorio.listar()) {
+            if (reserva.getEstado() != EstadoReserva.APROVADA || agora.isBefore(reserva.getFim())) {
+                continue;
+            }
+            try {
+                transicionar(reserva, sistema, "Não comparecimento automático: fim do horário sem início do uso",
+                        () -> reserva.setEstado(EstadoReserva.NAO_COMPARECEU));
+                AuditoriaService.registrar("Reserva", reserva.getId(), "NAO_COMPARECIMENTO", Banco.SISTEMA_ID, agora);
+                encerradas.add(reserva);
+            } catch (RuntimeException e) {
+                // Uma reserva com falha de gravacao nao impede as demais; a proxima passada tenta de novo.
+                LOG.log(Level.WARNING, "Nao comparecimento automatico da reserva {0} falhou ({1})",
+                        new Object[]{reserva.getId(), e.getClass().getSimpleName()});
+            }
+        }
+        return encerradas;
     }
 
     /** Perfil, existencia, competencia (antes do estado, para nao revelar estado a quem nao decide) e estado exigido. */
     private Reserva decisorSobreReserva(Usuario ator, UUID reservaId, String acao, EstadoReserva estadoExigido) {
         Banco.seedSeNecessario();
         if (ator.getPerfil() != Perfil.RESPONSAVEL && ator.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem " + acao + " a reserva");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem " + acao + " a reserva");
         }
         Reserva reserva = repositorio.buscar(reservaId);
-        String foraDoEstado = "Reserva nao esta " + estadoExigido + " para " + acao + " a reserva";
+        String foraDoEstado = "Reserva não está " + estadoExigido + " para " + acao + " a reserva";
         if (reserva == null) {
             throw new RegraNegocioException(409, foraDoEstado);
         }
@@ -244,18 +301,18 @@ public class ReservaService {
     public Reserva rejeitar(Usuario responsavel, UUID reservaId, String justificativa) {
         Banco.seedSeNecessario();
         if (responsavel.getPerfil() != Perfil.RESPONSAVEL && responsavel.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem rejeitar reservas");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem rejeitar reservas");
         }
         if (justificativa == null || justificativa.isBlank()) {
-            throw new RegraNegocioException(400, "Justificativa da rejeicao e obrigatoria");
+            throw new RegraNegocioException(400, "Justificativa da rejeição é obrigatória");
         }
         Reserva reserva = repositorio.buscar(reservaId);
         if (reserva == null) {
-            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
+            throw new RegraNegocioException(409, "Reserva não está em estado SOLICITADA para rejeição");
         }
         exigirDecisorCompetente(responsavel, reserva, "rejeitar");
         if (reserva.getEstado() != EstadoReserva.SOLICITADA) {
-            throw new RegraNegocioException(409, "Reserva nao esta em estado SOLICITADA para rejeicao");
+            throw new RegraNegocioException(409, "Reserva não está em estado SOLICITADA para rejeição");
         }
         transicionar(reserva, responsavel, justificativa, () -> reserva.rejeitar(justificativa));
         AuditoriaService.registrar("Reserva", reserva.getId(), "REJEICAO", responsavel.getId(), LocalDateTime.now(clock));
@@ -267,7 +324,7 @@ public class ReservaService {
         Reserva reserva = repositorio.buscar(reservaId);
         if (autor.getPerfil() == Perfil.SOLICITANTE
                 && (reserva == null || !reserva.getSolicitanteId().equals(autor.getId()))) {
-            throw new RegraNegocioException(403, "Solicitante nao pode consultar reserva de outro solicitante");
+            throw new RegraNegocioException(403, "Solicitante não pode consultar reserva de outro solicitante");
         }
         if (reserva == null) {
             throw new RegraNegocioException(409, "Reserva inexistente");
@@ -298,7 +355,7 @@ public class ReservaService {
     public List<RegistroHistoricoReserva> consultarHistorico(Usuario autor, UUID reservaId) {
         Banco.seedSeNecessario();
         if (autor.getPerfil() != Perfil.RESPONSAVEL && autor.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem consultar o historico da reserva");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem consultar o histórico da reserva");
         }
         if (repositorio.buscar(reservaId) == null) {
             throw new RegraNegocioException(409, "Reserva inexistente");
@@ -312,7 +369,7 @@ public class ReservaService {
      * a reserva, para que a resposta nao revele estado nem existencia.
      */
     public void excluir(Usuario autor, UUID reservaId) {
-        throw new RegraNegocioException(403, "Reservas nao podem ser excluidas; para encerrar uma reserva, cancele-a");
+        throw new RegraNegocioException(403, "Reservas não podem ser excluídas; para encerrar uma reserva, cancele-a");
     }
 
     /**
@@ -356,7 +413,7 @@ public class ReservaService {
     private static void exigirDecisorCompetente(Usuario autor, Reserva reserva, String acao) {
         if (!ehDecisorCompetente(autor, reserva)) {
             throw new RegraNegocioException(403,
-                    "Apenas o Responsavel pelo local do recurso (ou o Administrador) pode " + acao + " esta reserva");
+                    "Apenas o Responsável pelo local do recurso (ou o Administrador) pode " + acao + " esta reserva");
         }
     }
 
@@ -385,7 +442,7 @@ public class ReservaService {
 
     private void validarIntervalo(LocalDateTime inicio, LocalDateTime fim) {
         if (inicio == null || fim == null || !fim.isAfter(inicio)) {
-            throw new RegraNegocioException(400, "Intervalo invalido: fim deve ser posterior ao inicio");
+            throw new RegraNegocioException(400, "Intervalo inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')");
         }
     }
 
@@ -405,11 +462,11 @@ public class ReservaService {
         boolean emManutencao = Banco.manutencoes.values().stream()
                 .anyMatch(m -> m.getRecurso() == recurso && Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));
         if (emManutencao) {
-            throw new RegraNegocioException(409, "Recurso em manutencao no intervalo solicitado");
+            throw new RegraNegocioException(409, "Recurso em manutenção no intervalo solicitado");
         }
         if (repositorio.existeConflito(recurso, inicio, fim, reservaIgnorada)) {
             registrarRejeicaoPorSobreposicao(reservaTentada, autor);
-            throw new RegraNegocioException(409, "Recurso indisponivel: sobreposicao com reserva ativa");
+            throw new RegraNegocioException(409, "Recurso indisponível: sobreposição com reserva ativa");
         }
     }
 

@@ -1,7 +1,6 @@
 package com.edualoca.domain.notificacao;
 
 import com.edualoca.domain.comum.Banco;
-import com.edualoca.domain.recurso.Material;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.Reserva;
 
@@ -37,7 +36,7 @@ public class NotificacaoService {
         StatusNotificacao status = responsavelId != null ? StatusNotificacao.ENVIADA : StatusNotificacao.FALHA;
         UUID destinatario = responsavelId != null ? responsavelId : UUID.randomUUID();
         NotificacaoEnviada notificacao = new NotificacaoEnviada(UUID.randomUUID(), destinatario,
-                "Nova solicitacao restrita pendente de aprovacao", status);
+                "Nova solicitação restrita pendente de aprovação", status);
         Banco.notificacoes.put(notificacao.getId(), notificacao);
         return notificacao;
     }

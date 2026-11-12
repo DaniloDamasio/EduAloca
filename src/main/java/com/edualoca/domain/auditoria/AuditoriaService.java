@@ -23,6 +23,26 @@ public class AuditoriaService {
     }
 
     /**
+     * RF-28: eventos de auditoria do mais recente para o mais antigo, filtrados por entidade e acao (ignorando
+     * maiusculas; filtro nulo ou vazio nao restringe), no maximo {@code limite}. So leitura: nenhuma rota altera ou
+     * apaga eventos (RF-29).
+     */
+    public List<AuditoriaEvento> listar(String entidade, String acao, int limite) {
+        Banco.seedSeNecessario();
+        java.util.List<AuditoriaEvento> todos = new java.util.ArrayList<>(Banco.auditoria);
+        java.util.Collections.reverse(todos);
+        return todos.stream()
+                .filter(e -> vazio(entidade) || entidade.strip().equalsIgnoreCase(e.getEntidade()))
+                .filter(e -> vazio(acao) || acao.strip().equalsIgnoreCase(e.getAcao()))
+                .limit(Math.max(0, limite))
+                .toList();
+    }
+
+    private static boolean vazio(String valor) {
+        return valor == null || valor.isBlank();
+    }
+
+    /**
      * Eventos registrados para a entidade, na ordem de registro. Entidade sem eventos devolve lista vazia: a ausencia de
      * registro e informacao de auditoria e nao pode ser mascarada por um evento fabricado (DEF-011).
      */

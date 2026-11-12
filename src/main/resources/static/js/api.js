@@ -114,5 +114,13 @@ const Api = (() => {
             return requisitar('PUT', base + id(recursoId), corpo);
         },
         cadastrarManutencao: (corpo) => requisitar('POST', '/manutencoes', corpo),
+        manutencoes: () => requisitar('GET', '/manutencoes'),
+        encerrarManutencao: (manutencaoId) => requisitar('POST', '/manutencoes/' + id(manutencaoId) + '/encerramento'),
+        retiradasPendentes: () => requisitar('GET', '/retiradas/pendentes'),
+
+        usuarios: () => requisitar('GET', '/usuarios'),
+        cadastrarUsuario: (corpo) => requisitar('POST', '/usuarios', corpo),
+        inativarUsuario: (usuarioId) => requisitar('POST', '/usuarios/' + id(usuarioId) + '/inativacao'),
+        auditoria: (p) => requisitar('GET', comParametros('/auditoria', p)),
     };
 })();

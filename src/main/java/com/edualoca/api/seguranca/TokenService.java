@@ -24,7 +24,7 @@ public class TokenService {
 
     public String emitir(Usuario usuario) {
         if (usuario == null) {
-            throw new IllegalArgumentException("usuario obrigatorio");
+            throw new IllegalArgumentException("usuário obrigatório");
         }
         byte[] bytes = new byte[BYTES_DO_TOKEN];
         aleatorio.nextBytes(bytes);
@@ -52,7 +52,12 @@ public class TokenService {
         }
     }
 
+    /** Revoga todos os tokens do usuario (ex.: conta inativada pelo Administrador). */
+    public void revogarDoUsuario(java.util.UUID usuarioId) {
+        usuarioPorToken.values().removeIf(usuario -> usuarioId.equals(usuario.getId()));
+    }
+
     private static RegraNegocioException naoAutenticado() {
-        return new RegraNegocioException(401, "Autenticacao necessaria: informe um token de acesso valido");
+        return new RegraNegocioException(401, "Autenticação necessária: informe um token de acesso válido");
     }
 }

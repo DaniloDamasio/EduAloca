@@ -117,14 +117,14 @@ public class ReservaController {
             return List.of();
         }
         if (recursos.size() > MAX_RECURSOS_POR_RESERVA) {
-            throw new RegraNegocioException(400, "Uma reserva aceita no maximo " + MAX_RECURSOS_POR_RESERVA + " recursos");
+            throw new RegraNegocioException(400, "Uma reserva aceita no máximo " + MAX_RECURSOS_POR_RESERVA + " recursos");
         }
         return recursos.stream().map(this::recurso).toList();
     }
 
     private ReservaRecurso recurso(CriarReservaRequisicao.RecursoRequisicao r) {
         if (r == null) {
-            throw new RegraNegocioException(400, "Recurso da reserva nao pode ser vazio");
+            throw new RegraNegocioException(400, "Recurso da reserva não pode ser vazio");
         }
         int quantidade = r.quantidade() == null ? 1 : r.quantidade();
         if (quantidade < 1) {

@@ -19,13 +19,13 @@ public record RegistroHistoricoReserva(UUID id, UUID reservaId, UUID usuarioId, 
         exigir(estadoNovo != null, "estado novo");
         exigir(motivo != null && !motivo.isBlank(), "motivo");
         if (estadoAnterior == estadoNovo) {
-            throw new IllegalArgumentException("Registro de historico exige mudanca de estado");
+            throw new IllegalArgumentException("Registro de histórico exige mudança de estado");
         }
     }
 
     private static void exigir(boolean condicao, String campo) {
         if (!condicao) {
-            throw new IllegalArgumentException("Registro de historico sem " + campo);
+            throw new IllegalArgumentException("Registro de histórico sem " + campo);
         }
     }
 }

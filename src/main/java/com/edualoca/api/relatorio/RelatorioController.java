@@ -35,12 +35,12 @@ public class RelatorioController {
 
     private static LocalDateTime data(String valor) {
         if (valor == null || valor.isBlank()) {
-            throw new RegraNegocioException(400, "Informe inicio e fim do periodo (aaaa-mm-ddThh:mm)");
+            throw new RegraNegocioException(400, "Informe início e fim do período (aaaa-mm-ddThh:mm)");
         }
         try {
             return LocalDateTime.parse(valor.trim());
         } catch (DateTimeParseException e) {
-            throw new RegraNegocioException(400, "Data do periodo fora do formato aaaa-mm-ddThh:mm");
+            throw new RegraNegocioException(400, "Data do período fora do formato aaaa-mm-ddThh:mm");
         }
     }
 }

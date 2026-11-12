@@ -79,6 +79,7 @@ public class TratadorDeErros {
             case 405 -> "Operação não permitida";
             case 409 -> "Conflito";
             case 415 -> "Formato não suportado";
+            case 429 -> "Muitas tentativas";
             case 500 -> "Erro interno";
             default -> "Requisição não atendida";
         };

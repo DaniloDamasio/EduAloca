@@ -5,6 +5,7 @@ info:
   description: |
     API de alocacao de salas, professores e materiais (RF-39). Todas as rotas, exceto `POST /auth/login`, exigem
     `Authorization: Bearer <token>`; o token sai do login e o perfil vem sempre do servidor, nunca do corpo.
+    A sessao vence apos 30 minutos sem uso ou 8 horas desde o login (401 "Sessão expirada").
     Datas sao `aaaa-mm-ddThh:mm` no horario local do servidor. Erros seguem ProblemDetail (RFC 9457,
     `application/problem+json`), com `title`, `status`, `detail` e a copia `mensagem`, sem detalhe tecnico.
     Este arquivo e servido pela aplicacao em `/openapi.yaml` e o teste `DocumentacaoOpenApiTest` falha se alguma
@@ -47,6 +48,12 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problema' }
+        '429':
+          description: Depois de 5 senhas erradas para o mesmo e-mail em 15 minutos, o login desse e-mail fica bloqueado por 15 minutos (inclusive com a senha certa)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              example: { title: Muitas tentativas, status: 429, detail: 'Muitas tentativas de login: aguarde 15 minuto(s) e tente novamente' }
   /auth/logout:
     post:
       tags: [Sessao]

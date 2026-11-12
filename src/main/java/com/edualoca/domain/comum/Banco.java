@@ -41,6 +41,8 @@ public final class Banco {
     public static final Map<String, UUID> responsavelPorLocalizacao = new ConcurrentHashMap<>();
     /** E-mails de contas inativadas pelo Administrador: nao fazem login e nao podem ser recadastrados. */
     public static final java.util.Set<String> usuariosInativos = ConcurrentHashMap.newKeySet();
+    /** Falhas de login por e-mail normalizado (limite contra forca bruta, AutenticacaoService). */
+    public static final Map<String, com.edualoca.domain.usuario.TentativasLogin> tentativasLogin = new ConcurrentHashMap<>();
 
     public static final UUID SALA_EXCLUIDA_POR_CONFLITO_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     public static final UUID RESPONSAVEL_BLOCO_A_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
@@ -71,6 +73,7 @@ public final class Banco {
             notificacoes.clear();
             responsavelPorLocalizacao.clear();
             usuariosInativos.clear();
+            tentativasLogin.clear();
             seeded = false;
         }
     }

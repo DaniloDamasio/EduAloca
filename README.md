@@ -4,6 +4,22 @@ Sistema para organizar a alocação de salas, professores e materiais escolares,
 conflitos de horário e dupla reserva de recursos, com três perfis de acesso:
 **Solicitante**, **Responsável** e **Administrador**.
 
+## Autoria e revisão
+
+Trabalho **individual** de Danilo Damasio (QS, 4º semestre). Como não há outro integrante para revisar, a revisão por
+pares pedida no enunciado foi substituída por verificações que não dependem do autor, e todas impedem o merge quando
+falham:
+
+- **CI obrigatório na `main`:** o check "Build e Testes" é exigido pela proteção da branch (`strict`, `enforce_admins`),
+  e nenhum PR entra sem build, suíte completa (unitários, integração com PostgreSQL, E2E em navegador), gate JaCoCo
+  (≥ 80% linhas, ≥ 70% ramos) e análise do SonarCloud.
+- **Revisão adversarial dos testes:** mutação manual das regras críticas ([DOCS/testes/mutacao-manual.md](DOCS/testes/mutacao-manual.md)),
+  que encontrou testes que passavam com qualquer código (DEF-011) e regras sem teste (DEF-014, DEF-015).
+- **Relatório de qualidade** com evidência, interpretação e limite para cada afirmação
+  ([DOCS/relatorio-qualidade.md](DOCS/relatorio-qualidade.md)).
+
+Limite: nenhuma dessas verificações substitui o olhar de outra pessoa sobre legibilidade e decisões de projeto.
+
 ## Visão Geral
 
 O EduAloca organiza a reserva de salas, professores e materiais de uma instituição de
@@ -116,7 +132,8 @@ java -jar target/edualoca-0.0.1-SNAPSHOT.jar
 
 Abra <http://localhost:8080/>. A interface (HTML, CSS e JavaScript puros, sem dependências) é servida pela própria
 aplicação a partir de [src/main/resources/static](src/main/resources/static), adapta-se a celular e desktop e consome
-só a API pública abaixo. Os dados voltam ao seed a cada reinício.
+só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. Os dados voltam ao seed a cada reinício; o que é ou não
+persistido no PostgreSQL está no [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md).
 
 ### Contas de demonstração
 
@@ -126,9 +143,9 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
 |---|---|---|---|
 | Solicitante | `usuario@example.com` | `senhaValida123` | Buscar e reservar; Minhas reservas (alterar horário, cancelar) |
 | Solicitante (2º) | `novo@example.com` | `minhaSenha123` | Idem, para mostrar que um não vê a reserva do outro |
-| Responsável (Bloco A) | `responsavel@example.com` | `senhaResponsavel123` | Aprovações e uso (aprovar, rejeitar, iniciar uso, retirada/devolução, histórico); Relatório |
+| Responsável (Bloco A) | `responsavel@example.com` | `senhaResponsavel123` | Aprovações e uso (aprovar, rejeitar, iniciar uso, não compareceu, concluir, retirada/devolução, histórico); Relatório |
 | Responsável (Bloco B) | `responsavel.b@example.com` | `senhaResponsavelB123` | Idem, só para reservas com sala do Bloco B |
-| Administrador | `admin@example.com` | `senhaAdmin123` | Tudo do Responsável, em qualquer bloco, mais Cadastro e manutenção |
+| Administrador | `admin@example.com` | `senhaAdmin123` | Tudo do Responsável, em qualquer bloco, mais Cadastro (criar, editar, inativar) e manutenção |
 
 ### Roteiro de demonstração (cerca de 5 minutos)
 
@@ -140,7 +157,8 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
    Tente também fim antes do início (400).
 4. **Responsável (Bloco B)**: a lista vem vazia, porque a sala é do Bloco A (competência por local).
 5. **Responsável (Bloco A)** → *Aprovações e uso*: aprove, troque o filtro para *Todos*, **inicie o uso**, abra
-   *Retirada e devolução*, registre a retirada do kit e depois a devolução; abra o *Histórico* (Solicitada → Aprovada → Em uso).
+   *Retirada e devolução*, registre a retirada do kit e depois a devolução; **conclua** a reserva e abra o *Histórico*
+   (Solicitada → Aprovada → Em uso → Concluída). *Não compareceu* só é aceito a partir de 15 minutos depois do início.
 6. **Responsável** → *Relatório*: horas por recurso, carga por professor e conflitos evitados no período.
 7. **Administrador** → *Bloquear para manutenção*: bloqueie uma sala num horário; como Solicitante, ela some da busca
    nesse horário.
@@ -154,11 +172,12 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
 | `GET /salas/disponiveis`, `GET /professores/disponiveis`, `GET /materiais/disponiveis` | todos | busca por tipo, capacidade, localização, competência, quantidade e horário |
 | `GET /reservas` | todos | Solicitante: as próprias; Responsável: as do seu bloco; Administrador: todas |
 | `POST /reservas`, `PUT /reservas/{id}`, `POST /reservas/{id}/cancelamento` | Solicitante (dono) | criar, alterar horário, cancelar |
-| `POST /reservas/{id}/aprovacao`, `/rejeicao`, `/inicio-uso`, `GET /reservas/{id}/historico` | Responsável competente, Administrador | |
+| `POST /reservas/{id}/aprovacao`, `/rejeicao`, `/inicio-uso`, `/conclusao`, `/nao-comparecimento`, `GET /reservas/{id}/historico` | Responsável competente, Administrador | não comparecimento só a partir de início + 15 min |
 | `GET`/`POST /reservas/{id}/retiradas`, `POST /retiradas/{id}/devolucao` | Responsável competente, Administrador | retirada só com reserva `EM_USO`; condição `INTEGRO` ou `DANIFICADO` |
 | `GET /relatorios/utilizacao` | Responsável, Administrador | ver seção do relatório |
-| `POST /salas`, `/professores`, `/materiais`, `POST /{salas\|professores\|materiais}/{id}/inativacao`, `POST /manutencoes` | Administrador | |
+| `POST /salas`, `/professores`, `/materiais`, `PUT /{salas\|professores\|materiais}/{id}`, `POST /{salas\|professores\|materiais}/{id}/inativacao`, `POST /manutencoes` | Administrador | edição no lugar; identificador do professor não muda |
 
+Referência completa (corpos, respostas, códigos de erro e o teste de cada rota): **[DOCS/api.md](DOCS/api.md)**.
 Testes das rotas acima: [InterfacePerfisApiTest](src/test/java/com/edualoca/InterfacePerfisApiTest.java) (caixa-preta,
 token do login real), além de [MatrizAutorizacaoApiTest](src/test/java/com/edualoca/MatrizAutorizacaoApiTest.java).
 
@@ -185,6 +204,11 @@ TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
 ```
 
 Com Docker Desktop ou no CI (`ubuntu-latest`), basta `./mvnw -B verify`.
+
+O teste end-to-end [FluxoCompletoNavegadorIT](src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java) abre a interface
+real em Chromium headless (Playwright 1.64.0) e percorre o fluxo dos três perfis, do cadastro à conclusão, além de
+conferir o layout em 375 px. Na primeira execução, o Playwright baixa o navegador para o cache do usuário. No CI, o
+passo `npx playwright@1.64.0 install --with-deps chromium` faz isso antes do `verify`.
 
 ## Especificação executável (BDD com Cucumber)
 
@@ -299,8 +323,9 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem
   persistência e deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling no login).
   A auditoria de cadastro (criação, edição, inativação e manutenção) registra autor `null` (RF-28), porque
-  `CadastroRecursoService` não recebe o usuário. A retirada/devolução não gera evento de auditoria. A edição de
-  recursos (RF-04 a RF-06) existe no domínio, mas não tem rota.
+  `CadastroRecursoService` não recebe o usuário. A retirada/devolução não gera evento de auditoria. A notificação
+  externa só é chamada com `edualoca.notificacao.externa.habilitada=true`; a chave vem da variável de ambiente
+  `EDUALOCA_NOTIFICACAO_API_KEY`, nunca de arquivo versionado.
 
 ## Roadmap
 
@@ -316,4 +341,9 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] Testes de integração com persistência real (Testcontainers) e concorrência entre instâncias
 - [x] Teste de carga (JMeter, rodada 01 em [DOCS/performance/resultado-01.md](DOCS/performance/resultado-01.md))
 - [x] Interface web responsiva para os três perfis (HTML, CSS e JS puros em `src/main/resources/static`)
-- [x] RTM (Requirements Traceability Matrix) — cobertura inicial, ver [DOCS/RTM.md](DOCS/RTM.md)
+- [x] RTM (Requirements Traceability Matrix), 32/32 requisitos críticos, ver [DOCS/RTM.md](DOCS/RTM.md)
+- [x] Notificação ligada aos fluxos de reserva (simulada por padrão; adaptador HTTP opcional)
+- [x] Ciclo completo de estados: concluir e não comparecimento (P-05/P-07/P-08)
+- [x] Teste end-to-end em navegador real (Playwright)
+- [x] Documentação da API ([DOCS/api.md](DOCS/api.md)) e escopo da persistência ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md))
+- [x] Teste de carga, rodada 02 ([DOCS/performance/resultado-02.md](DOCS/performance/resultado-02.md))

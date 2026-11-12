@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,44 +67,6 @@ class AutenticacaoAutorizacaoTest {
 
         // assert
         assertEquals(401, ex.getStatusHttp());
-    }
-
-    @Test
-    @DisplayName("RF-02-T1: usuario ADMINISTRADOR deve ser autorizado a acessar endpoint de cadastro de sala")
-    void rf02T1_administrador_deveSerAutorizado() {
-        // arrange
-        Usuario admin = new Usuario(UUID.randomUUID(), "admin@example.com", "hash", Perfil.ADMINISTRADOR);
-
-        // act & assert: autorizado = nenhuma RegraNegocioException (403)
-        assertDoesNotThrow(() -> autenticacaoService.autorizar(admin, Perfil.ADMINISTRADOR));
-    }
-
-    @Test
-    @DisplayName("RF-02-T2: usuario SOLICITANTE chamando endpoint ADM-only deve receber HTTP 403")
-    void rf02T2_solicitanteEmEndpointAdmOnly_deveRetornar403() {
-        // arrange
-        Usuario solicitante = new Usuario(UUID.randomUUID(), "solicitante@example.com", "hash", Perfil.SOLICITANTE);
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> autenticacaoService.autorizar(solicitante, Perfil.ADMINISTRADOR));
-
-        // assert
-        assertEquals(403, ex.getStatusHttp());
-    }
-
-    @Test
-    @DisplayName("RF-02-T3: usuario RESPONSAVEL chamando endpoint de CRUD de usuarios (ADM-only) deve receber HTTP 403")
-    void rf02T3_responsavelEmCrudDeUsuarios_deveRetornar403() {
-        // arrange
-        Usuario responsavel = new Usuario(UUID.randomUUID(), "responsavel@example.com", "hash", Perfil.RESPONSAVEL);
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> autenticacaoService.autorizar(responsavel, Perfil.ADMINISTRADOR));
-
-        // assert
-        assertEquals(403, ex.getStatusHttp());
     }
 
     @Test

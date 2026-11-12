@@ -20,7 +20,6 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -54,7 +53,7 @@ public class RelatorioService {
         validarAcesso(autor);
         validarIntervalo(inicio, fim);
         if (decorrido(inicio, fim).compareTo(PERIODO_MAXIMO) > 0) {
-            throw new RegraNegocioException(400, "Periodo do relatorio nao pode passar de 366 dias");
+            throw new RegraNegocioException(400, "Período do relatório não pode passar de 366 dias");
         }
         Map<UUID, UsoRecurso> recursos = new LinkedHashMap<>();
         Map<UUID, CargaProfessor> professores = new LinkedHashMap<>();
@@ -85,24 +84,6 @@ public class RelatorioService {
                 contarRejeicoes(inicio, fim));
     }
 
-    public RelatorioUtilizacao gerarRelatorioUtilizacao(Usuario autor, LocalDateTime inicio, LocalDateTime fim) {
-        Banco.seedSeNecessario();
-        validarAcesso(autor);
-        validarIntervalo(inicio, fim);
-        var registros = Banco.reservas.values().stream()
-                .filter(r -> r.getEstado() == EstadoReserva.CONCLUIDA || r.getEstado() == EstadoReserva.EM_USO)
-                .filter(r -> !r.getInicio().isBefore(inicio) && !r.getFim().isAfter(fim))
-                .toList();
-        return new RelatorioUtilizacao(registros);
-    }
-
-    public long contarRejeicoesPorSobreposicao(Usuario autor, LocalDateTime inicio, LocalDateTime fim) {
-        Banco.seedSeNecessario();
-        validarAcesso(autor);
-        validarIntervalo(inicio, fim);
-        return contarRejeicoes(inicio, fim);
-    }
-
     /** Tempo realmente decorrido no fuso do servidor (horario de verao incluido), nao a diferenca de relogio de parede. */
     private Duration decorrido(LocalDateTime inicio, LocalDateTime fim) {
         return Duration.between(inicio.atZone(fuso), fim.atZone(fuso));
@@ -120,13 +101,13 @@ public class RelatorioService {
     /** RF-36: so Responsavel e Administrador. Publico para que a borda HTTP cheque o perfil antes da entrada. */
     public void validarAcesso(Usuario autor) {
         if (autor.getPerfil() != Perfil.RESPONSAVEL && autor.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem acessar relatorios");
+            throw new RegraNegocioException(403, "Apenas Responsável ou Administrador podem acessar relatórios");
         }
     }
 
     private void validarIntervalo(LocalDateTime inicio, LocalDateTime fim) {
         if (inicio == null || fim == null || !fim.isAfter(inicio)) {
-            throw new RegraNegocioException(400, "Intervalo de relatorio invalido: fim deve ser posterior ao inicio");
+            throw new RegraNegocioException(400, "Intervalo de relatório inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')");
         }
     }
 }

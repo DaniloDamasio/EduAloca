@@ -1,6 +1,7 @@
 package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
@@ -33,11 +34,17 @@ class RetiradaDevolucaoMaterialTest {
         return new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
     }
 
+    /** Material reservado pela ultima chamada de {@link #criarReservaEmUso()}: e o item que se retira (DEF-014). */
+    private UUID materialId;
+
     private UUID criarReservaEmUso() {
         Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
         Sala sala = new Sala(UUID.randomUUID(), "Sala X", "aula", 30, "Bloco A", false);
+        Material projetor = new Material(UUID.randomUUID(), "Projetor X", "projetor", 1, false);
+        materialId = projetor.getId();
         Reserva reserva = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 10, 10, 0),
-                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula com material", List.of(new ReservaRecurso(sala, 1)));
+                LocalDateTime.of(2026, 3, 10, 12, 0), "Aula com material",
+                List.of(new ReservaRecurso(sala, 1), new ReservaRecurso(projetor, 1)));
         reserva.setEstado(EstadoReserva.EM_USO);
         return reserva.getId();
     }
@@ -48,7 +55,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         Usuario autor = responsavel();
         UUID reservaEmUsoId = criarReservaEmUso();
-        UUID itemId = UUID.randomUUID();
+        UUID itemId = materialId;
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 10, 5);
 
         // act
@@ -80,7 +87,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         Usuario autor = responsavel();
         UUID reservaId = criarReservaEmUso();
-        UUID itemComCicloAbertoId = UUID.randomUUID();
+        UUID itemComCicloAbertoId = materialId;
         retiradaMaterialService.registrarRetirada(autor, reservaId, itemComCicloAbertoId, LocalDateTime.now());
 
         // act
@@ -97,7 +104,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         Usuario autor = responsavel();
         UUID reservaEmUsoId = criarReservaEmUso();
-        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, materialId,
                 LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 12, 5);
 
@@ -114,7 +121,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         Usuario autor = responsavel();
         UUID reservaEmUsoId = criarReservaEmUso();
-        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, materialId,
                 LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 12, 5);
 
@@ -164,7 +171,7 @@ class RetiradaDevolucaoMaterialTest {
 
         // act
         retiradaMaterialService.sinalizarPendencias(agora);
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), agora.minusHours(3));
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, materialId, agora.minusHours(3));
 
         // assert
         assertEquals(false, registro.isPendenciaSinalizada());
@@ -175,7 +182,7 @@ class RetiradaDevolucaoMaterialTest {
     void rf26T2_jobNoInstanteDoFim_naoDeveSinalizarAindaPendencia() {
         // arrange
         UUID reservaEmUsoId = criarReservaEmUso();
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, materialId, LocalDateTime.of(2026, 3, 10, 10, 0));
         LocalDateTime exatamenteNoFim = LocalDateTime.of(2026, 3, 10, 12, 0);
 
         // act
@@ -190,7 +197,7 @@ class RetiradaDevolucaoMaterialTest {
     void rf26T3_jobExecutadoDuasVezes_naoDeveDuplicarSinalizacao() {
         // arrange
         UUID reservaEmUsoId = criarReservaEmUso();
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(), LocalDateTime.of(2026, 3, 10, 10, 0));
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, materialId, LocalDateTime.of(2026, 3, 10, 10, 0));
         registro.setPendenciaSinalizada(true);
         LocalDateTime agora = LocalDateTime.of(2026, 3, 10, 13, 0);
 
@@ -208,7 +215,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         Usuario autor = responsavel();
         UUID reservaEmUsoId = criarReservaEmUso();
-        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, UUID.randomUUID(),
+        UUID registroRetiradaId = retiradaMaterialService.registrarRetirada(autor, reservaEmUsoId, materialId,
                 LocalDateTime.of(2026, 3, 10, 10, 5)).getId();
         RegistroRetirada registro = retiradaMaterialService.registrarDevolucao(autor, registroRetiradaId, LocalDateTime.of(2026, 3, 10, 11, 0), CondicaoItem.INTEGRO);
 
@@ -230,7 +237,7 @@ class RetiradaDevolucaoMaterialTest {
         // arrange
         LocalDateTime fimDaReserva = LocalDateTime.of(2026, 3, 10, 12, 0);
         UUID reservaEmUsoId = criarReservaEmUso();
-        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, UUID.randomUUID(),
+        RegistroRetirada registro = retiradaMaterialService.registrarRetirada(responsavel(), reservaEmUsoId, materialId,
                 LocalDateTime.of(2026, 3, 10, 10, 0));
         LocalDateTime agora = fimDaReserva.plusMinutes(offsetMinutos);
 

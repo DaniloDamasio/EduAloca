@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EduAloca · Alocação de salas, professores e materiais</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/estilo.css">
+    <script src="js/api.js" defer></script>
+    <script src="js/app.js" defer></script>
+</head>
+<body>
+<header class="topo">
+    <div class="topo__marca">
+        <span class="topo__logo" aria-hidden="true">E</span>
+        <div>
+            <strong class="topo__nome">EduAloca</strong>
+            <span class="topo__sub">Alocação de salas, professores e materiais</span>
+        </div>
+    </div>
+    <div class="topo__usuario" id="usuario" hidden>
+        <span class="selo" id="usuario-perfil"></span>
+        <span class="topo__email" id="usuario-email"></span>
+        <button type="button" class="botao botao--claro" id="sair">Sair</button>
+    </div>
+</header>
+
+<div class="aviso" id="aviso" role="status" aria-live="polite" hidden></div>
+
+<main class="conteudo">
+    <!-- Login -->
+    <section id="tela-login" class="cartao cartao--login" aria-labelledby="titulo-login">
+        <h1 id="titulo-login">Entrar</h1>
+        <form id="form-login" class="formulario" novalidate>
+            <label>E-mail
+                <input type="email" name="email" autocomplete="username" required maxlength="120">
+            </label>
+            <label>Senha
+                <input type="password" name="senha" autocomplete="current-password" required maxlength="120">
+            </label>
+            <button type="submit" class="botao">Entrar</button>
+        </form>
+        <div class="demo">
+            <p class="demo__titulo">Contas de demonstração (dados de seed, não usar em produção)</p>
+            <div class="demo__botoes">
+                <button type="button" class="botao botao--secundario" data-demo="usuario@example.com|senhaValida123">Solicitante</button>
+                <button type="button" class="botao botao--secundario" data-demo="responsavel@example.com|senhaResponsavel123">Responsável (Bloco A)</button>
+                <button type="button" class="botao botao--secundario" data-demo="admin@example.com|senhaAdmin123">Administrador</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Aplicacao autenticada -->
+    <section id="tela-app" hidden>
+        <nav class="abas" id="abas" aria-label="Seções"></nav>
+
+        <!-- Solicitante: buscar e reservar -->
+        <section class="painel" id="painel-buscar" data-perfis="SOLICITANTE" data-titulo="Buscar e reservar" hidden>
+            <div class="grade">
+                <div class="cartao">
+                    <h2>Buscar disponibilidade</h2>
+                    <form id="form-busca" class="formulario">
+                        <div class="linha">
+                            <label>Início <input type="datetime-local" name="inicio" required></label>
+                            <label>Fim <input type="datetime-local" name="fim" required></label>
+                        </div>
+                        <label>Tipo de recurso
+                            <select name="recurso" id="busca-recurso">
+                                <option value="SALA">Sala</option>
+                                <option value="PROFESSOR">Professor</option>
+                                <option value="MATERIAL">Material</option>
+                            </select>
+                        </label>
+                        <div class="filtros" data-filtro="SALA">
+                            <label>Tipo da sala <input name="tipoSala" placeholder="ex.: laboratorio" maxlength="60"></label>
+                            <label>Capacidade mínima <input type="number" name="capacidadeMinima" min="0" value="0"></label>
+                            <label>Localização <input name="localizacao" placeholder="ex.: Bloco A" maxlength="60"></label>
+                        </div>
+                        <div class="filtros" data-filtro="PROFESSOR" hidden>
+                            <label>Competência <input name="competencia" placeholder="ex.: Robotica" maxlength="60"></label>
+                        </div>
+                        <div class="filtros" data-filtro="MATERIAL" hidden>
+                            <label>Tipo do material <input name="tipoMaterial" placeholder="ex.: projetor" maxlength="60"></label>
+                            <label>Quantidade <input type="number" name="quantidade" min="1" value="1"></label>
+                        </div>
+                        <button type="submit" class="botao">Buscar</button>
+                    </form>
+                    <ul class="lista" id="resultado-busca"></ul>
+                </div>
+
+                <div class="cartao">
+                    <h2>Nova reserva</h2>
+                    <p class="dica">Adicione recursos a partir da busca. O horário usado é o da busca.</p>
+                    <ul class="lista" id="carrinho"></ul>
+                    <form id="form-reserva" class="formulario">
+                        <p class="dica" id="carrinho-horario"></p>
+                        <label>Finalidade <input name="finalidade" required maxlength="120" placeholder="ex.: Aula de Robótica"></label>
+                        <button type="submit" class="botao">Solicitar reserva</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lista de reservas (todos os perfis, acoes conforme o perfil) -->
+        <section class="painel" id="painel-reservas" data-perfis="SOLICITANTE RESPONSAVEL ADMINISTRADOR" data-titulo="Reservas" hidden>
+            <div class="cartao">
+                <div class="cabecalho-cartao">
+                    <h2 id="titulo-reservas">Reservas</h2>
+                    <div class="linha linha--compacta">
+                        <label>Estado
+                            <select id="filtro-estado">
+                                <option value="">Todos</option>
+                                <option value="SOLICITADA">Solicitada</option>
+                                <option value="APROVADA">Aprovada</option>
+                                <option value="EM_USO">Em uso</option>
+                                <option value="REJEITADA">Rejeitada</option>
+                                <option value="CANCELADA">Cancelada</option>
+                            </select>
+                        </label>
+                        <button type="button" class="botao botao--secundario" id="atualizar-reservas">Atualizar</button>
+                    </div>
+                </div>
+                <div id="lista-reservas" class="reservas"></div>
+            </div>
+        </section>
+
+        <!-- Relatorio (Responsavel e Administrador) -->
+        <section class="painel" id="painel-relatorio" data-perfis="RESPONSAVEL ADMINISTRADOR" data-titulo="Relatório" hidden>
+            <div class="cartao">
+                <h2>Relatório de utilização</h2>
+                <form id="form-relatorio" class="formulario">
+                    <div class="linha">
+                        <label>Início <input type="datetime-local" name="inicio" required></label>
+                        <label>Fim <input type="datetime-local" name="fim" required></label>
+                    </div>
+                    <button type="submit" class="botao">Gerar</button>
+                </form>
+                <div id="resultado-relatorio"></div>
+            </div>
+        </section>
+
+        <!-- Cadastro (Administrador) -->
+        <section class="painel" id="painel-cadastro" data-perfis="ADMINISTRADOR" data-titulo="Cadastro e manutenção" hidden>
+            <div class="grade grade--tres">
+                <form class="cartao formulario" id="form-sala">
+                    <h2>Nova sala</h2>
+                    <label>Nome <input name="nome" required maxlength="120"></label>
+                    <label>Tipo <input name="tipo" required maxlength="120" placeholder="ex.: laboratorio"></label>
+                    <label>Capacidade <input type="number" name="capacidade" min="1" required></label>
+                    <label>Localização
+                        <select name="localizacao">
+                            <option>Bloco A</option>
+                            <option>Bloco B</option>
+                        </select>
+                    </label>
+                    <label class="marcar"><input type="checkbox" name="restrito"> Restrita (exige aprovação)</label>
+                    <button type="submit" class="botao">Cadastrar sala</button>
+                </form>
+                <form class="cartao formulario" id="form-professor">
+                    <h2>Novo professor</h2>
+                    <label>Nome <input name="nome" required maxlength="120"></label>
+                    <label>Identificador institucional <input name="identificadorInstitucional" required maxlength="120"></label>
+                    <label>Competências (separadas por vírgula) <input name="competencias" maxlength="600" placeholder="ex.: Robotica, Fisica"></label>
+                    <button type="submit" class="botao">Cadastrar professor</button>
+                </form>
+                <form class="cartao formulario" id="form-material">
+                    <h2>Novo material</h2>
+                    <label>Nome <input name="nome" required maxlength="120"></label>
+                    <label>Tipo <input name="tipo" required maxlength="120" placeholder="ex.: projetor"></label>
+                    <label>Quantidade total <input type="number" name="quantidadeTotal" min="1" required></label>
+                    <label class="marcar"><input type="checkbox" name="restrito"> Restrito (exige aprovação)</label>
+                    <button type="submit" class="botao">Cadastrar material</button>
+                </form>
+            </div>
+            <div class="grade">
+                <form class="cartao formulario" id="form-manutencao">
+                    <h2>Bloquear para manutenção</h2>
+                    <label>Recurso <select name="recurso" id="manutencao-recurso" required></select></label>
+                    <div class="linha">
+                        <label>Início <input type="datetime-local" name="inicio" required></label>
+                        <label>Fim <input type="datetime-local" name="fim" required></label>
+                    </div>
+                    <label>Motivo <input name="motivo" required maxlength="120"></label>
+                    <button type="submit" class="botao">Registrar manutenção</button>
+                </form>
+                <div class="cartao">
+                    <h2>Catálogo ativo</h2>
+                    <div id="catalogo"></div>
+                </div>
+            </div>
+        </section>
+    </section>
+</main>
+
+<dialog id="dialogo" class="dialogo">
+    <form method="dialog" class="formulario" id="dialogo-form">
+        <h2 id="dialogo-titulo"></h2>
+        <div id="dialogo-campos"></div>
+        <div class="linha linha--direita">
+            <button type="button" class="botao botao--secundario" id="dialogo-cancelar">Voltar</button>
+            <button type="submit" class="botao" id="dialogo-confirmar">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<footer class="rodape">EduAloca · Projeto acadêmico de Qualidade de Software · Senac</footer>
+</body>
+</html>

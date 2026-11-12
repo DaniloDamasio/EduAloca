@@ -5,10 +5,10 @@ import java.util.UUID;
 public class Material {
 
     private final UUID id;
-    private final String nome;
-    private final String tipo;
-    private final int quantidadeTotal;
-    private final boolean restrito;
+    private String nome;
+    private String tipo;
+    private int quantidadeTotal;
+    private boolean restrito;
     private boolean ativo = true;
 
     public Material(UUID id, String nome, String tipo, int quantidadeTotal, boolean restrito) {
@@ -41,6 +41,14 @@ public class Material {
 
     public boolean isAtivo() {
         return ativo;
+    }
+
+    /** Edicao no proprio objeto (RF-06): reservas e manutencoes apontam para esta instancia. Validar antes. */
+    public void atualizar(String nome, String tipo, int quantidadeTotal, boolean restrito) {
+        this.nome = nome;
+        this.tipo = tipo;
+        this.quantidadeTotal = quantidadeTotal;
+        this.restrito = restrito;
     }
 
     public void inativar() {

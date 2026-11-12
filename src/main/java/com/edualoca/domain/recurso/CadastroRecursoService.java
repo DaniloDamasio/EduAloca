@@ -27,12 +27,7 @@ public class CadastroRecursoService {
 
     public Sala cadastrarSala(String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
         Banco.seedSeNecessario();
-        if (nome == null || nome.isBlank()) {
-            throw new RegraNegocioException(400, "Nome da sala e obrigatorio");
-        }
-        if (capacidade <= 0) {
-            throw new RegraNegocioException(400, "Capacidade da sala deve ser positiva");
-        }
+        validarSala(nome, tipo, capacidade, localizacao);
         Sala sala = new Sala(UUID.randomUUID(), nome, tipo, capacidade, localizacao, restrito);
         Banco.salas.put(sala.getId(), sala);
         AuditoriaService.registrar("Sala", sala.getId(), "CRIACAO", null, LocalDateTime.now(clock));
@@ -41,6 +36,8 @@ public class CadastroRecursoService {
 
     public Professor cadastrarProfessor(String nome, String identificadorInstitucional, List<Competencia> competencias) {
         Banco.seedSeNecessario();
+        validarProfessor(nome, competencias);
+        obrigatorio(identificadorInstitucional, "Identificador institucional do professor e obrigatorio");
         if (Banco.professorIdPorIdentificador.containsKey(identificadorInstitucional)) {
             throw new RegraNegocioException(409, "Identificador institucional ja cadastrado");
         }
@@ -53,9 +50,7 @@ public class CadastroRecursoService {
 
     public Material cadastrarMaterial(String nome, String tipo, int quantidadeTotal, boolean restrito) {
         Banco.seedSeNecessario();
-        if (quantidadeTotal <= 0) {
-            throw new RegraNegocioException(400, "Quantidade total do material deve ser positiva");
-        }
+        validarMaterial(nome, tipo, quantidadeTotal);
         Material material = new Material(UUID.randomUUID(), nome, tipo, quantidadeTotal, restrito);
         Banco.materiais.put(material.getId(), material);
         AuditoriaService.registrar("Material", material.getId(), "CRIACAO", null, LocalDateTime.now(clock));
@@ -101,6 +96,50 @@ public class CadastroRecursoService {
         AuditoriaService.registrar("Sala", sala.getId(), "INATIVACAO", null, LocalDateTime.now(clock));
     }
 
+    /** RF-04: edita a sala no lugar; recusa sem alterar nada se algum campo for invalido. */
+    public Sala atualizarSala(UUID id, String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
+        Banco.seedSeNecessario();
+        Sala sala = existente(Banco.salas.get(id), "Sala");
+        validarSala(nome, tipo, capacidade, localizacao);
+        sala.atualizar(nome, tipo, capacidade, localizacao, restrito);
+        AuditoriaService.registrar("Sala", sala.getId(), "ATUALIZACAO", null, LocalDateTime.now(clock));
+        return sala;
+    }
+
+    /** RF-05: edita nome e competencias; o identificador institucional e a chave e nao muda. */
+    public Professor atualizarProfessor(UUID id, String nome, List<Competencia> competencias) {
+        Banco.seedSeNecessario();
+        Professor professor = existente(Banco.professores.get(id), "Professor");
+        validarProfessor(nome, competencias);
+        professor.atualizar(nome, competencias);
+        AuditoriaService.registrar("Professor", professor.getId(), "ATUALIZACAO", null, LocalDateTime.now(clock));
+        return professor;
+    }
+
+    public void inativarProfessor(UUID id) {
+        Banco.seedSeNecessario();
+        Professor professor = existente(Banco.professores.get(id), "Professor");
+        professor.inativar();
+        AuditoriaService.registrar("Professor", professor.getId(), "INATIVACAO", null, LocalDateTime.now(clock));
+    }
+
+    /** RF-06: edita o material no lugar; recusa sem alterar nada se algum campo for invalido. */
+    public Material atualizarMaterial(UUID id, String nome, String tipo, int quantidadeTotal, boolean restrito) {
+        Banco.seedSeNecessario();
+        Material material = existente(Banco.materiais.get(id), "Material");
+        validarMaterial(nome, tipo, quantidadeTotal);
+        material.atualizar(nome, tipo, quantidadeTotal, restrito);
+        AuditoriaService.registrar("Material", material.getId(), "ATUALIZACAO", null, LocalDateTime.now(clock));
+        return material;
+    }
+
+    public void inativarMaterial(UUID id) {
+        Banco.seedSeNecessario();
+        Material material = existente(Banco.materiais.get(id), "Material");
+        material.inativar();
+        AuditoriaService.registrar("Material", material.getId(), "INATIVACAO", null, LocalDateTime.now(clock));
+    }
+
     public List<Sala> listarSalasAtivas() {
         Banco.seedSeNecessario();
         return Banco.salas.values().stream().filter(Sala::isAtivo).toList();
@@ -111,6 +150,43 @@ public class CadastroRecursoService {
             throw new RegraNegocioException(401, "Autenticacao necessaria para consultar salas");
         }
         return listarSalasAtivas();
+    }
+
+    private static void validarSala(String nome, String tipo, int capacidade, String localizacao) {
+        obrigatorio(nome, "Nome da sala e obrigatorio");
+        obrigatorio(tipo, "Tipo da sala e obrigatorio");
+        obrigatorio(localizacao, "Localizacao da sala e obrigatoria");
+        if (capacidade <= 0) {
+            throw new RegraNegocioException(400, "Capacidade da sala deve ser positiva");
+        }
+    }
+
+    private static void validarProfessor(String nome, List<Competencia> competencias) {
+        obrigatorio(nome, "Nome do professor e obrigatorio");
+        if (competencias == null) {
+            throw new RegraNegocioException(400, "Lista de competencias do professor e obrigatoria (pode ser vazia)");
+        }
+    }
+
+    private static void validarMaterial(String nome, String tipo, int quantidadeTotal) {
+        obrigatorio(nome, "Nome do material e obrigatorio");
+        obrigatorio(tipo, "Tipo do material e obrigatorio");
+        if (quantidadeTotal <= 0) {
+            throw new RegraNegocioException(400, "Quantidade total do material deve ser positiva");
+        }
+    }
+
+    private static void obrigatorio(String valor, String mensagem) {
+        if (valor == null || valor.isBlank()) {
+            throw new RegraNegocioException(400, mensagem);
+        }
+    }
+
+    private static <T> T existente(T recurso, String entidade) {
+        if (recurso == null) {
+            throw new RegraNegocioException(404, "Cadastro inexistente: " + entidade);
+        }
+        return recurso;
     }
 
     private static boolean envolveRecurso(Reserva reserva, Object recurso) {

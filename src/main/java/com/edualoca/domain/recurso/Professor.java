@@ -6,9 +6,9 @@ import java.util.UUID;
 public class Professor {
 
     private final UUID id;
-    private final String nome;
+    private String nome;
     private final String identificadorInstitucional;
-    private final List<Competencia> competencias;
+    private List<Competencia> competencias;
     private boolean ativo = true;
 
     public Professor(UUID id, String nome, String identificadorInstitucional, List<Competencia> competencias) {
@@ -36,6 +36,12 @@ public class Professor {
 
     public boolean isAtivo() {
         return ativo;
+    }
+
+    /** Edicao no proprio objeto (RF-05). O identificador institucional nao muda: e a chave de unicidade. */
+    public void atualizar(String nome, List<Competencia> competencias) {
+        this.nome = nome;
+        this.competencias = List.copyOf(competencias);
     }
 
     public void inativar() {

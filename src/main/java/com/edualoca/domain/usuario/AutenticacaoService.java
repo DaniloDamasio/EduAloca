@@ -9,13 +9,14 @@ public class AutenticacaoService {
 
     public Usuario autenticar(String email, String senha) {
         Banco.seedSeNecessario();
-        String senhaCadastrada = Banco.credenciais.get(email);
-        if (senhaCadastrada == null || !senhaCadastrada.equals(senha)) {
+        String armazenado = email == null ? null : Banco.credenciais.get(email);
+        // confere() gasta o mesmo custo quando a conta nao existe: a resposta e o tempo nao revelam o e-mail.
+        if (!SenhaHasher.confere(senha, armazenado)) {
             throw new RegraNegocioException(401, "Credenciais invalidas");
         }
         UUID id = Banco.usuarioIdPorEmail.computeIfAbsent(email, e -> UUID.randomUUID());
         Perfil perfil = Banco.perfilPorEmail.getOrDefault(email, Perfil.SOLICITANTE);
-        return new Usuario(id, email, SenhaHasher.hash(senhaCadastrada), perfil);
+        return new Usuario(id, email, armazenado, perfil);
     }
 
     public void autorizar(Usuario usuario, Perfil perfilExigido) {

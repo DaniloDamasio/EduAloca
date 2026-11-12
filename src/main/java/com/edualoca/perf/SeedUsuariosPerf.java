@@ -45,7 +45,7 @@ public class SeedUsuariosPerf implements ApplicationRunner {
         for (String linha : linhas.subList(Math.min(1, linhas.size()), linhas.size())) {
             String[] campos = linha.split(",", 2);
             if (campos.length == 2 && !campos[0].isBlank() && !campos[1].isBlank()) {
-                Banco.credenciais.put(campos[0].trim(), campos[1].trim());
+                Banco.registrarCredencial(campos[0].trim(), campos[1].trim());
                 cadastrados++;
             }
         }

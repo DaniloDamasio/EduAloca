@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** |
+| Status | **Corrigido** (reteste local aprovado em 11/11/2026; CI pendente) |
 | Severidade | Alta: a trilha de auditoria afirma ações que nunca aconteceram (`REJEICAO_SOBREPOSICAO` ou `CRIACAO`, com autor aleatório) e esconde a ausência de registro, que é justamente o que a auditoria precisa revelar |
 | Prioridade | Alta |
 | Requisitos | RF-27, RF-28, RF-29 |
@@ -47,8 +47,24 @@ testes de id aleatório.
 
 ## Correção
 
-_Pendente._
+Commit `fc5fe22`. `consultarPorEntidade` devolve só os eventos registrados, ou seja, lista vazia quando não há
+nenhum. Saíram o *fallback* e o `Clock` da instância, que só ele usava. O registro de eventos (`registrar`) não mudou.
+
+No commit red `1826216`, `rf27T1`, `rf28T1` e `rf28T2` foram reescritos para exercitar ações reais (aprovar uma
+reserva restrita, cadastrar uma sala, provocar uma rejeição por sobreposição) e conferir a ação e o autor do evento.
 
 ## Reteste
 
-_Pendente._
+- `def011_entidadeSemEventos_devolveListaVazia` está verde.
+- `./mvnw -B verify` local: 387 testes unitários (3 pulados, os `@bloqueado`) e 14 de integração sem falhas, gate
+  JaCoCo atendido.
+- Mutação com a correção aplicada. Cada quebra derruba o teste reescrito correspondente; antes, os três passavam
+  com qualquer código:
+
+| Quebra | Teste que falhou |
+|---|---|
+| Aprovação sem evento `APROVACAO` | `rf27T1_transicaoDeEstadoDeReserva_deveGerarAuditoria` |
+| Cadastro de sala sem auditoria | `rf28T1_alteracaoDeCadastro_deveGerarAuditoria` |
+| Rejeição por sobreposição sem auditoria | `rf28T2_rejeicaoAutomaticaPorSobreposicao_deveGravarAcaoEspecifica` |
+
+Execução no CI pendente até o PR.

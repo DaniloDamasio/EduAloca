@@ -102,7 +102,7 @@ mutação possível: não existe regra no código para quebrar.
 **Defeito encontrado na leitura do código (não é mutação):** em `PesquisaRecursoService`, `disponivel()` só olha
 manutenção quando o recurso é `Sala`, e `buscarMateriais` não olha manutenção nenhuma. Professor ou material em
 manutenção continuam aparecendo em `buscarProfessores`/`buscarMateriais`, contrariando o RF-11. Hoje a API só expõe
-`/salas/disponiveis`, por isso nenhum teste de API pega o problema. Fica registrado como candidato a DEF-011, sem
+`/salas/disponiveis`, por isso nenhum teste de API pega o problema. Fica registrado como candidato a DEF-012, sem
 correção nesta rodada.
 
 ### 2.5 Autorização (RF-01, RF-02, RF-03)
@@ -140,9 +140,13 @@ sala, professor e material, manutenção de sala, material e professor, inativa�
 `Banco.auditoria` direto. Passa com o código original e, com U8 aplicada, falha nos 3 casos de manutenção em 3 de 3
 execuções (`expected: <1> but was: <0>`).
 
-**Defeito encontrado (não corrigido nesta rodada):** inventar um evento de auditoria em produção fere o RF-29: a
-consulta afirma ações que nunca aconteceram. A correção (devolver lista vazia) derruba os três testes falsos de
-`AuditoriaTest`, que precisam ser reescritos junto. Candidato a DEF-012. Observação: os eventos de cadastro gravam
+**Defeito encontrado e corrigido:**
+[DEF-011](../defeitos/DEF-011-auditoria-inventa-evento-inexistente.md). Inventar um evento de auditoria em produção
+fere o RF-29, porque a consulta afirma ações que nunca aconteceram. Correção feita em seguida: red `1826216` (teste
+`def011_entidadeSemEventos_devolveListaVazia`, mais `rf27T1`, `rf28T1` e `rf28T2` reescritos com ações reais) e
+green `fc5fe22`. Reteste por mutação: remover a auditoria de aprovação, de criação de sala e de rejeição por
+sobreposição derruba, respectivamente, `rf27T1`, `rf28T1` e `rf28T2`. Antes da correção, os três passavam com
+qualquer código. Observação: os eventos de cadastro gravam
 `autorId = null`, porque `CadastroRecursoService` não recebe o usuário. O RF-28 pede só a entrada de auditoria, mas
 sem autor a investigação "quem fez" não é possível.
 
@@ -208,9 +212,10 @@ requisitos sem nenhuma parte descoberta no commit `ee540c5`, a taxa estrita é *
 
 1. Commitar os três testes novos e obter um run de CI verde. Até lá, RF-28 e as partes novas de RF-12 e RF-17 não
    contam como evidência.
-2. Corrigir `AuditoriaService.consultarPorEntidade` (não inventar evento) e reescrever `AuditoriaTest.rf27T1`,
-   `rf28T1` e `rf28T2` (candidato a DEF-012).
-3. Excluir da busca o professor e o material em manutenção (`PesquisaRecursoService`, candidato a DEF-011).
+2. ~~Corrigir `AuditoriaService.consultarPorEntidade` e reescrever `AuditoriaTest.rf27T1`, `rf28T1` e `rf28T2`.~~
+   Feito em [DEF-011](../defeitos/DEF-011-auditoria-inventa-evento-inexistente.md) (`1826216` red, `fc5fe22` green).
+   CI pendente.
+3. Excluir da busca o professor e o material em manutenção (`PesquisaRecursoService`, candidato a DEF-012).
 4. RF-18: decidir P-05 (iniciar uso) e, até lá, remover ou renomear `rf18T1`, que não testa o que o nome diz.
 5. Abrir linhas na RTM, com risco e auditoria por mutação, para RF-04/05/06, RF-24/25, RNF-05, RNF-07, RNF-10,
    RNF-12 e RNF-15.

@@ -84,8 +84,11 @@ Correções de rastreabilidade apontadas pela mutação. São testes que já est
   (único a detectar A3) e `rf19T4_aprovarReservaForaDeSolicitada_deveSerRejeitado` (único a detectar A5).
 - RF-23: `RegrasCriticasTest` :: `rc04T5_manutencaoSobrepoeReservaEmUso_exigeConfirmacaoOuRecusa` (único a detectar M4).
 
-Testes que **não** servem de evidência, embora estejam verdes: `AuditoriaTest` :: `rf27T1`, `rf28T1`, `rf28T2`
-(passam com qualquer código, porque `AuditoriaService.consultarPorEntidade` inventa um evento quando não há nenhum) e
+No commit `ee540c5`, `AuditoriaTest` :: `rf27T1`, `rf28T1` e `rf28T2` passavam com qualquer código, porque
+`AuditoriaService.consultarPorEntidade` inventava um evento quando não havia nenhum. Isso foi corrigido em
+[DEF-011](defeitos/DEF-011-auditoria-inventa-evento-inexistente.md) (red `1826216`, green `fc5fe22`): os três testes
+foram reescritos com ações reais, e cada um derruba um mutante de auditoria. A execução foi local, e o CI está
+pendente. Continua sem servir de evidência, embora esteja verde,
 `AprovacaoRecursosRestritosTest` :: `rf18T1` (recebe 409 por "reserva inexistente" e não exercita a transição para
 `EM_USO`).
 

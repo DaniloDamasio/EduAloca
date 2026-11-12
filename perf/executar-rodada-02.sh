@@ -5,6 +5,9 @@
 # Requer: Docker, JMeter 5.6.3 no PATH, JDK 21. Brutos em perf/resultados/rodada-02/ (nao versionados).
 set -u
 cd "$1" || exit 1
+# Impede suspensao por ociosidade durante a rodada. Tampa fechada na bateria suspende mesmo assim: por isso cada
+# cenario confere o log de energia do macOS e e marcado INVALIDO se houve suspensao (rodada 02, 1a tentativa).
+if [ -z "${SOB_CAFFEINATE:-}" ]; then SOB_CAFFEINATE=1 exec caffeinate -dims "$0" "$@"; fi
 BASE=${BASE_OVERRIDE:-perf/resultados/rodada-02}
 mkdir -p "$BASE"
 JAR=target/edualoca-0.0.1-SNAPSHOT.jar
@@ -18,6 +21,8 @@ COMMIT=$(git rev-parse --short HEAD)
 cenario() {
   local nome=$1 usuarios=$2 k=$3 out="$BASE/$1"
   mkdir -p "$out"; echo ">>> $nome usuarios=$usuarios salas=$k $(date '+%T')"
+  local inicio_cenario; inicio_cenario=$(date '+%Y-%m-%d %H:%M:%S')
+  pmset -g batt | head -1 > "$out/energia.txt"
   docker rm -f edualoca-perf-pg >/dev/null 2>&1
   docker run -d --name edualoca-perf-pg -e POSTGRES_DB=edualoca -e POSTGRES_USER=edualoca \
     -e POSTGRES_PASSWORD=perf-local -p 127.0.0.1:55432:5432 postgres:16-alpine >/dev/null
@@ -56,7 +61,10 @@ cenario() {
     UNION ALL SELECT 'recursos_distintos', count(DISTINCT recurso_id) FROM reserva_recurso;" > "$out/banco.txt" 2>&1
   kill $app; wait $app 2>/dev/null; kill $amostra 2>/dev/null
   grep -h "RESUMO DISPUTA" "$out/jmeter.log" | tail -1 > "$out/resumo-disputa.txt"
-  echo "<<< $nome fim $(date '+%T') $(cat "$out/resumo-disputa.txt" | sed 's/.*RESUMO/RESUMO/')"
+  local fim_cenario; fim_cenario=$(date '+%Y-%m-%d %H:%M:%S')
+  pmset -g log | awk -v a="$inicio_cenario" -v b="$fim_cenario" 'substr($0,1,19) >= a && substr($0,1,19) <= b && /Entering Sleep/' > "$out/suspensoes.txt"
+  if [ -s "$out/suspensoes.txt" ]; then echo "INVALIDO: a maquina suspendeu durante o cenario" > "$out/INVALIDO"; fi
+  echo "<<< $nome fim $(date '+%T') $(cat "$out/resumo-disputa.txt" | sed 's/.*RESUMO/RESUMO/') $( [ -f "$out/INVALIDO" ] && echo '[INVALIDO: suspensao]')"
 }
 
 if [ -n "${SMOKE:-}" ]; then cenario smoke 5 0; cenario smoke-k3 5 3; else

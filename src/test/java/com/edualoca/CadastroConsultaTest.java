@@ -2,13 +2,20 @@ package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.Competencia;
 import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.recurso.Professor;
 import com.edualoca.domain.recurso.Sala;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -146,5 +153,50 @@ class CadastroConsultaTest {
 
         // assert
         assertEquals(401, ex.getStatusHttp());
+    }
+
+    // Lacunas da mutacao manual de cadastro (C1, C3, C5, C7): o cadastro precisa ficar visivel na consulta, e nao
+    // so no objeto devolvido.
+
+    private final PesquisaRecursoService pesquisaRecursoService = new PesquisaRecursoService();
+    private static final LocalDateTime INICIO = LocalDateTime.of(2027, 6, 1, 8, 0);
+    private static final LocalDateTime FIM = LocalDateTime.of(2027, 6, 1, 10, 0);
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    @DisplayName("RF-04-T5: sala sem nome (nulo, vazio ou em branco) e recusada com 400")
+    void rf04T5_salaSemNome_eRecusada(String nome) {
+        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
+                () -> cadastroRecursoService.cadastrarSala(nome, "laboratorio", 30, "Bloco A", false));
+
+        assertEquals(400, ex.getStatusHttp());
+    }
+
+    @Test
+    @DisplayName("RF-04-T6: sala criada aparece na listagem de ativas")
+    void rf04T6_salaCriada_apareceNaConsulta() {
+        Sala sala = cadastroRecursoService.cadastrarSala("Sala " + UUID.randomUUID(), "aula", 30, "Bloco C", false);
+
+        assertTrue(cadastroRecursoService.listarSalasAtivas().contains(sala));
+    }
+
+    @Test
+    @DisplayName("RF-05-T3: professor criado aparece na busca por competencia")
+    void rf05T3_professorCriado_apareceNaConsulta() {
+        String competencia = "Competencia-" + UUID.randomUUID();
+        Professor professor = cadastroRecursoService.cadastrarProfessor("Prof. Novo", "PN-" + UUID.randomUUID(),
+                List.of(new Competencia(competencia)));
+
+        assertEquals(List.of(professor), pesquisaRecursoService.buscarProfessores(competencia, INICIO, FIM));
+    }
+
+    @Test
+    @DisplayName("RF-06-T3: material criado aparece na busca por tipo")
+    void rf06T3_materialCriado_apareceNaConsulta() {
+        String tipo = "tipo-" + UUID.randomUUID();
+        Material material = cadastroRecursoService.cadastrarMaterial("Kit", tipo, 2, false);
+
+        assertEquals(List.of(material), pesquisaRecursoService.buscarMateriais(tipo, 1, INICIO, FIM));
     }
 }

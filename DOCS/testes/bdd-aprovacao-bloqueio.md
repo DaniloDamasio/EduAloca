@@ -366,7 +366,7 @@ Funcionalidade: Máquina de estados da Reserva
 | P-04 | Ao aprovar uma reserva SOLICITADA, o sistema deve revalidar manutenção/conflito surgidos depois da criação? Ou o cadastro de manutenção (RF-23) também deve proteger reservas SOLICITADA? | BDD-R3-07 | Nova |
 | P-05 | `NAO_COMPARECEU` parte de `APROVADA` ou de `EM_USO`? O diagrama J9 (JORNADAS.md) desenha o ramo saindo de APROVADA; o plano-tdd §4 escreve `EM_USO → NAO_COMPARECEU`. | BDD-R4-01, BDD-R4-02 | Divergência nova; complementa Q25 |
 | P-06 | Reserva `EM_USO` pode ser cancelada? RF-14 sugere que sim; J9 não desenha a transição. | BDD-R4-06 | Nova |
-| P-07 | O gatilho de `APROVADA → EM_USO` e `EM_USO → CONCLUIDA` é automático (horário/job) ou manual? Quem aciona? | BDD-R1-08, BDD-R4-01, BDD-R4-02 | = Q24 |
+| P-07 | O gatilho de `APROVADA → EM_USO` e `EM_USO → CONCLUIDA` é automático (horário/job) ou manual? Quem aciona? **Decidido em 12/11/2026 para `APROVADA → EM_USO`:** manual, por Responsável competente pelo local ou Administrador (`ReservaService.iniciarUso`, mesmo controle da aprovação), com histórico e evento `INICIO_USO`. `EM_USO → CONCLUIDA` continua em aberto. | BDD-R1-08, BDD-R4-01, BDD-R4-02 | = Q24 |
 | P-08 | Qual o critério e quem registra o não comparecimento (tolerância de atraso, ator)? | BDD-R4-01 | = Q25 |
 | P-09 | Qual código HTTP para transição inválida (409? 422?) e é o mesmo para todos os pares proibidos? | BDD-R4-02 | = Q16 |
 

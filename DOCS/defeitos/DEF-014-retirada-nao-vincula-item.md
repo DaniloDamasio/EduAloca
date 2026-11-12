@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | **Aberto** (red registrado; correção em andamento) |
+| Status | **Corrigido** (reteste aprovado em 11/11/2026; red `109aace`, green `e5c5859`) |
 | Severidade | Alta: o RF-24 (Crítico) pede que 100% das retiradas vinculem reserva + **item** + autor + instante, e o item não é guardado; não dá para saber qual material saiu nem cobrar a devolução certa |
 | Prioridade | Alta |
 | Requisitos | RF-24, RF-25, RF-26 |
@@ -46,6 +46,24 @@ guardar o item.
 
 - Java 21.0.9 (Temurin), Spring Boot 4.1.1, perfil padrão em memória
 - Teste de unidade sobre `ReservaService` e `RetiradaMaterialService`
+
+## Correção
+
+Commit `e5c5859`.
+
+- `RegistroRetirada` ganhou `itemId` (construtor e `getItemId()`).
+- `registrarRetirada` recusa com 409 o item que não é `Material` entre os recursos da reserva. O ciclo aberto passa
+  a ser por (reserva, item), e o item informado é gravado.
+- `registrarDevolucao` só encerra ciclo aberto: registro inexistente ou já devolvido responde 409 sem alterar nada.
+- A fixture de `RetiradaDevolucaoMaterialTest` passou a reservar um material real e retirar esse material (antes
+  usava um UUID aleatório).
+
+## Reteste
+
+- `RetiradaVinculoItemTest` 6/6 e `RetiradaDevolucaoMaterialTest` 14/14 verdes.
+- Mutação sobre a correção: 11 de 11 mutantes mortos, incluindo os que sobreviviam antes (R1 reserva fora de
+  `EM_USO`, R3 autor errado, R4 instante errado) e os da regra nova (R8 item fora da reserva, R9 ciclo por reserva,
+  R10 devolução repetida, R11 outro item gravado). Detalhes em [mutacao-manual.md §6](../testes/mutacao-manual.md).
 
 ## Premissa
 

@@ -2,6 +2,7 @@ package com.edualoca;
 
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.reserva.ReservaRecurso;
 import com.edualoca.domain.reserva.ReservaService;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -74,8 +76,8 @@ class AutenticacaoAutorizacaoTest {
         // arrange
         Usuario admin = new Usuario(UUID.randomUUID(), "admin@example.com", "hash", Perfil.ADMINISTRADOR);
 
-        // act & assert
-        autenticacaoService.autorizar(admin, Perfil.ADMINISTRADOR);
+        // act & assert: autorizado = nenhuma RegraNegocioException (403)
+        assertDoesNotThrow(() -> autenticacaoService.autorizar(admin, Perfil.ADMINISTRADOR));
     }
 
     @Test
@@ -116,9 +118,11 @@ class AutenticacaoAutorizacaoTest {
                 LocalDateTime.of(2026, 3, 10, 12, 0), "Aula propria", List.of(new ReservaRecurso(sala, 1)));
 
         // act
-        reservaService.cancelar(solicitanteA, reservaPropria.getId(), "Mudanca de planos");
+        Reserva cancelada = reservaService.cancelar(solicitanteA, reservaPropria.getId(), "Mudanca de planos");
 
-        // assert — nao deve lancar excecao de autorizacao (comportamento validado via ausencia de excecao 403)
+        // assert: o dono cancelou de fato (sem 403) e a reserva saiu do estado ativo
+        assertEquals(reservaPropria.getId(), cancelada.getId());
+        assertEquals(EstadoReserva.CANCELADA, cancelada.getEstado());
     }
 
     @Test

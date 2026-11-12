@@ -481,9 +481,9 @@ async function carregarCatalogo() {
 function itensDoCatalogo() {
     const c = estado.catalogo;
     return [
-        ...c.salas.map((r) => ({ tipo: 'SALA', id: r.id, nome: r.nome, detalhe: descreverRecurso('SALA', r) })),
-        ...c.professores.map((r) => ({ tipo: 'PROFESSOR', id: r.id, nome: r.nome, detalhe: descreverRecurso('PROFESSOR', r) })),
-        ...c.materiais.map((r) => ({ tipo: 'MATERIAL', id: r.id, nome: r.nome, detalhe: descreverRecurso('MATERIAL', r) })),
+        ...c.salas.map((r) => ({ tipo: 'SALA', id: r.id, nome: r.nome, detalhe: descreverRecurso('SALA', r), dados: r })),
+        ...c.professores.map((r) => ({ tipo: 'PROFESSOR', id: r.id, nome: r.nome, detalhe: descreverRecurso('PROFESSOR', r), dados: r })),
+        ...c.materiais.map((r) => ({ tipo: 'MATERIAL', id: r.id, nome: r.nome, detalhe: descreverRecurso('MATERIAL', r), dados: r })),
     ];
 }
 
@@ -492,7 +492,32 @@ function renderizarCatalogo() {
     $('#manutencao-recurso').replaceChildren(...itens.map((i) => el('option', { value: i.tipo + '|' + i.id, text: ROTULO_TIPO[i.tipo] + ' · ' + i.nome })));
     $('#catalogo').replaceChildren(el('ul', { class: 'lista' }, itens.map((i) => el('li', {},
         el('div', {}, el('span', { class: 'selo', text: ROTULO_TIPO[i.tipo] }), ' ', el('strong', { text: i.nome }), el('div', { class: 'dica', text: i.detalhe })),
-        el('button', { type: 'button', class: 'botao botao--perigo botao--pequeno', text: 'Inativar', onclick: (e) => inativar(e.target, i) })))));
+        el('div', { class: 'reserva__acoes' },
+            el('button', { type: 'button', class: 'botao botao--secundario botao--pequeno', text: 'Editar', onclick: (e) => editar(e.target, i) }),
+            el('button', { type: 'button', class: 'botao botao--perigo botao--pequeno', text: 'Inativar', onclick: (e) => inativar(e.target, i) }))))));
+}
+
+/** RF-04/05/06 (DEF-015): edicao pelo Administrador; a validacao e a mesma do cadastro, no servidor. */
+async function editar(botao, item) {
+    const r = item.dados;
+    const simNao = (valor) => ({ nome: 'restrito', rotulo: 'Exige aprovação', tipo: 'select', opcoes: [['false', 'Não'], ['true', 'Sim']], valor: String(valor) });
+    const campos = {
+        SALA: [{ nome: 'nome', rotulo: 'Nome', valor: r.nome }, { nome: 'tipo', rotulo: 'Tipo', valor: r.tipo },
+            { nome: 'capacidade', rotulo: 'Capacidade', tipo: 'number', valor: r.capacidade },
+            { nome: 'localizacao', rotulo: 'Localização', valor: r.localizacao }, simNao(r.restrito)],
+        PROFESSOR: [{ nome: 'nome', rotulo: 'Nome', valor: r.nome },
+            { nome: 'competencias', rotulo: 'Competências (separadas por vírgula)', valor: (r.competencias || []).join(', '), obrigatorio: false }],
+        MATERIAL: [{ nome: 'nome', rotulo: 'Nome', valor: r.nome }, { nome: 'tipo', rotulo: 'Tipo', valor: r.tipo },
+            { nome: 'quantidadeTotal', rotulo: 'Quantidade total', tipo: 'number', valor: r.quantidadeTotal }, simNao(r.restrito)],
+    }[item.tipo];
+    const dados = await dialogo('Editar ' + ROTULO_TIPO[item.tipo].toLowerCase() + ' "' + item.nome + '"', campos, 'Salvar');
+    if (!dados) return;
+    const corpo = {
+        SALA: () => ({ nome: dados.nome, tipo: dados.tipo, capacidade: Number(dados.capacidade), localizacao: dados.localizacao, restrito: dados.restrito === 'true' }),
+        PROFESSOR: () => ({ nome: dados.nome, competencias: dados.competencias.split(',').map((c) => c.trim()).filter(Boolean) }),
+        MATERIAL: () => ({ nome: dados.nome, tipo: dados.tipo, quantidadeTotal: Number(dados.quantidadeTotal), restrito: dados.restrito === 'true' }),
+    }[item.tipo]();
+    if (await executar(botao, () => Api.editar(item.tipo, item.id, corpo), 'Cadastro atualizado.')) await carregarCatalogo();
 }
 
 async function inativar(botao, item) {

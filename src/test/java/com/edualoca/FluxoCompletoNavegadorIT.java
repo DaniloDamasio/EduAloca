@@ -123,6 +123,13 @@ class FluxoCompletoNavegadorIT {
         formSala.locator("[name=restrito]").check();
         formSala.locator("button[type=submit]").click();
         avisoContem("Sala cadastrada");
+        // Edicao pela tela (RF-04): capacidade 20 -> 25, refletida no catalogo.
+        Locator itemSala = pagina.locator("#catalogo li").filter(new Locator.FilterOptions().setHasText(sala));
+        itemSala.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Editar")).click();
+        pagina.locator("#dialogo [name=capacidade]").fill("25");
+        pagina.locator("#dialogo-confirmar").click();
+        avisoContem("Cadastro atualizado");
+        assertThat(itemSala).containsText("25 lugares");
         Locator formMaterial = pagina.locator("#form-material");
         formMaterial.locator("[name=nome]").fill(material);
         formMaterial.locator("[name=tipo]").fill(tipoMaterial);

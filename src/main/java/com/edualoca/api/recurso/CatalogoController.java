@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -116,6 +117,31 @@ public class CatalogoController {
     public MaterialResposta cadastrarMaterial(@UsuarioAutenticado Usuario usuario, @RequestBody MaterialRequisicao r) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
         return MaterialResposta.de(cadastro.cadastrarMaterial(opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+                numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));
+    }
+
+    /** RF-04 / DEF-015: edicao no lugar; reservas e manutencoes continuam apontando para a mesma sala. */
+    @PutMapping("/salas/{id}")
+    public SalaResposta editarSala(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id, @RequestBody SalaRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return SalaResposta.de(cadastro.atualizarSala(id, opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+                numero(r.capacidade()), opcional(r.localizacao(), "localizacao"), Boolean.TRUE.equals(r.restrito())));
+    }
+
+    /** RF-05 / DEF-015: nome e competencias; o identificador institucional nao muda (e a chave de unicidade). */
+    @PutMapping("/professores/{id}")
+    public ProfessorResposta editarProfessor(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                             @RequestBody ProfessorRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return ProfessorResposta.de(cadastro.atualizarProfessor(id, opcional(r.nome(), "nome"), competencias(r.competencias())));
+    }
+
+    /** RF-06 / DEF-015. */
+    @PutMapping("/materiais/{id}")
+    public MaterialResposta editarMaterial(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                           @RequestBody MaterialRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return MaterialResposta.de(cadastro.atualizarMaterial(id, opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
                 numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));
     }
 

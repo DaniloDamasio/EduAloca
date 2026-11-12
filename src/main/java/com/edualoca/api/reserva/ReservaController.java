@@ -82,6 +82,18 @@ public class ReservaController {
         return ReservaResposta.de(reservaService.iniciarUso(usuario, id));
     }
 
+    /** P-07: EM_USO -> CONCLUIDA, por Responsavel competente ou Administrador. */
+    @PostMapping("/{id}/conclusao")
+    public ReservaResposta concluir(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return ReservaResposta.de(reservaService.concluir(usuario, id));
+    }
+
+    /** P-05 / P-08: APROVADA -> NAO_COMPARECEU, so depois de inicio + 15 min. */
+    @PostMapping("/{id}/nao-comparecimento")
+    public ReservaResposta registrarNaoComparecimento(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return ReservaResposta.de(reservaService.registrarNaoComparecimento(usuario, id));
+    }
+
     @PostMapping("/{id}/rejeicao")
     public ReservaResposta rejeitar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
                                     @RequestBody JustificativaRequisicao requisicao) {

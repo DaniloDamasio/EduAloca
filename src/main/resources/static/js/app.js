@@ -334,7 +334,12 @@ function cartaoReserva(r) {
                 botao('Rejeitar', 'botao--perigo', (e) => rejeitar(e.target, r)));
         }
         if (r.estado === 'APROVADA') {
-            acoes.append(botao('Iniciar uso', '', (e) => transicao(e.target, () => Api.iniciarUso(r.id), 'Uso da reserva iniciado.')));
+            acoes.append(
+                botao('Iniciar uso', '', (e) => transicao(e.target, () => Api.iniciarUso(r.id), 'Uso da reserva iniciado.')),
+                botao('Não compareceu', 'botao--perigo', (e) => transicao(e.target, () => Api.registrarNaoComparecimento(r.id), 'Não comparecimento registrado.')));
+        }
+        if (r.estado === 'EM_USO') {
+            acoes.append(botao('Concluir', '', (e) => transicao(e.target, () => Api.concluirReserva(r.id), 'Reserva concluída.')));
         }
         if (r.estado === 'EM_USO' && r.recursos.some((x) => x.tipo === 'MATERIAL')) {
             acoes.append(botao('Retirada e devolução', 'botao--secundario', () => alternarExtra(extra, 'retiradas', () => painelRetiradas(extra, r))));

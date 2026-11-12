@@ -194,6 +194,53 @@ public class ReservaService {
         return reserva;
     }
 
+    /** Tolerancia de atraso antes de registrar o nao comparecimento (P-08, decisao de 12/11/2026). */
+    public static final java.time.Duration TOLERANCIA_NAO_COMPARECIMENTO = java.time.Duration.ofMinutes(15);
+
+    /**
+     * P-07 (decisao de 12/11/2026): {@code EM_USO -> CONCLUIDA}, manual, por Responsavel competente ou Administrador.
+     * Mesmo controle de acesso do inicio de uso; grava historico e um evento {@code CONCLUSAO}.
+     */
+    public Reserva concluir(Usuario ator, UUID reservaId) {
+        Reserva reserva = decisorSobreReserva(ator, reservaId, "concluir", EstadoReserva.EM_USO);
+        transicionar(reserva, ator, "Conclusao do uso", () -> reserva.setEstado(EstadoReserva.CONCLUIDA));
+        AuditoriaService.registrar("Reserva", reserva.getId(), "CONCLUSAO", ator.getId(), LocalDateTime.now(clock));
+        return reserva;
+    }
+
+    /**
+     * P-05 / P-08 (decisao de 12/11/2026): {@code APROVADA -> NAO_COMPARECEU}, manual, por Responsavel competente ou
+     * Administrador, so quando o relogio do servidor ja passou de inicio + {@link #TOLERANCIA_NAO_COMPARECIMENTO}.
+     */
+    public Reserva registrarNaoComparecimento(Usuario ator, UUID reservaId) {
+        Reserva reserva = decisorSobreReserva(ator, reservaId, "registrar o nao comparecimento de", EstadoReserva.APROVADA);
+        if (LocalDateTime.now(clock).isBefore(reserva.getInicio().plus(TOLERANCIA_NAO_COMPARECIMENTO))) {
+            throw new RegraNegocioException(409, "Nao comparecimento so pode ser registrado "
+                    + TOLERANCIA_NAO_COMPARECIMENTO.toMinutes() + " minutos depois do inicio da reserva");
+        }
+        transicionar(reserva, ator, "Nao comparecimento", () -> reserva.setEstado(EstadoReserva.NAO_COMPARECEU));
+        AuditoriaService.registrar("Reserva", reserva.getId(), "NAO_COMPARECIMENTO", ator.getId(), LocalDateTime.now(clock));
+        return reserva;
+    }
+
+    /** Perfil, existencia, competencia (antes do estado, para nao revelar estado a quem nao decide) e estado exigido. */
+    private Reserva decisorSobreReserva(Usuario ator, UUID reservaId, String acao, EstadoReserva estadoExigido) {
+        Banco.seedSeNecessario();
+        if (ator.getPerfil() != Perfil.RESPONSAVEL && ator.getPerfil() != Perfil.ADMINISTRADOR) {
+            throw new RegraNegocioException(403, "Apenas Responsavel ou Administrador podem " + acao + " a reserva");
+        }
+        Reserva reserva = repositorio.buscar(reservaId);
+        String foraDoEstado = "Reserva nao esta " + estadoExigido + " para " + acao + " a reserva";
+        if (reserva == null) {
+            throw new RegraNegocioException(409, foraDoEstado);
+        }
+        exigirDecisorCompetente(ator, reserva, acao);
+        if (reserva.getEstado() != estadoExigido) {
+            throw new RegraNegocioException(409, foraDoEstado);
+        }
+        return reserva;
+    }
+
     public Reserva rejeitar(Usuario responsavel, UUID reservaId, String justificativa) {
         Banco.seedSeNecessario();
         if (responsavel.getPerfil() != Perfil.RESPONSAVEL && responsavel.getPerfil() != Perfil.ADMINISTRADOR) {

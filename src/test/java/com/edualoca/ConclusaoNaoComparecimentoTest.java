@@ -2,6 +2,7 @@ package com.edualoca;
 
 import com.edualoca.domain.comum.Banco;
 import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.RegistroHistoricoReserva;
@@ -149,5 +150,20 @@ class ConclusaoNaoComparecimentoTest {
                 () -> assertEquals(403, assertThrows(RegraNegocioException.class, () -> reservas.registrarNaoComparecimento(responsavelB, faltou.getId())).getStatusHttp()),
                 () -> assertEquals(EstadoReserva.EM_USO, emUso.getEstado()),
                 () -> assertEquals(EstadoReserva.APROVADA, faltou.getEstado()));
+    }
+
+    @Test
+    @DisplayName("Reserva sem sala (so material): o Solicitante continua sem poder concluir nem registrar falta (403)")
+    void reservaSemSala_perfilContinuaExigido() {
+        Material projetor = new Material(UUID.randomUUID(), "Projetor", "projetor", 1, false);
+        Reserva emUso = reservas.criar(solicitante, INICIO, FIM, "Aula", List.of(new ReservaRecurso(projetor, 1)));
+        reservas.iniciarUso(administrador, emUso.getId());
+        Reserva faltou = reservas.criar(solicitante, INICIO.plusHours(3), FIM.plusHours(3), "Aula",
+                List.of(new ReservaRecurso(new Material(UUID.randomUUID(), "Caixa", "audio", 1, false), 1)));
+        agora(INICIO.plusHours(4));
+
+        assertAll(
+                () -> assertEquals(403, assertThrows(RegraNegocioException.class, () -> reservas.concluir(solicitante, emUso.getId())).getStatusHttp()),
+                () -> assertEquals(403, assertThrows(RegraNegocioException.class, () -> reservas.registrarNaoComparecimento(solicitante, faltou.getId())).getStatusHttp()));
     }
 }

@@ -90,6 +90,8 @@ const Api = (() => {
         rejeitarReserva: (reservaId, justificativa) =>
             requisitar('POST', '/reservas/' + id(reservaId) + '/rejeicao', { justificativa }),
         iniciarUso: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/inicio-uso'),
+        concluirReserva: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/conclusao'),
+        registrarNaoComparecimento: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/nao-comparecimento'),
         historico: (reservaId) => requisitar('GET', '/reservas/' + id(reservaId) + '/historico'),
 
         retiradas: (reservaId) => requisitar('GET', '/reservas/' + id(reservaId) + '/retiradas'),

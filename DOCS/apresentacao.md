@@ -4,6 +4,11 @@ Roteiro para a apresentação final (cerca de 15 minutos: 8 de slides e 7 de dem
 evidência no repositório, para que qualquer número citado possa ser conferido na hora. Trabalho individual de Danilo
 Damasio.
 
+**Slides:** [apresentacao/slides.html](apresentacao/slides.html), 15 slides 16:9. Abrir no navegador; setas ← → navegam.
+Para gerar o PDF (não versionado), imprimir a página (tecla `P`, "Salvar como PDF", sem margens) ou, por linha de comando,
+`chrome --headless --no-pdf-header-footer --print-to-pdf=slides.pdf DOCS/apresentacao/slides.html`. Os números citados
+nos slides são os do relatório de qualidade, seção 10.
+
 ## Preparação (antes de entrar na sala)
 
 1. Conferir o último run de CI verde na `main` e abrir a aba do SonarCloud do projeto.

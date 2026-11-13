@@ -18,3 +18,6 @@ perf/resultados/rodada-02-tentativa-1/
 
 # Configuracao local do editor (VS Code)
 .vscode/
+
+# PDF da apresentacao: gerado a partir de DOCS/apresentacao/slides.html (documentos nao sao versionados)
+DOCS/apresentacao/*.pdf

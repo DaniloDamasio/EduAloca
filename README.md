@@ -430,5 +430,5 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] OpenAPI 3 das 39 operações, com teste de sincronia (RF-39)
 - [x] Gestão de usuários, consulta de auditoria, lista de manutenções e confirmação explícita (RF-23)
 - [x] Não comparecimento automático no fim do horário (P-08) e devoluções em atraso (RF-26)
-- [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md))
+- [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md)) e slides ([DOCS/apresentacao/slides.html](DOCS/apresentacao/slides.html); o PDF é gerado a partir dele)
 - [x] Mutação automatizada com PIT no domínio: 90,6% dos mutantes mortos ([DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md))

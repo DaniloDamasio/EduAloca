@@ -132,8 +132,8 @@ java -jar target/edualoca-0.0.1-SNAPSHOT.jar
 
 Abra <http://localhost:8080/>. A interface (HTML, CSS e JavaScript puros, sem dependências) é servida pela própria
 aplicação a partir de [src/main/resources/static](src/main/resources/static), adapta-se a celular e desktop e consome
-só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. Os dados voltam ao seed a cada reinício; o que é ou não
-persistido no PostgreSQL está no [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md).
+só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. No modo padrão (em memória) os dados voltam ao seed a cada reinício; com
+PostgreSQL, catálogo e reservas são mantidos (ver "Escopo da persistência" e o [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)).
 
 ### Escopo da persistência (PostgreSQL)
 
@@ -145,20 +145,28 @@ histórico é gravado na mesma transação da mudança de estado e um trigger re
 contra PostgreSQL real com Testcontainers (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
 `ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`) e foi medido sob carga ([resultado-02](DOCS/performance/resultado-02.md)).
 
-O restante (salas, professores, materiais, manutenções, usuários, auditoria, retiradas e notificações) fica **em
-memória**, e as leituras de reserva usam um cache em memória preenchido depois do commit. Consequência: ao reiniciar a
-aplicação, o catálogo volta ao seed e o que foi cadastrado pela interface se perde, mesmo com o PostgreSQL ligado.
-Foi uma decisão de escopo para a entrega ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)): levar
-todas as entidades ao banco exige repositórios para cada uma e trocar a comparação de recursos por referência de objeto
-pela comparação por id em todo o domínio, mexendo justamente nas partes já verificadas por concorrência e carga.
+O **catálogo** (salas, professores com competências e materiais) também é gravado no banco a cada cadastro, edição e
+inativação. Na subida, a aplicação recarrega do PostgreSQL o catálogo e as reservas, e o histórico continua sendo lido do
+banco. Assim, **com o PostgreSQL ligado, um reinício não perde o que foi cadastrado nem as reservas**
+(`PersistenciaReinicioIT`, `CatalogoRepositorioJdbcIT`). As leituras continuam saindo de um cache em memória preenchido
+pelo banco, então o domínio e as regras de concorrência não mudaram.
 
-Para rodar com PostgreSQL (opcional; o modo padrão em memória é o de demonstração):
+Continuam **só em memória**, e voltam ao seed num reinício: manutenções, usuários e senhas, auditoria, retiradas,
+notificações, tokens e tentativas de login ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md), seção
+"Atualização"). Com duas instâncias, cada uma só enxerga o catálogo gravado pela outra depois de reiniciar.
+
+Para rodar com PostgreSQL (o modo padrão, sem essas propriedades, é em memória):
 
 ```
+docker run -d --name edualoca-pg -e POSTGRES_DB=edualoca -e POSTGRES_USER=edualoca \
+  -e POSTGRES_PASSWORD=<senha> -p 127.0.0.1:5432:5432 postgres:16-alpine
 java -jar target/edualoca-0.0.1-SNAPSHOT.jar \
   --edualoca.persistencia.url=jdbc:postgresql://localhost:5432/edualoca \
-  --edualoca.persistencia.usuario=<usuario> --edualoca.persistencia.senha=<senha>
+  --edualoca.persistencia.usuario=edualoca --edualoca.persistencia.senha=<senha>
 ```
+
+O esquema é criado na subida (`db/postgres/schema.sql`, idempotente). Reiniciar o `java -jar` mantém o catálogo e as
+reservas.
 
 ### Contas de demonstração
 

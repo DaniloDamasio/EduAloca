@@ -635,6 +635,24 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
 - *Ação:* cada instância passou a ter log próprio (`target/instancia-externa-<timestamp>.log`) e a mensagem de erro traz
   as últimas 25 linhas do log, para que uma nova ocorrência mostre a causa. A corrida de porta não foi corrigida.
 
+### 10.6 Atualização: persistência do catálogo e recarga das reservas (2026-11-13, branch `persistencia-catalogo`)
+
+**A-34. Com PostgreSQL, catálogo e reservas sobrevivem ao reinício.**
+- *Evidência:* tabelas `sala`, `professor`, `professor_competencia` e `material`; gravação a cada cadastro, edição e
+  inativação; recarga do catálogo e das reservas na subida ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md),
+  "Atualização"). `PersistenciaReinicioIT` sobe a aplicação inteira duas vezes no mesmo PostgreSQL (Testcontainers), com a
+  memória zerada entre as subidas. Confere edição e inativação, competências na ordem, reserva aprovada e rejeitada (com
+  justificativa) apontando para os mesmos objetos do catálogo, histórico, sobreposição ainda recusada e seed sem duplicar.
+  `CatalogoRepositorioJdbcIT` (3 casos) cobre o repositório. Dois mutantes manuais (sem recarga de reservas; edição de
+  sala não gravada) fazem o teste falhar. Teste manual com o jar e um PostgreSQL em Docker: sala criada pela API continua
+  lá depois de reiniciar. `./mvnw -B verify`: **573 unitários e 23 ITs, 0 falhas**; linhas 1663/1714 = **97,02%**,
+  ramos 634/709 = **89,42%**.
+- *Interpretação:* fecha a limitação mais visível do modo PostgreSQL (o cadastro sumia no reinício), sem mexer no domínio
+  nem na proteção contra dupla reserva, porque o cache em memória continua sendo a fonte das leituras.
+- *Limite:* manutenções, usuários, auditoria, retiradas, notificações e sessões continuam em memória; com duas instâncias,
+  o cache de uma não é atualizado pelas gravações da outra até reiniciar; se a gravação no banco falhar depois da mudança
+  no cache, o cache fica à frente do banco até o reinício; a carga (rodada 02) é anterior a esta mudança.
+
 ## Apêndice A: comandos usados
 
 ```bash

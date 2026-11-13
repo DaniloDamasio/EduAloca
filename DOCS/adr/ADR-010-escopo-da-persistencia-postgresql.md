@@ -66,3 +66,28 @@ Adotar a **alternativa 2** para esta entrega acadêmica.
 3. `usuario` com `senha_hash` (o formato PBKDF2 já é autodescritivo) e `auditoria_evento` na mesma transação da escrita
    de cadastro, fechando o ADR-002 por completo.
 4. Migrations versionadas (Flyway) no lugar do `schema.sql` aplicado na subida.
+
+## Atualização (2026-11-13): catálogo persistido e reservas recarregadas
+
+O primeiro passo do caminho de migração foi feito, sem trocar a arquitetura de cache:
+
+- **Catálogo no banco:** tabelas `sala`, `professor`, `professor_competencia` (com a ordem) e `material`. Cada cadastro,
+  edição e inativação grava no banco pela porta `CatalogoRepositorio` (`CatalogoRepositorioJdbc`); no modo em memória a
+  porta é `NENHUM`.
+- **Recarga na subida:** o catálogo gravado vence o seed, e o seed ausente é inserido sem sobrescrever nada
+  (`ON CONFLICT DO NOTHING`, seguro com duas instâncias subindo juntas). Em seguida as reservas são recarregadas do banco,
+  com cada recurso resolvido por tipo e id no catálogo já carregado. Isso acontece na criação dos beans, antes de a
+  aplicação atender requisições.
+- **Seed com ids fixos** (`Banco.SALA_SEED_ID`, `PROFESSOR_SEED_ID` e `MATERIAL_SEED_ID`), para não duplicar a cada subida.
+- **O `Banco` em memória continua sendo o cache de leitura:** o domínio segue comparando recursos por referência de
+  objeto, e as leituras não mudaram. Por isso a concorrência e a carga medidas continuam valendo.
+
+Testes: `CatalogoRepositorioJdbcIT` (upsert, competências, identificador repetido → 409, banco vence o seed, seed sem
+duplicar) e `PersistenciaReinicioIT`. Este último sobe a aplicação inteira, cadastra e reserva, desliga, zera a memória e
+sobe de novo no mesmo banco. Dois mutantes manuais (sem a recarga de reservas; sem gravar a edição de sala) fazem o
+`PersistenciaReinicioIT` falhar.
+
+**Continua em memória:** manutenções, usuários e credenciais, auditoria, retiradas, notificações, tokens e tentativas
+de login. Com duas instâncias, uma instância só vê o catálogo gravado pela outra quando reinicia: o cache não é
+invalidado entre instâncias. A dupla reserva entre instâncias continua garantida pela constraint do banco.
+

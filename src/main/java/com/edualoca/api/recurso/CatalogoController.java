@@ -64,7 +64,7 @@ public class CatalogoController {
     public CatalogoResposta catalogo(@UsuarioAutenticado Usuario usuario) {
         Banco.seedSeNecessario();
         return new CatalogoResposta(
-                Banco.salas.values().stream().filter(Sala::isAtivo).sorted(Comparator.comparing(Sala::getNome))
+                cadastro.listarSalasAtivas().stream().sorted(Comparator.comparing(Sala::getNome))
                         .map(SalaResposta::de).toList(),
                 Banco.professores.values().stream().filter(Professor::isAtivo)
                         .sorted(Comparator.comparing(Professor::getNome)).map(ProfessorResposta::de).toList(),

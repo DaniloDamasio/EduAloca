@@ -52,8 +52,7 @@ public class RetiradaMaterialService {
         }
         registro.setDataDevolucao(dataHora);
         registro.setCondicaoDevolucao(condicao);
-        AuditoriaService.registrar("Retirada", registro.getId(), "DEVOLUCAO_" + condicao.name(),
-                autor == null ? null : autor.getId(), dataHora);
+        AuditoriaService.registrar("Retirada", registro.getId(), "DEVOLUCAO_" + condicao.name(), autor.getId(), dataHora);
         return registro;
     }
 

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.recurso</a> &gt; <span class="el_source">CatalogoController.java</span></div><h1>CatalogoController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.recurso;
+
+import com.edualoca.api.recurso.CadastroRequisicoes.MaterialRequisicao;
+import com.edualoca.api.recurso.CadastroRequisicoes.ProfessorRequisicao;
+import com.edualoca.api.recurso.CadastroRequisicoes.SalaRequisicao;
+import com.edualoca.api.reserva.RecursoResolver;
+import com.edualoca.api.seguranca.Perfis;
+import com.edualoca.api.seguranca.UsuarioAutenticado;
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.Competencia;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.PesquisaRecursoService;
+import com.edualoca.domain.recurso.Professor;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Catalogo de salas, professores e materiais (RF-04 a RF-10). Qualquer usuario autenticado consulta; so o
+ * Administrador cadastra e inativa. As regras de cada cadastro ficam em {@link CadastroRecursoService}; aqui so o
+ * perfil e o tamanho da entrada (RNF-04).
+ */
+@RestController
+public class CatalogoController {
+
+    static final int MAX_TEXTO = 120;
+    static final int MAX_COMPETENCIAS = 20;
+    private static final String SO_ADMIN = &quot;Apenas o Administrador pode gerenciar o cadastro de recursos&quot;;
+
+    private final CadastroRecursoService cadastro;
+    private final PesquisaRecursoService pesquisa;
+    private final RecursoResolver recursoResolver;
+
+    public CatalogoController(CadastroRecursoService cadastro, PesquisaRecursoService pesquisa,
+<span class="fc" id="L52">                              RecursoResolver recursoResolver) {</span>
+<span class="fc" id="L53">        this.cadastro = cadastro;</span>
+<span class="fc" id="L54">        this.pesquisa = pesquisa;</span>
+<span class="fc" id="L55">        this.recursoResolver = recursoResolver;</span>
+<span class="fc" id="L56">    }</span>
+
+<span class="fc" id="L58">    public record CatalogoResposta(List&lt;SalaResposta&gt; salas, List&lt;ProfessorResposta&gt; professores,</span>
+                                   List&lt;MaterialResposta&gt; materiais) {
+    }
+
+    /** Recursos ativos, em ordem de nome. */
+    @GetMapping(&quot;/recursos&quot;)
+    public CatalogoResposta catalogo(@UsuarioAutenticado Usuario usuario) {
+<span class="fc" id="L65">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L66">        return new CatalogoResposta(</span>
+<span class="fc" id="L67">                cadastro.listarSalasAtivas().stream().sorted(Comparator.comparing(Sala::getNome))</span>
+<span class="fc" id="L68">                        .map(SalaResposta::de).toList(),</span>
+<span class="fc" id="L69">                Banco.professores.values().stream().filter(Professor::isAtivo)</span>
+<span class="fc" id="L70">                        .sorted(Comparator.comparing(Professor::getNome)).map(ProfessorResposta::de).toList(),</span>
+<span class="fc" id="L71">                Banco.materiais.values().stream().filter(Material::isAtivo)</span>
+<span class="fc" id="L72">                        .sorted(Comparator.comparing(Material::getNome)).map(MaterialResposta::de).toList());</span>
+    }
+
+    /** RF-09: professores com a competencia e sem reserva ativa ou manutencao no intervalo. */
+    @GetMapping(&quot;/professores/disponiveis&quot;)
+    public List&lt;ProfessorResposta&gt; professoresDisponiveis(
+            @UsuarioAutenticado Usuario usuario, @RequestParam String competencia,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+<span class="fc" id="L81">        return pesquisa.buscarProfessores(texto(competencia, &quot;competencia&quot;), inicio, fim).stream()</span>
+<span class="fc" id="L82">                .map(ProfessorResposta::de).toList();</span>
+    }
+
+    /** RF-10: materiais com a quantidade livre pedida no intervalo e fora de manutencao. */
+    @GetMapping(&quot;/materiais/disponiveis&quot;)
+    public List&lt;MaterialResposta&gt; materiaisDisponiveis(
+            @UsuarioAutenticado Usuario usuario, @RequestParam(required = false) String tipo,
+            @RequestParam(defaultValue = &quot;1&quot;) int quantidade,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (quantidade &lt; 1) {</span>
+<span class="fc" id="L93">            throw new RegraNegocioException(400, &quot;Quantidade inválida: informe ao menos 1 unidade&quot;);</span>
+        }
+<span class="fc" id="L95">        return pesquisa.buscarMateriais(opcional(tipo, &quot;tipo&quot;), quantidade, inicio, fim).stream()</span>
+<span class="fc" id="L96">                .map(MaterialResposta::de).toList();</span>
+    }
+
+    @PostMapping(&quot;/salas&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    public SalaResposta cadastrarSala(@UsuarioAutenticado Usuario usuario, @RequestBody SalaRequisicao r) {
+<span class="fc" id="L102">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L103">        return SalaResposta.de(cadastro.por(usuario).cadastrarSala(opcional(r.nome(), &quot;nome&quot;), opcional(r.tipo(), &quot;tipo&quot;),</span>
+<span class="fc" id="L104">                numero(r.capacidade()), opcional(r.localizacao(), &quot;localizacao&quot;), Boolean.TRUE.equals(r.restrito())));</span>
+    }
+
+    @PostMapping(&quot;/professores&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProfessorResposta cadastrarProfessor(@UsuarioAutenticado Usuario usuario, @RequestBody ProfessorRequisicao r) {
+<span class="fc" id="L110">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L111">        return ProfessorResposta.de(cadastro.por(usuario).cadastrarProfessor(opcional(r.nome(), &quot;nome&quot;),</span>
+<span class="fc" id="L112">                opcional(r.identificadorInstitucional(), &quot;identificadorInstitucional&quot;), competencias(r.competencias())));</span>
+    }
+
+    @PostMapping(&quot;/materiais&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    public MaterialResposta cadastrarMaterial(@UsuarioAutenticado Usuario usuario, @RequestBody MaterialRequisicao r) {
+<span class="fc" id="L118">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L119">        return MaterialResposta.de(cadastro.por(usuario).cadastrarMaterial(opcional(r.nome(), &quot;nome&quot;), opcional(r.tipo(), &quot;tipo&quot;),</span>
+<span class="fc" id="L120">                numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));</span>
+    }
+
+    /** RF-04 / DEF-015: edicao no lugar; reservas e manutencoes continuam apontando para a mesma sala. */
+    @PutMapping(&quot;/salas/{id}&quot;)
+    public SalaResposta editarSala(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id, @RequestBody SalaRequisicao r) {
+<span class="fc" id="L126">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L127">        return SalaResposta.de(cadastro.por(usuario).atualizarSala(id, opcional(r.nome(), &quot;nome&quot;), opcional(r.tipo(), &quot;tipo&quot;),</span>
+<span class="fc" id="L128">                numero(r.capacidade()), opcional(r.localizacao(), &quot;localizacao&quot;), Boolean.TRUE.equals(r.restrito())));</span>
+    }
+
+    /** RF-05 / DEF-015: nome e competencias; o identificador institucional nao muda (e a chave de unicidade). */
+    @PutMapping(&quot;/professores/{id}&quot;)
+    public ProfessorResposta editarProfessor(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                             @RequestBody ProfessorRequisicao r) {
+<span class="fc" id="L135">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L136">        return ProfessorResposta.de(cadastro.por(usuario).atualizarProfessor(id, opcional(r.nome(), &quot;nome&quot;), competencias(r.competencias())));</span>
+    }
+
+    /** RF-06 / DEF-015. */
+    @PutMapping(&quot;/materiais/{id}&quot;)
+    public MaterialResposta editarMaterial(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                           @RequestBody MaterialRequisicao r) {
+<span class="fc" id="L143">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L144">        return MaterialResposta.de(cadastro.por(usuario).atualizarMaterial(id, opcional(r.nome(), &quot;nome&quot;), opcional(r.tipo(), &quot;tipo&quot;),</span>
+<span class="fc" id="L145">                numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));</span>
+    }
+
+    @PostMapping(&quot;/salas/{id}/inativacao&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void inativarSala(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+<span class="fc" id="L151">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L152">        cadastro.por(usuario).inativarSala((Sala) recursoResolver.resolver(&quot;SALA&quot;, id));</span>
+<span class="fc" id="L153">    }</span>
+
+    @PostMapping(&quot;/professores/{id}/inativacao&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void inativarProfessor(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+<span class="fc" id="L158">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L159">        cadastro.por(usuario).inativarProfessor(id);</span>
+<span class="fc" id="L160">    }</span>
+
+    @PostMapping(&quot;/materiais/{id}/inativacao&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void inativarMaterial(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+<span class="fc" id="L165">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L166">        cadastro.por(usuario).inativarMaterial(id);</span>
+<span class="fc" id="L167">    }</span>
+
+    private static List&lt;Competencia&gt; competencias(List&lt;String&gt; nomes) {
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (nomes == null) {</span>
+<span class="nc" id="L171">            return List.of();</span>
+        }
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (nomes.size() &gt; MAX_COMPETENCIAS) {</span>
+<span class="fc" id="L174">            throw new RegraNegocioException(400, &quot;Informe no máximo &quot; + MAX_COMPETENCIAS + &quot; competências&quot;);</span>
+        }
+<span class="fc" id="L176">        return nomes.stream().map(nome -&gt; new Competencia(texto(nome, &quot;competencias&quot;))).toList();</span>
+    }
+
+    private static int numero(Integer valor) {
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        return valor == null ? 0 : valor;</span>
+    }
+
+    /** Texto obrigatorio, sem espacos nas pontas e com tamanho limitado. */
+    private static String texto(String valor, String campo) {
+<span class="pc bpc" id="L185" title="1 of 4 branches missed.">        if (valor == null || valor.isBlank()) {</span>
+<span class="fc" id="L186">            throw new RegraNegocioException(400, &quot;Campo obrigatório ausente: informe '&quot; + campo + &quot;'&quot;);</span>
+        }
+<span class="fc" id="L188">        return opcional(valor, campo);</span>
+    }
+
+    /** Ausente continua ausente (o servico decide se e obrigatorio); presente e aparado e limitado. */
+    private static String opcional(String valor, String campo) {
+<span class="fc bfc" id="L193" title="All 4 branches covered.">        if (valor == null || valor.isBlank()) {</span>
+<span class="fc" id="L194">            return null;</span>
+        }
+<span class="fc" id="L196">        String aparado = valor.strip();</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (aparado.length() &gt; MAX_TEXTO) {</span>
+<span class="fc" id="L198">            throw new RegraNegocioException(400, &quot;Campo '&quot; + campo + &quot;' excede &quot; + MAX_TEXTO + &quot; caracteres&quot;);</span>
+        }
+<span class="fc" id="L200">        return aparado;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

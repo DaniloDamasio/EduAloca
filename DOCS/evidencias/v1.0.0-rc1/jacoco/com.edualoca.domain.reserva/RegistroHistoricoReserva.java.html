@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegistroHistoricoReserva.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.reserva</a> &gt; <span class="el_source">RegistroHistoricoReserva.java</span></div><h1>RegistroHistoricoReserva.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.reserva;
+
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Uma entrada do historico auditavel de uma reserva (RF-27): quem mudou o estado, quando, de qual para qual
+ * e por que. {@code estadoAnterior} e {@code null} na criacao. Imutavel: nao ha como alterar um registro depois
+ * de criado, e a porta {@link HistoricoReservaRepositorio} nao oferece alteracao nem exclusao (RF-29).
+ */
+public record RegistroHistoricoReserva(UUID id, UUID reservaId, UUID usuarioId, Instant instante,
+                                       EstadoReserva estadoAnterior, EstadoReserva estadoNovo, String motivo) {
+
+<span class="fc" id="L14">    public RegistroHistoricoReserva {</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        exigir(id != null, &quot;id&quot;);</span>
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        exigir(reservaId != null, &quot;reserva&quot;);</span>
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        exigir(usuarioId != null, &quot;usuario&quot;);</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        exigir(instante != null, &quot;instante&quot;);</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        exigir(estadoNovo != null, &quot;estado novo&quot;);</span>
+<span class="fc bfc" id="L20" title="All 4 branches covered.">        exigir(motivo != null &amp;&amp; !motivo.isBlank(), &quot;motivo&quot;);</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (estadoAnterior == estadoNovo) {</span>
+<span class="fc" id="L22">            throw new IllegalArgumentException(&quot;Registro de histórico exige mudança de estado&quot;);</span>
+        }
+<span class="fc" id="L24">    }</span>
+
+    private static void exigir(boolean condicao, String campo) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        if (!condicao) {</span>
+<span class="fc" id="L28">            throw new IllegalArgumentException(&quot;Registro de histórico sem &quot; + campo);</span>
+        }
+<span class="fc" id="L30">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

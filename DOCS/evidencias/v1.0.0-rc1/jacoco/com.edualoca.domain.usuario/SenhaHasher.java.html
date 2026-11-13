@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SenhaHasher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.usuario</a> &gt; <span class="el_source">SenhaHasher.java</span></div><h1>SenhaHasher.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.usuario;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.UUID;
+
+/**
+ * Hash de senha com sal (RNF-05, DEF-013): PBKDF2-HMAC-SHA256 do proprio JDK, 600.000 iteracoes (recomendacao
+ * OWASP para esse algoritmo), sal aleatorio de 16 bytes por senha e chave de 256 bits. O valor armazenado leva os
+ * parametros, no formato {@code pbkdf2-sha256$iteracoes$sal$hash} (sal e hash em Base64), para que o custo possa
+ * subir sem invalidar as senhas ja gravadas.
+ */
+public final class SenhaHasher {
+
+    private static final String ALGORITMO = &quot;PBKDF2WithHmacSHA256&quot;;
+    private static final String PREFIXO = &quot;pbkdf2-sha256&quot;;
+    static final int ITERACOES = 600_000;
+    private static final int MAX_ITERACOES = 10_000_000;
+    private static final int BYTES_SAL = 16;
+    private static final int BITS_CHAVE = 256;
+<span class="fc" id="L25">    private static final SecureRandom ALEATORIO = new SecureRandom();</span>
+
+    /**
+     * Valor de referencia para conta inexistente ou senha vazia: a conferencia gasta o mesmo tempo e falha, e assim o
+     * tempo de resposta nao revela se o e-mail esta cadastrado.
+     */
+<span class="fc" id="L31">    private static final String HASH_FICTICIO = gerar(UUID.randomUUID().toString());</span>
+
+    private SenhaHasher() {
+    }
+
+    /** Gera o valor a armazenar. Nunca devolve nem registra a senha em claro. */
+    public static String gerar(String senhaEmTextoPlano) {
+<span class="pc bpc" id="L38" title="2 of 4 branches missed.">        if (senhaEmTextoPlano == null || senhaEmTextoPlano.isEmpty()) {</span>
+<span class="nc" id="L39">            throw new IllegalArgumentException(&quot;Senha vazia nao pode ser cadastrada&quot;);</span>
+        }
+<span class="fc" id="L41">        byte[] sal = new byte[BYTES_SAL];</span>
+<span class="fc" id="L42">        ALEATORIO.nextBytes(sal);</span>
+<span class="fc" id="L43">        byte[] chave = derivar(senhaEmTextoPlano, sal, ITERACOES);</span>
+<span class="fc" id="L44">        Base64.Encoder b64 = Base64.getEncoder().withoutPadding();</span>
+<span class="fc" id="L45">        return PREFIXO + &quot;$&quot; + ITERACOES + &quot;$&quot; + b64.encodeToString(sal) + &quot;$&quot; + b64.encodeToString(chave);</span>
+    }
+
+    /**
+     * Confere a senha com o valor armazenado, em tempo constante na comparacao. Valor ausente, mal formado ou senha
+     * vazia sempre resultam em {@code false}, depois de gastar o custo de uma derivacao.
+     */
+    public static boolean confere(String senhaEmTextoPlano, String armazenado) {
+<span class="fc bfc" id="L53" title="All 6 branches covered.">        boolean entradaValida = senhaEmTextoPlano != null &amp;&amp; !senhaEmTextoPlano.isEmpty() &amp;&amp; armazenado != null;</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        String[] partes = (entradaValida ? armazenado : HASH_FICTICIO).split(&quot;\\$&quot;);</span>
+        int iteracoes;
+        byte[] sal;
+        byte[] esperado;
+        try {
+<span class="fc bfc" id="L59" title="All 4 branches covered.">            if (partes.length != 4 || !PREFIXO.equals(partes[0])) {</span>
+<span class="fc" id="L60">                return falhaComCusto();</span>
+            }
+<span class="fc" id="L62">            iteracoes = Integer.parseInt(partes[1]);</span>
+<span class="fc" id="L63">            sal = Base64.getDecoder().decode(partes[2]);</span>
+<span class="fc" id="L64">            esperado = Base64.getDecoder().decode(partes[3]);</span>
+<span class="fc" id="L65">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L66">            return falhaComCusto();</span>
+<span class="fc" id="L67">        }</span>
+<span class="pc bpc" id="L68" title="2 of 8 branches missed.">        if (iteracoes &lt; 1 || iteracoes &gt; MAX_ITERACOES || sal.length == 0 || esperado.length == 0) {</span>
+<span class="fc" id="L69">            return falhaComCusto();</span>
+        }
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        String candidata = entradaValida ? senhaEmTextoPlano : &quot;senha-ficticia&quot;;</span>
+<span class="fc" id="L72">        boolean iguais = MessageDigest.isEqual(derivar(candidata, sal, iteracoes), esperado);</span>
+<span class="fc bfc" id="L73" title="All 4 branches covered.">        return entradaValida &amp;&amp; iguais;</span>
+    }
+
+    private static boolean falhaComCusto() {
+<span class="fc" id="L77">        confere(&quot;senha-ficticia&quot;, HASH_FICTICIO);</span>
+<span class="fc" id="L78">        return false;</span>
+    }
+
+    private static byte[] derivar(String senha, byte[] sal, int iteracoes) {
+<span class="fc" id="L82">        PBEKeySpec spec = new PBEKeySpec(senha.toCharArray(), sal, iteracoes, BITS_CHAVE);</span>
+        try {
+<span class="fc" id="L84">            return SecretKeyFactory.getInstance(ALGORITMO).generateSecret(spec).getEncoded();</span>
+<span class="nc" id="L85">        } catch (GeneralSecurityException e) {</span>
+<span class="nc" id="L86">            throw new IllegalStateException(&quot;PBKDF2 indisponivel na JVM&quot;, e);</span>
+        } finally {
+<span class="fc" id="L88">            spec.clearPassword();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

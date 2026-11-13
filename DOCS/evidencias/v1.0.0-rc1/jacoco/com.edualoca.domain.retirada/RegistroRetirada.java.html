@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegistroRetirada.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.retirada</a> &gt; <span class="el_source">RegistroRetirada.java</span></div><h1>RegistroRetirada.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.retirada;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public class RegistroRetirada {
+
+    private final UUID id;
+    private final UUID reservaId;
+    /** Material retirado (RF-24, DEF-014). */
+    private final UUID itemId;
+    private final UUID autorId;
+    private final LocalDateTime dataRetirada;
+    private LocalDateTime dataDevolucao;
+    private CondicaoItem condicaoDevolucao;
+<span class="fc" id="L16">    private boolean pendenciaSinalizada = false;</span>
+
+<span class="fc" id="L18">    public RegistroRetirada(UUID id, UUID reservaId, UUID itemId, UUID autorId, LocalDateTime dataRetirada) {</span>
+<span class="fc" id="L19">        this.id = id;</span>
+<span class="fc" id="L20">        this.reservaId = reservaId;</span>
+<span class="fc" id="L21">        this.itemId = itemId;</span>
+<span class="fc" id="L22">        this.autorId = autorId;</span>
+<span class="fc" id="L23">        this.dataRetirada = dataRetirada;</span>
+<span class="fc" id="L24">    }</span>
+
+    public UUID getId() {
+<span class="fc" id="L27">        return id;</span>
+    }
+
+    public UUID getReservaId() {
+<span class="fc" id="L31">        return reservaId;</span>
+    }
+
+    public UUID getItemId() {
+<span class="fc" id="L35">        return itemId;</span>
+    }
+
+    public UUID getAutorId() {
+<span class="fc" id="L39">        return autorId;</span>
+    }
+
+    public LocalDateTime getDataRetirada() {
+<span class="fc" id="L43">        return dataRetirada;</span>
+    }
+
+    public LocalDateTime getDataDevolucao() {
+<span class="fc" id="L47">        return dataDevolucao;</span>
+    }
+
+    public void setDataDevolucao(LocalDateTime dataDevolucao) {
+<span class="fc" id="L51">        this.dataDevolucao = dataDevolucao;</span>
+<span class="fc" id="L52">    }</span>
+
+    public CondicaoItem getCondicaoDevolucao() {
+<span class="fc" id="L55">        return condicaoDevolucao;</span>
+    }
+
+    public void setCondicaoDevolucao(CondicaoItem condicaoDevolucao) {
+<span class="fc" id="L59">        this.condicaoDevolucao = condicaoDevolucao;</span>
+<span class="fc" id="L60">    }</span>
+
+    public boolean isPendenciaSinalizada() {
+<span class="fc" id="L63">        return pendenciaSinalizada;</span>
+    }
+
+    public void setPendenciaSinalizada(boolean pendenciaSinalizada) {
+<span class="fc" id="L67">        this.pendenciaSinalizada = pendenciaSinalizada;</span>
+<span class="fc" id="L68">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

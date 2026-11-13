@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetiradaMaterialService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.retirada</a> &gt; <span class="el_source">RetiradaMaterialService.java</span></div><h1>RetiradaMaterialService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.retirada;
+
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.usuario.Usuario;
+
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+
+<span class="fc" id="L16">public class RetiradaMaterialService {</span>
+
+    public RegistroRetirada registrarRetirada(Usuario autor, UUID reservaId, UUID itemId, LocalDateTime dataHora) {
+<span class="fc" id="L19">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L20">        Reserva reserva = Banco.reservas.get(reservaId);</span>
+<span class="fc bfc" id="L21" title="All 4 branches covered.">        if (reserva == null || reserva.getEstado() != EstadoReserva.EM_USO) {</span>
+<span class="fc" id="L22">            throw new RegraNegocioException(409, &quot;Retirada só pode ser registrada para reserva EM_USO&quot;);</span>
+        }
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        boolean itemDaReserva = itemId != null &amp;&amp; reserva.getRecursos().stream()</span>
+<span class="fc bfc" id="L25" title="All 6 branches covered.">                .anyMatch(rr -&gt; rr.getRecurso() instanceof Material m &amp;&amp; m.getId().equals(itemId));</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (!itemDaReserva) {</span>
+<span class="fc" id="L27">            throw new RegraNegocioException(409, &quot;O material informado não faz parte desta reserva&quot;);</span>
+        }
+        // Ciclo aberto e por item (DEF-014): outro material da mesma reserva pode sair ao mesmo tempo.
+<span class="fc" id="L30">        boolean cicloAberto = Banco.retiradas.values().stream()</span>
+<span class="fc bfc" id="L31" title="All 4 branches covered.">                .anyMatch(r -&gt; r.getReservaId().equals(reservaId) &amp;&amp; r.getItemId().equals(itemId)</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">                        &amp;&amp; r.getDataDevolucao() == null);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (cicloAberto) {</span>
+<span class="fc" id="L34">            throw new RegraNegocioException(409, &quot;Já existe retirada em aberto para este item&quot;);</span>
+        }
+<span class="fc" id="L36">        RegistroRetirada registro = new RegistroRetirada(UUID.randomUUID(), reservaId, itemId, autor.getId(), dataHora);</span>
+<span class="fc" id="L37">        Banco.retiradas.put(registro.getId(), registro);</span>
+        // RF-28: retirada e devolucao tambem entram na auditoria, com o autor do token e a data do servidor.
+<span class="fc" id="L39">        AuditoriaService.registrar(&quot;Retirada&quot;, registro.getId(), &quot;RETIRADA&quot;, autor.getId(), dataHora);</span>
+<span class="fc" id="L40">        return registro;</span>
+    }
+
+    public RegistroRetirada registrarDevolucao(Usuario autor, UUID registroRetiradaId, LocalDateTime dataHora, CondicaoItem condicao) {
+<span class="fc" id="L44">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (condicao == null) {</span>
+<span class="fc" id="L46">            throw new RegraNegocioException(400, &quot;Condição de devolução é obrigatória&quot;);</span>
+        }
+<span class="fc" id="L48">        RegistroRetirada registro = Banco.retiradas.get(registroRetiradaId);</span>
+        // So encerra ciclo aberto: devolucao repetida nao reescreve data nem condicao (DEF-014, RF-25).
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        if (registro == null || registro.getDataDevolucao() != null) {</span>
+<span class="fc" id="L51">            throw new RegraNegocioException(409, &quot;Não existe retirada em aberto para este registro&quot;);</span>
+        }
+<span class="fc" id="L53">        registro.setDataDevolucao(dataHora);</span>
+<span class="fc" id="L54">        registro.setCondicaoDevolucao(condicao);</span>
+<span class="fc" id="L55">        AuditoriaService.registrar(&quot;Retirada&quot;, registro.getId(), &quot;DEVOLUCAO_&quot; + condicao.name(), autor.getId(), dataHora);</span>
+<span class="fc" id="L56">        return registro;</span>
+    }
+
+    /** Registros de retirada da reserva, do mais antigo para o mais recente. */
+    public List&lt;RegistroRetirada&gt; listarPorReserva(UUID reservaId) {
+<span class="fc" id="L61">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L62">        return Banco.retiradas.values().stream()</span>
+<span class="fc" id="L63">                .filter(r -&gt; r.getReservaId().equals(reservaId))</span>
+<span class="fc" id="L64">                .sorted(Comparator.comparing(RegistroRetirada::getDataRetirada))</span>
+<span class="fc" id="L65">                .toList();</span>
+    }
+
+    /** RF-26: retiradas sinalizadas como pendentes e ainda sem devolucao, da mais antiga para a mais recente. */
+    public List&lt;RegistroRetirada&gt; listarPendentes() {
+<span class="fc" id="L70">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L71">        return Banco.retiradas.values().stream()</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">                .filter(r -&gt; r.isPendenciaSinalizada() &amp;&amp; r.getDataDevolucao() == null)</span>
+<span class="fc" id="L73">                .sorted(Comparator.comparing(RegistroRetirada::getDataRetirada))</span>
+<span class="fc" id="L74">                .toList();</span>
+    }
+
+    /** Registro de retirada pelo id, ou {@code null}. */
+    public RegistroRetirada buscar(UUID registroRetiradaId) {
+<span class="fc" id="L79">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L80">        return Banco.retiradas.get(registroRetiradaId);</span>
+    }
+
+    public void sinalizarPendencias(LocalDateTime agora) {
+<span class="fc" id="L84">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (RegistroRetirada registro : Banco.retiradas.values()) {</span>
+<span class="fc bfc" id="L86" title="All 4 branches covered.">            if (registro.getDataDevolucao() != null || registro.isPendenciaSinalizada()) {</span>
+<span class="fc" id="L87">                continue;</span>
+            }
+<span class="fc" id="L89">            com.edualoca.domain.reserva.Reserva reserva = Banco.reservas.get(registro.getReservaId());</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (reserva == null) {</span>
+<span class="fc" id="L91">                continue;</span>
+            }
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (agora.isAfter(reserva.getFim())) {</span>
+<span class="fc" id="L94">                registro.setPendenciaSinalizada(true);</span>
+            }
+<span class="fc" id="L96">        }</span>
+<span class="fc" id="L97">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

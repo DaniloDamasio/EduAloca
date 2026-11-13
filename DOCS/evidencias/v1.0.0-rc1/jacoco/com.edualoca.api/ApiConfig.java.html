@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api</a> &gt; <span class="el_source">ApiConfig.java</span></div><h1>ApiConfig.java</h1><pre class="source lang-java linenums">package com.edualoca.api;
+
+import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
+import com.edualoca.domain.notificacao.NotificacaoService;
+import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.CatalogoRepositorio;
+import com.edualoca.domain.recurso.PesquisaRecursoService;
+import com.edualoca.domain.relatorio.RelatorioService;
+import com.edualoca.domain.reserva.HistoricoReservaRepositorio;
+import com.edualoca.domain.reserva.HistoricoReservaRepositorioEmMemoria;
+import com.edualoca.domain.reserva.ReservaRepositorio;
+import com.edualoca.domain.reserva.ReservaRepositorioEmMemoria;
+import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.reserva.Transacao;
+import com.edualoca.domain.retirada.RetiradaMaterialService;
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.usuario.AutenticacaoService;
+import com.edualoca.domain.usuario.UsuarioService;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.time.Clock;
+import java.util.List;
+
+/** Liga os servicos de dominio (POJOs com Clock injetado) a camada HTTP. */
+@Configuration
+public class ApiConfig implements WebMvcConfigurer {
+
+    private final UsuarioAutenticadoResolver usuarioAutenticadoResolver;
+
+<span class="fc" id="L34">    public ApiConfig(UsuarioAutenticadoResolver usuarioAutenticadoResolver) {</span>
+<span class="fc" id="L35">        this.usuarioAutenticadoResolver = usuarioAutenticadoResolver;</span>
+<span class="fc" id="L36">    }</span>
+
+    @Bean
+    public Clock clock() {
+<span class="fc" id="L40">        return Clock.systemDefaultZone();</span>
+    }
+
+    @Bean
+    public ReservaService reservaService(Clock clock, ObjectProvider&lt;ReservaRepositorio&gt; repositorio,
+                                         ObjectProvider&lt;HistoricoReservaRepositorio&gt; historico,
+                                         ObjectProvider&lt;Transacao&gt; transacao, NotificacaoService notificacaoService) {
+        // PostgreSQL quando configurado (PersistenciaPostgresConfig); caso contrario, memoria.
+<span class="fc" id="L48">        return new ReservaService(clock, repositorio.getIfAvailable(ReservaRepositorioEmMemoria::new),</span>
+<span class="fc" id="L49">                historico.getIfAvailable(HistoricoReservaRepositorioEmMemoria::new),</span>
+<span class="fc" id="L50">                transacao.getIfAvailable(Transacao::direta), notificacaoService);</span>
+    }
+
+    @Bean
+    public CadastroRecursoService cadastroRecursoService(Clock clock, ObjectProvider&lt;CatalogoRepositorio&gt; catalogo) {
+        // PostgreSQL quando configurado (PersistenciaPostgresConfig); caso contrario, so o cache em memoria.
+<span class="fc" id="L56">        return new CadastroRecursoService(clock, catalogo.getIfAvailable(() -&gt; CatalogoRepositorio.NENHUM));</span>
+    }
+
+    @Bean
+    public AutenticacaoService autenticacaoService() {
+<span class="fc" id="L61">        return new AutenticacaoService();</span>
+    }
+
+    @Bean
+    public PesquisaRecursoService pesquisaRecursoService() {
+<span class="fc" id="L66">        return new PesquisaRecursoService();</span>
+    }
+
+    @Bean
+    public RelatorioService relatorioService(Clock clock) {
+<span class="fc" id="L71">        return new RelatorioService(clock.getZone());</span>
+    }
+
+    @Bean
+    public RetiradaMaterialService retiradaMaterialService() {
+<span class="fc" id="L76">        return new RetiradaMaterialService();</span>
+    }
+
+    @Bean
+    public UsuarioService usuarioService(Clock clock) {
+<span class="fc" id="L81">        return new UsuarioService(clock);</span>
+    }
+
+    @Bean
+    public AuditoriaService auditoriaService() {
+<span class="fc" id="L86">        return new AuditoriaService();</span>
+    }
+
+    @Override
+    public void addArgumentResolvers(List&lt;HandlerMethodArgumentResolver&gt; resolvers) {
+<span class="fc" id="L91">        resolvers.add(usuarioAutenticadoResolver);</span>
+<span class="fc" id="L92">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

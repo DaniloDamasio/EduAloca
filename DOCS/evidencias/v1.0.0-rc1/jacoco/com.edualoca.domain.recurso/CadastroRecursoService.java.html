@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CadastroRecursoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.recurso</a> &gt; <span class="el_source">CadastroRecursoService.java</span></div><h1>CadastroRecursoService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.recurso;
+
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.usuario.Usuario;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+public class CadastroRecursoService {
+
+    private final Clock clock;
+    /** Autor gravado nos eventos de auditoria (RF-28); {@code null} quando o servico e usado sem ator (testes antigos). */
+    private final UUID autorId;
+    /** Grava cada mudanca de cadastro (PostgreSQL) ou nada (memoria); o {@code Banco} continua sendo o cache de leitura. */
+    private final CatalogoRepositorio catalogo;
+
+    public CadastroRecursoService() {
+<span class="fc" id="L25">        this(Clock.systemDefaultZone());</span>
+<span class="fc" id="L26">    }</span>
+
+    public CadastroRecursoService(Clock clock) {
+<span class="fc" id="L29">        this(clock, CatalogoRepositorio.NENHUM);</span>
+<span class="fc" id="L30">    }</span>
+
+    public CadastroRecursoService(Clock clock, CatalogoRepositorio catalogo) {
+<span class="fc" id="L33">        this(clock, null, catalogo);</span>
+<span class="fc" id="L34">    }</span>
+
+<span class="fc" id="L36">    private CadastroRecursoService(Clock clock, UUID autorId, CatalogoRepositorio catalogo) {</span>
+<span class="fc" id="L37">        this.clock = clock;</span>
+<span class="fc" id="L38">        this.autorId = autorId;</span>
+<span class="fc" id="L39">        this.catalogo = catalogo;</span>
+<span class="fc" id="L40">    }</span>
+
+    /**
+     * RF-28: mesmo servico, mas gravando {@code autor} como autor de cada evento de auditoria (criacao, edicao,
+     * inativacao e manutencao). Usado pela camada HTTP com o usuario do token; nunca com um campo do corpo.
+     */
+    public CadastroRecursoService por(Usuario autor) {
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        return new CadastroRecursoService(clock, autor == null ? null : autor.getId(), catalogo);</span>
+    }
+
+    public Sala cadastrarSala(String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
+<span class="fc" id="L51">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L52">        validarSala(nome, tipo, capacidade, localizacao);</span>
+<span class="fc" id="L53">        Sala sala = new Sala(UUID.randomUUID(), nome, tipo, capacidade, localizacao, restrito);</span>
+<span class="fc" id="L54">        Banco.salas.put(sala.getId(), sala);</span>
+<span class="fc" id="L55">        catalogo.salvar(sala);</span>
+<span class="fc" id="L56">        AuditoriaService.registrar(&quot;Sala&quot;, sala.getId(), &quot;CRIACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L57">        return sala;</span>
+    }
+
+    public Professor cadastrarProfessor(String nome, String identificadorInstitucional, List&lt;Competencia&gt; competencias) {
+<span class="fc" id="L61">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L62">        validarProfessor(nome, competencias);</span>
+<span class="fc" id="L63">        obrigatorio(identificadorInstitucional, &quot;Identificador institucional do professor é obrigatório&quot;);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (Banco.professorIdPorIdentificador.containsKey(identificadorInstitucional)) {</span>
+<span class="fc" id="L65">            throw new RegraNegocioException(409, &quot;Identificador institucional já cadastrado&quot;);</span>
+        }
+<span class="fc" id="L67">        Professor professor = new Professor(UUID.randomUUID(), nome, identificadorInstitucional, competencias);</span>
+<span class="fc" id="L68">        Banco.professores.put(professor.getId(), professor);</span>
+<span class="fc" id="L69">        Banco.professorIdPorIdentificador.put(identificadorInstitucional, professor.getId());</span>
+<span class="fc" id="L70">        catalogo.salvar(professor);</span>
+<span class="fc" id="L71">        AuditoriaService.registrar(&quot;Professor&quot;, professor.getId(), &quot;CRIACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L72">        return professor;</span>
+    }
+
+    public Material cadastrarMaterial(String nome, String tipo, int quantidadeTotal, boolean restrito) {
+<span class="fc" id="L76">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L77">        validarMaterial(nome, tipo, quantidadeTotal);</span>
+<span class="fc" id="L78">        Material material = new Material(UUID.randomUUID(), nome, tipo, quantidadeTotal, restrito);</span>
+<span class="fc" id="L79">        Banco.materiais.put(material.getId(), material);</span>
+<span class="fc" id="L80">        catalogo.salvar(material);</span>
+<span class="fc" id="L81">        AuditoriaService.registrar(&quot;Material&quot;, material.getId(), &quot;CRIACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L82">        return material;</span>
+    }
+
+    public Manutencao cadastrarManutencao(Sala sala, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+<span class="fc" id="L86">        return registrarManutencao(sala, inicio, fim, motivo);</span>
+    }
+
+    private Manutencao registrarManutencao(Object recurso, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+<span class="fc" id="L90">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L91" title="All 6 branches covered.">        if (inicio == null || fim == null || !fim.isAfter(inicio)) {</span>
+<span class="fc" id="L92">            throw new RegraNegocioException(400, &quot;Período de manutenção inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')&quot;);</span>
+        }
+<span class="pc bpc" id="L94" title="1 of 4 branches missed.">        if (motivo == null || motivo.isBlank()) {</span>
+<span class="fc" id="L95">            throw new RegraNegocioException(400, &quot;Motivo da manutenção é obrigatório&quot;);</span>
+        }
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        boolean colideComReservaAtivaNaoConfirmada = !reservasQueColidemComManutencao(recurso, inicio, fim).isEmpty();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (colideComReservaAtivaNaoConfirmada) {</span>
+<span class="fc" id="L99">            throw new RegraNegocioException(409, &quot;Manutenção colide com reserva ativa; confirmação explícita necessária&quot;);</span>
+        }
+<span class="fc" id="L101">        Manutencao manutencao = new Manutencao(UUID.randomUUID(), recurso, inicio, fim, motivo);</span>
+<span class="fc" id="L102">        Banco.manutencoes.put(manutencao.getId(), manutencao);</span>
+<span class="fc" id="L103">        AuditoriaService.registrar(&quot;Manutencao&quot;, manutencao.getId(), &quot;CRIACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L104">        return manutencao;</span>
+    }
+
+    /**
+     * RF-23: reservas {@code APROVADA} ou {@code EM_USO} do recurso que se sobrepoem ao periodo de manutencao, em ordem
+     * de inicio. Sao elas que impedem o cadastro sem confirmacao explicita.
+     */
+    public List&lt;Reserva&gt; reservasQueColidemComManutencao(Object recurso, LocalDateTime inicio, LocalDateTime fim) {
+<span class="fc" id="L112">        Banco.seedSeNecessario();</span>
+<span class="pc bpc" id="L113" title="1 of 6 branches missed.">        if (inicio == null || fim == null || !fim.isAfter(inicio)) {</span>
+<span class="fc" id="L114">            return List.of();</span>
+        }
+<span class="fc" id="L116">        return Banco.reservas.values().stream()</span>
+<span class="fc bfc" id="L117" title="All 4 branches covered.">                .filter(r -&gt; r.getEstado() == EstadoReserva.APROVADA || r.getEstado() == EstadoReserva.EM_USO)</span>
+<span class="fc" id="L118">                .filter(r -&gt; envolveRecurso(r, recurso))</span>
+<span class="fc" id="L119">                .filter(r -&gt; Intervalos.sobrepoe(inicio, fim, r.getInicio(), r.getFim()))</span>
+<span class="fc" id="L120">                .sorted(java.util.Comparator.comparing(Reserva::getInicio))</span>
+<span class="fc" id="L121">                .toList();</span>
+    }
+
+    /**
+     * RF-21: encerra a manutencao antes do fim previsto (ou cancela uma futura). O bloqueio deixa de valer na hora e o
+     * recurso volta a aparecer na busca; o evento {@code ENCERRAMENTO} fica na auditoria com o autor.
+     */
+    public Manutencao encerrarManutencao(UUID manutencaoId) {
+<span class="fc" id="L129">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        Manutencao manutencao = manutencaoId == null ? null : Banco.manutencoes.remove(manutencaoId);</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (manutencao == null) {</span>
+<span class="fc" id="L132">            throw new RegraNegocioException(404, &quot;Manutenção inexistente ou já encerrada&quot;);</span>
+        }
+<span class="fc" id="L134">        AuditoriaService.registrar(&quot;Manutencao&quot;, manutencao.getId(), &quot;ENCERRAMENTO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L135">        return manutencao;</span>
+    }
+
+    /** Manutencoes cadastradas, da mais proxima para a mais distante. */
+    public List&lt;Manutencao&gt; listarManutencoes() {
+<span class="fc" id="L140">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L141">        return Banco.manutencoes.values().stream()</span>
+<span class="pc" id="L142">                .sorted(java.util.Comparator.comparing(Manutencao::getInicio).thenComparing(m -&gt; m.getId().toString()))</span>
+<span class="fc" id="L143">                .toList();</span>
+    }
+
+    public Manutencao cadastrarManutencao(Material material, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+<span class="fc" id="L147">        return registrarManutencao(material, inicio, fim, motivo);</span>
+    }
+
+    public Manutencao cadastrarManutencao(Professor professor, LocalDateTime inicio, LocalDateTime fim, String motivo) {
+<span class="fc" id="L151">        return registrarManutencao(professor, inicio, fim, motivo);</span>
+    }
+
+    public void inativarSala(Sala sala) {
+<span class="fc" id="L155">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L156">        sala.inativar();</span>
+<span class="fc" id="L157">        catalogo.salvar(sala);</span>
+<span class="fc" id="L158">        AuditoriaService.registrar(&quot;Sala&quot;, sala.getId(), &quot;INATIVACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L159">    }</span>
+
+    /** RF-04: edita a sala no lugar; recusa sem alterar nada se algum campo for invalido. */
+    public Sala atualizarSala(UUID id, String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
+<span class="fc" id="L163">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L164">        Sala sala = existente(Banco.salas.get(id), &quot;Sala&quot;);</span>
+<span class="fc" id="L165">        validarSala(nome, tipo, capacidade, localizacao);</span>
+<span class="fc" id="L166">        sala.atualizar(nome, tipo, capacidade, localizacao, restrito);</span>
+<span class="fc" id="L167">        catalogo.salvar(sala);</span>
+<span class="fc" id="L168">        AuditoriaService.registrar(&quot;Sala&quot;, sala.getId(), &quot;ATUALIZACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L169">        return sala;</span>
+    }
+
+    /** RF-05: edita nome e competencias; o identificador institucional e a chave e nao muda. */
+    public Professor atualizarProfessor(UUID id, String nome, List&lt;Competencia&gt; competencias) {
+<span class="fc" id="L174">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L175">        Professor professor = existente(Banco.professores.get(id), &quot;Professor&quot;);</span>
+<span class="fc" id="L176">        validarProfessor(nome, competencias);</span>
+<span class="fc" id="L177">        professor.atualizar(nome, competencias);</span>
+<span class="fc" id="L178">        catalogo.salvar(professor);</span>
+<span class="fc" id="L179">        AuditoriaService.registrar(&quot;Professor&quot;, professor.getId(), &quot;ATUALIZACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L180">        return professor;</span>
+    }
+
+    public void inativarProfessor(UUID id) {
+<span class="fc" id="L184">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L185">        Professor professor = existente(Banco.professores.get(id), &quot;Professor&quot;);</span>
+<span class="fc" id="L186">        professor.inativar();</span>
+<span class="fc" id="L187">        catalogo.salvar(professor);</span>
+<span class="fc" id="L188">        AuditoriaService.registrar(&quot;Professor&quot;, professor.getId(), &quot;INATIVACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L189">    }</span>
+
+    /** RF-06: edita o material no lugar; recusa sem alterar nada se algum campo for invalido. */
+    public Material atualizarMaterial(UUID id, String nome, String tipo, int quantidadeTotal, boolean restrito) {
+<span class="fc" id="L193">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L194">        Material material = existente(Banco.materiais.get(id), &quot;Material&quot;);</span>
+<span class="fc" id="L195">        validarMaterial(nome, tipo, quantidadeTotal);</span>
+<span class="fc" id="L196">        material.atualizar(nome, tipo, quantidadeTotal, restrito);</span>
+<span class="fc" id="L197">        catalogo.salvar(material);</span>
+<span class="fc" id="L198">        AuditoriaService.registrar(&quot;Material&quot;, material.getId(), &quot;ATUALIZACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L199">        return material;</span>
+    }
+
+    public void inativarMaterial(UUID id) {
+<span class="fc" id="L203">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L204">        Material material = existente(Banco.materiais.get(id), &quot;Material&quot;);</span>
+<span class="fc" id="L205">        material.inativar();</span>
+<span class="fc" id="L206">        catalogo.salvar(material);</span>
+<span class="fc" id="L207">        AuditoriaService.registrar(&quot;Material&quot;, material.getId(), &quot;INATIVACAO&quot;, autorId, LocalDateTime.now(clock));</span>
+<span class="fc" id="L208">    }</span>
+
+    public List&lt;Sala&gt; listarSalasAtivas() {
+<span class="fc" id="L211">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L212">        return Banco.salas.values().stream().filter(Sala::isAtivo).toList();</span>
+    }
+
+    public List&lt;Sala&gt; listarSalasAtivas(Usuario solicitante) {
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (solicitante == null) {</span>
+<span class="fc" id="L217">            throw new RegraNegocioException(401, &quot;Autenticação necessária para consultar salas&quot;);</span>
+        }
+<span class="nc" id="L219">        return listarSalasAtivas();</span>
+    }
+
+    private static void validarSala(String nome, String tipo, int capacidade, String localizacao) {
+<span class="fc" id="L223">        obrigatorio(nome, &quot;Nome da sala é obrigatório&quot;);</span>
+<span class="fc" id="L224">        obrigatorio(tipo, &quot;Tipo da sala é obrigatório&quot;);</span>
+<span class="fc" id="L225">        obrigatorio(localizacao, &quot;Localização da sala é obrigatória (campo 'localizacao')&quot;);</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (capacidade &lt;= 0) {</span>
+<span class="fc" id="L227">            throw new RegraNegocioException(400, &quot;Capacidade da sala deve ser positiva&quot;);</span>
+        }
+<span class="fc" id="L229">    }</span>
+
+    private static void validarProfessor(String nome, List&lt;Competencia&gt; competencias) {
+<span class="fc" id="L232">        obrigatorio(nome, &quot;Nome do professor é obrigatório&quot;);</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">        if (competencias == null) {</span>
+<span class="fc" id="L234">            throw new RegraNegocioException(400, &quot;Lista de competências do professor é obrigatória (campo 'competencias'; pode ser vazia)&quot;);</span>
+        }
+<span class="fc" id="L236">    }</span>
+
+    private static void validarMaterial(String nome, String tipo, int quantidadeTotal) {
+<span class="fc" id="L239">        obrigatorio(nome, &quot;Nome do material é obrigatório&quot;);</span>
+<span class="fc" id="L240">        obrigatorio(tipo, &quot;Tipo do material é obrigatório&quot;);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">        if (quantidadeTotal &lt;= 0) {</span>
+<span class="fc" id="L242">            throw new RegraNegocioException(400, &quot;Quantidade total do material deve ser positiva&quot;);</span>
+        }
+<span class="fc" id="L244">    }</span>
+
+    private static void obrigatorio(String valor, String mensagem) {
+<span class="fc bfc" id="L247" title="All 4 branches covered.">        if (valor == null || valor.isBlank()) {</span>
+<span class="fc" id="L248">            throw new RegraNegocioException(400, mensagem);</span>
+        }
+<span class="fc" id="L250">    }</span>
+
+    private static &lt;T&gt; T existente(T recurso, String entidade) {
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (recurso == null) {</span>
+<span class="fc" id="L254">            throw new RegraNegocioException(404, &quot;Cadastro inexistente: &quot; + entidade);</span>
+        }
+<span class="fc" id="L256">        return recurso;</span>
+    }
+
+    private static boolean envolveRecurso(Reserva reserva, Object recurso) {
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        return reserva.getRecursos().stream().anyMatch(rr -&gt; rr.getRecurso() == recurso);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

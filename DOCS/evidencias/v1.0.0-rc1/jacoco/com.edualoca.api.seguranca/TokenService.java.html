@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.seguranca</a> &gt; <span class="el_source">TokenService.java</span></div><h1>TokenService.java</h1><pre class="source lang-java linenums">package com.edualoca.api.seguranca;
+
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Emite e resolve tokens opacos de acesso (Bearer). O token e aleatorio (CSPRNG, 256 bits) e nao carrega
+ * dados do usuario; o perfil vem sempre do estado no servidor, nunca do cliente.
+ *
+ * &lt;p&gt;A sessao expira por inatividade e por duracao maxima (padrao 30 min e 8 h). O relogio e o do sistema, de
+ * proposito independente do {@code Clock} de negocio que alguns testes avancam dias para simular o calendario.
+ */
+@Component
+public class TokenService {
+
+    private static final String PREFIXO = &quot;Bearer &quot;;
+    private static final int BYTES_DO_TOKEN = 32;
+
+<span class="fc" id="L31">    private record Sessao(Usuario usuario, Instant emitidoEm, Instant ultimoUso) {</span>
+    }
+
+<span class="fc" id="L34">    private final SecureRandom aleatorio = new SecureRandom();</span>
+<span class="fc" id="L35">    private final Map&lt;String, Sessao&gt; sessaoPorToken = new ConcurrentHashMap&lt;&gt;();</span>
+    private final Clock relogio;
+    private final Duration inatividadeMaxima;
+    private final Duration duracaoMaxima;
+
+    @Autowired
+    public TokenService(@Value(&quot;${edualoca.seguranca.token.inatividade-minutos:30}&quot;) long inatividadeMinutos,
+                        @Value(&quot;${edualoca.seguranca.token.duracao-maxima-horas:8}&quot;) long duracaoMaximaHoras) {
+<span class="fc" id="L43">        this(Clock.systemUTC(), Duration.ofMinutes(inatividadeMinutos), Duration.ofHours(duracaoMaximaHoras));</span>
+<span class="fc" id="L44">    }</span>
+
+    /** Para teste: relogio controlado e limites explicitos. */
+<span class="fc" id="L47">    public TokenService(Clock relogio, Duration inatividadeMaxima, Duration duracaoMaxima) {</span>
+<span class="pc bpc" id="L48" title="2 of 8 branches missed.">        if (inatividadeMaxima.isNegative() || inatividadeMaxima.isZero() || duracaoMaxima.isNegative() || duracaoMaxima.isZero()) {</span>
+<span class="fc" id="L49">            throw new IllegalArgumentException(&quot;limites de sessao devem ser positivos&quot;);</span>
+        }
+<span class="fc" id="L51">        this.relogio = relogio;</span>
+<span class="fc" id="L52">        this.inatividadeMaxima = inatividadeMaxima;</span>
+<span class="fc" id="L53">        this.duracaoMaxima = duracaoMaxima;</span>
+<span class="fc" id="L54">    }</span>
+
+    public String emitir(Usuario usuario) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (usuario == null) {</span>
+<span class="nc" id="L58">            throw new IllegalArgumentException(&quot;usuário obrigatório&quot;);</span>
+        }
+<span class="fc" id="L60">        byte[] bytes = new byte[BYTES_DO_TOKEN];</span>
+<span class="fc" id="L61">        aleatorio.nextBytes(bytes);</span>
+<span class="fc" id="L62">        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);</span>
+<span class="fc" id="L63">        Instant agora = relogio.instant();</span>
+<span class="fc" id="L64">        sessaoPorToken.put(token, new Sessao(usuario, agora, agora));</span>
+<span class="fc" id="L65">        return token;</span>
+    }
+
+    /**
+     * Resolve o cabecalho Authorization; ausencia, token desconhecido ou sessao vencida resultam em 401. Cada uso valido
+     * renova o prazo de inatividade, mas nunca alem da duracao maxima contada da emissao.
+     */
+    public Usuario autenticar(String cabecalhoAuthorization) {
+<span class="fc bfc" id="L73" title="All 4 branches covered.">        if (cabecalhoAuthorization == null || !cabecalhoAuthorization.startsWith(PREFIXO)) {</span>
+<span class="fc" id="L74">            throw naoAutenticado();</span>
+        }
+<span class="fc" id="L76">        String token = cabecalhoAuthorization.substring(PREFIXO.length()).trim();</span>
+<span class="fc" id="L77">        Sessao sessao = sessaoPorToken.get(token);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (sessao == null) {</span>
+<span class="fc" id="L79">            throw naoAutenticado();</span>
+        }
+<span class="fc" id="L81">        Instant agora = relogio.instant();</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        boolean inativa = !agora.isBefore(sessao.ultimoUso().plus(inatividadeMaxima));</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        boolean vencida = !agora.isBefore(sessao.emitidoEm().plus(duracaoMaxima));</span>
+<span class="fc bfc" id="L84" title="All 4 branches covered.">        if (inativa || vencida) {</span>
+<span class="fc" id="L85">            sessaoPorToken.remove(token, sessao);</span>
+<span class="fc" id="L86">            throw new RegraNegocioException(401, &quot;Sessão expirada: entre novamente&quot;);</span>
+        }
+<span class="fc" id="L88">        sessaoPorToken.replace(token, sessao, new Sessao(sessao.usuario(), sessao.emitidoEm(), agora));</span>
+<span class="fc" id="L89">        return sessao.usuario();</span>
+    }
+
+    /** Logout: o token deixa de valer imediatamente. Token ausente ou desconhecido e ignorado. */
+    public void revogar(String cabecalhoAuthorization) {
+<span class="pc bpc" id="L94" title="1 of 4 branches missed.">        if (cabecalhoAuthorization != null &amp;&amp; cabecalhoAuthorization.startsWith(PREFIXO)) {</span>
+<span class="fc" id="L95">            sessaoPorToken.remove(cabecalhoAuthorization.substring(PREFIXO.length()).trim());</span>
+        }
+<span class="fc" id="L97">    }</span>
+
+    /** Revoga todos os tokens do usuario (ex.: conta inativada pelo Administrador). */
+    public void revogarDoUsuario(UUID usuarioId) {
+<span class="fc" id="L101">        sessaoPorToken.values().removeIf(sessao -&gt; usuarioId.equals(sessao.usuario().getId()));</span>
+<span class="fc" id="L102">    }</span>
+
+    private static RegraNegocioException naoAutenticado() {
+<span class="fc" id="L105">        return new RegraNegocioException(401, &quot;Autenticação necessária: informe um token de acesso válido&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

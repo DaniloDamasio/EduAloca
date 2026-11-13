@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecursoResolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.reserva</a> &gt; <span class="el_source">RecursoResolver.java</span></div><h1>RecursoResolver.java</h1><pre class="source lang-java linenums">package com.edualoca.api.reserva;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+import org.springframework.stereotype.Component;
+
+import java.util.Locale;
+import java.util.UUID;
+
+/** Converte (tipo, id) recebidos na borda no objeto de dominio, recusando tipo ou id desconhecido com 400. */
+@Component
+<span class="fc" id="L12">public class RecursoResolver {</span>
+
+    public Object resolver(String tipo, UUID id) {
+<span class="pc bpc" id="L15" title="1 of 4 branches missed.">        if (tipo == null || id == null) {</span>
+<span class="fc" id="L16">            throw new RegraNegocioException(400, &quot;Informe o tipo (SALA, MATERIAL ou PROFESSOR) e o id de cada recurso&quot;);</span>
+        }
+<span class="fc bfc" id="L18" title="All 4 branches covered.">        Object recurso = switch (tipo.toUpperCase(Locale.ROOT)) {</span>
+<span class="fc" id="L19">            case &quot;SALA&quot; -&gt; Banco.salas.get(id);</span>
+<span class="fc" id="L20">            case &quot;MATERIAL&quot; -&gt; Banco.materiais.get(id);</span>
+<span class="fc" id="L21">            case &quot;PROFESSOR&quot; -&gt; Banco.professores.get(id);</span>
+<span class="fc" id="L22">            default -&gt; throw new RegraNegocioException(400, &quot;Tipo de recurso inválido: use SALA, MATERIAL ou PROFESSOR&quot;);</span>
+        };
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (recurso == null) {</span>
+<span class="fc" id="L25">            throw new RegraNegocioException(400, &quot;Recurso informado não existe&quot;);</span>
+        }
+<span class="fc" id="L27">        return recurso;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

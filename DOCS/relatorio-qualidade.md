@@ -50,7 +50,8 @@ na busca, 0 erros e 0 respostas 5xx ([performance/resultado-02.md](performance/r
   "Autoria e revisão").
 - O PIT foi medido antes da persistência do catálogo e mutou só o domínio.
 - Uma intermitência do IT de duas JVMs foi observada uma vez e não foi explicada; o diagnóstico foi melhorado (A-33).
-- O SonarCloud da `main` depois do merge do PR #17 ainda não foi conferido.
+- Evidência do SonarCloud: análise do PR #17 (gate OK, 0 issues, 0 hotspots), com o mesmo código que entra na `main`;
+  a `main` é analisada de novo pelo CI a cada merge.
 
 ---
 

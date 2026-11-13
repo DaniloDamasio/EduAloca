@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditoriaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.auditoria</a> &gt; <span class="el_source">AuditoriaController.java</span></div><h1>AuditoriaController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.auditoria;
+
+import com.edualoca.api.seguranca.Perfis;
+import com.edualoca.api.seguranca.UsuarioAutenticado;
+import com.edualoca.domain.auditoria.AuditoriaEvento;
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Consulta da auditoria (RF-28, RF-29): so leitura e so Administrador. Mostra reservas, cadastro de recursos,
+ * manutencoes e usuarios, do evento mais recente para o mais antigo.
+ */
+@RestController
+public class AuditoriaController {
+
+    static final int LIMITE_MAXIMO = 500;
+    private static final int TAMANHO_FILTRO = 60;
+
+    private final AuditoriaService auditoria;
+
+<span class="fc" id="L30">    public AuditoriaController(AuditoriaService auditoria) {</span>
+<span class="fc" id="L31">        this.auditoria = auditoria;</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="fc" id="L34">    public record EventoResposta(UUID id, String entidade, UUID entidadeId, String acao, UUID autorId,</span>
+                                 LocalDateTime dataHora) {
+
+        static EventoResposta de(AuditoriaEvento e) {
+<span class="fc" id="L38">            return new EventoResposta(e.getId(), e.getEntidade(), e.getEntidadeId(), e.getAcao(), e.getAutorId(),</span>
+<span class="fc" id="L39">                    e.getDataHora());</span>
+        }
+    }
+
+    @GetMapping(&quot;/auditoria&quot;)
+    public List&lt;EventoResposta&gt; listar(@UsuarioAutenticado Usuario usuario,
+                                       @RequestParam(required = false) String entidade,
+                                       @RequestParam(required = false) String acao,
+                                       @RequestParam(defaultValue = &quot;100&quot;) int limite) {
+<span class="fc" id="L48">        Perfis.exigir(usuario, &quot;Apenas o Administrador pode consultar a auditoria&quot;, Perfil.ADMINISTRADOR);</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        if (limite &lt; 1 || limite &gt; LIMITE_MAXIMO) {</span>
+<span class="fc" id="L50">            throw new RegraNegocioException(400, &quot;Limite inválido: informe de 1 a &quot; + LIMITE_MAXIMO + &quot; eventos&quot;);</span>
+        }
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">        if (tamanho(entidade) &gt; TAMANHO_FILTRO || tamanho(acao) &gt; TAMANHO_FILTRO) {</span>
+<span class="nc" id="L53">            throw new RegraNegocioException(400, &quot;Filtro de auditoria excede &quot; + TAMANHO_FILTRO + &quot; caracteres&quot;);</span>
+        }
+<span class="fc" id="L55">        return auditoria.listar(entidade, acao, limite).stream().map(EventoResposta::de).toList();</span>
+    }
+
+    private static int tamanho(String valor) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        return valor == null ? 0 : valor.length();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

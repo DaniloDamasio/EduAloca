@@ -90,6 +90,6 @@ As seções 1 a 3 são o retrato da avaliação do `c4098f2` e não foram reescr
 |---|---|---|---|
 | 1 | Revisão por pares | Limite declarado | Sem correção técnica possível num trabalho individual. A justificativa está no README ("Autoria e revisão") e no [CHANGELOG](../../CHANGELOG.md) |
 | 2 | Enunciado não versionado | Corrigido | `DOCS/enunciado.md` saiu do `.gitignore` e entrou no repositório. Os links relativos de `DOCS/REQUISITOS/*.md` foram corrigidos |
-| 3 | Brutos da carga inacessíveis | Pendente de ação manual | Os SHA-256 dos dois arquivos da release em rascunho conferem com o `resultado-02.md`. Falta publicar a release `carga-rodada-02` |
+| 3 | Brutos da carga inacessíveis | Corrigido (depois da tag) | Os SHA-256 dos dois arquivos conferem com o `resultado-02.md`. A release [carga-rodada-02](https://github.com/DaniloDamasio/EduAloca/releases/tag/carga-rodada-02) foi publicada em 13/11/2026, depois da `v1.0.0-rc1`. Como a release não faz parte do conteúdo da tag, não foi preciso criar a `rc2` |
 | 4 | Cobertura do `-DskipITs` errada no README | Corrigido | Números medidos (85,04% e 83,64%). O comando sem E2E passou a ser `-Dit.test='*IT,!FluxoCompletoNavegadorIT'` (19 ITs, sem repetir os unitários) |
 | 5 | Carga não mediu a versão entregue | Limite declarado | Declarado no CHANGELOG, no relatório de qualidade e no índice de evidências |

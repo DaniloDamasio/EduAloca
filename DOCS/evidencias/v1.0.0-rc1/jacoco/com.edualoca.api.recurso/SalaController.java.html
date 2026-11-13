@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SalaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.recurso</a> &gt; <span class="el_source">SalaController.java</span></div><h1>SalaController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.recurso;
+
+import com.edualoca.api.seguranca.UsuarioAutenticado;
+import com.edualoca.domain.recurso.PesquisaRecursoService;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/** Busca de salas disponiveis (RF-08, RF-11): exclui sala com reserva ativa sobreposta ou em manutencao. */
+@RestController
+public class SalaController {
+
+    private final PesquisaRecursoService pesquisaRecursoService;
+
+<span class="fc" id="L20">    public SalaController(PesquisaRecursoService pesquisaRecursoService) {</span>
+<span class="fc" id="L21">        this.pesquisaRecursoService = pesquisaRecursoService;</span>
+<span class="fc" id="L22">    }</span>
+
+    @GetMapping(&quot;/salas/disponiveis&quot;)
+    public List&lt;SalaResposta&gt; disponiveis(@UsuarioAutenticado Usuario usuario,
+                                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+                                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim,
+                                          @RequestParam(required = false) String tipo,
+                                          @RequestParam(defaultValue = &quot;0&quot;) int capacidadeMinima,
+                                          @RequestParam(required = false) String localizacao) {
+<span class="fc" id="L31">        return pesquisaRecursoService.buscarSalas(tipo, capacidadeMinima, localizacao, inicio, fim).stream()</span>
+<span class="fc" id="L32">                .map(SalaResposta::de)</span>
+<span class="fc" id="L33">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservaRepositorioJdbc.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.persistencia</a> &gt; <span class="el_source">ReservaRepositorioJdbc.java</span></div><h1>ReservaRepositorioJdbc.java</h1><pre class="source lang-java linenums">package com.edualoca.persistencia;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.Professor;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
+import com.edualoca.domain.reserva.ReservaRepositorio;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Reservas gravadas no PostgreSQL. A exclusividade recurso/intervalo e garantida pela constraint
+ * {@code ex_reserva_recurso_sem_sobreposicao} (EXCLUDE USING gist sobre tstzrange, ADR-009); a violacao
+ * vira 409. A consulta {@link #existeConflito} continua existindo para dar a resposta cedo no caso comum.
+ *
+ * &lt;p&gt;Os demais servicos (relatorio, pesquisa, retirada) ainda leem {@link Banco#reservas}, por isso a
+ * reserva gravada tambem e mantida nesse cache em memoria apos o commit (inclusive o de uma transacao externa). Na subida,
+ * {@link #carregarNoCache} recarrega do banco as reservas gravadas antes do reinicio.
+ */
+public class ReservaRepositorioJdbc implements ReservaRepositorio {
+
+    /** SQLSTATE do PostgreSQL para violacao de constraint de exclusao. */
+    static final String EXCLUSION_VIOLATION = &quot;23P01&quot;;
+    static final String MENSAGEM_CONFLITO = &quot;Recurso indisponivel: sobreposicao com reserva ativa&quot;;
+
+<span class="fc" id="L49">    private static final UUID NENHUMA = new UUID(0L, 0L);</span>
+<span class="fc" id="L50">    private static final Logger LOG = LoggerFactory.getLogger(ReservaRepositorioJdbc.class);</span>
+
+    private final JdbcTemplate jdbc;
+    private final TransactionTemplate transacao;
+    private final ZoneId fusoHorario;
+
+<span class="fc" id="L56">    public ReservaRepositorioJdbc(JdbcTemplate jdbc, TransactionTemplate transacao, ZoneId fusoHorario) {</span>
+<span class="fc" id="L57">        this.jdbc = jdbc;</span>
+<span class="fc" id="L58">        this.transacao = transacao;</span>
+<span class="fc" id="L59">        this.fusoHorario = fusoHorario;</span>
+<span class="fc" id="L60">    }</span>
+
+    @Override
+    public void inserir(Reserva reserva) {
+<span class="fc" id="L64">        traduzindoSobreposicao(() -&gt; transacao.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L65">            jdbc.update(&quot;&quot;&quot;</span>
+                            INSERT INTO reserva (id, solicitante_id, inicio, fim, finalidade, estado, justificativa_rejeicao)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)&quot;&quot;&quot;,
+<span class="fc" id="L68">                    reserva.getId(), reserva.getSolicitanteId(), ts(reserva.getInicio()), ts(reserva.getFim()),</span>
+<span class="fc" id="L69">                    reserva.getFinalidade(), reserva.getEstado().name(), reserva.getJustificativaRejeicao());</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            for (ReservaRecurso rr : reserva.getRecursos()) {</span>
+<span class="fc" id="L71">                jdbc.update(&quot;&quot;&quot;</span>
+                                INSERT INTO reserva_recurso (reserva_id, tipo_recurso, recurso_id, quantidade, periodo, ativa)
+                                VALUES (?, ?, ?, ?, tstzrange(?, ?, '[)'), ?)&quot;&quot;&quot;,
+<span class="fc" id="L74">                        reserva.getId(), tipo(rr.getRecurso()), id(rr.getRecurso()), rr.getQuantidade(),</span>
+<span class="fc" id="L75">                        instante(reserva.getInicio()), instante(reserva.getFim()), reserva.getEstado().isAtiva());</span>
+<span class="fc" id="L76">            }</span>
+<span class="fc" id="L77">        }));</span>
+<span class="fc" id="L78">        aposCommit(() -&gt; Banco.reservas.put(reserva.getId(), reserva));</span>
+<span class="fc" id="L79">    }</span>
+
+    /**
+     * Recarrega no cache as reservas do banco, resolvendo cada recurso por tipo e id no catalogo ja carregado
+     * ({@link CatalogoRepositorioJdbc#sincronizarComOBanco}), para que a reserva aponte para o mesmo objeto do catalogo.
+     * Reserva com recurso que nao esta no catalogo (ex.: gravada por teste sem cadastro) e ignorada, sem impedir a subida.
+     *
+     * @return quantas reservas foram recarregadas
+     */
+    public int carregarNoCache() {
+<span class="fc" id="L89">        Map&lt;UUID, Reserva&gt; lidas = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L90">        Set&lt;UUID&gt; incompletas = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L91">        Map&lt;UUID, List&lt;ReservaRecurso&gt;&gt; recursos = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L92">        jdbc.query(&quot;SELECT reserva_id, tipo_recurso, recurso_id, quantidade FROM reserva_recurso ORDER BY id&quot;, rs -&gt; {</span>
+<span class="fc" id="L93">            UUID reservaId = rs.getObject(&quot;reserva_id&quot;, UUID.class);</span>
+<span class="fc" id="L94">            Object recurso = resolver(rs.getString(&quot;tipo_recurso&quot;), rs.getObject(&quot;recurso_id&quot;, UUID.class));</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (recurso == null) {</span>
+<span class="nc" id="L96">                incompletas.add(reservaId);</span>
+            } else {
+<span class="fc" id="L98">                recursos.computeIfAbsent(reservaId, id -&gt; new ArrayList&lt;&gt;()).add(new ReservaRecurso(recurso, rs.getInt(&quot;quantidade&quot;)));</span>
+            }
+<span class="fc" id="L100">        });</span>
+<span class="fc" id="L101">        jdbc.query(&quot;SELECT id, solicitante_id, inicio, fim, finalidade, estado, justificativa_rejeicao FROM reserva&quot;, rs -&gt; {</span>
+<span class="fc" id="L102">            UUID id = rs.getObject(&quot;id&quot;, UUID.class);</span>
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">            if (incompletas.contains(id) || !recursos.containsKey(id)) {</span>
+<span class="nc" id="L104">                return;</span>
+            }
+<span class="fc" id="L106">            EstadoReserva estado = EstadoReserva.valueOf(rs.getString(&quot;estado&quot;));</span>
+<span class="fc" id="L107">            Reserva reserva = new Reserva(id, rs.getObject(&quot;solicitante_id&quot;, UUID.class),</span>
+<span class="fc" id="L108">                    rs.getTimestamp(&quot;inicio&quot;).toLocalDateTime(), rs.getTimestamp(&quot;fim&quot;).toLocalDateTime(),</span>
+<span class="fc" id="L109">                    rs.getString(&quot;finalidade&quot;), recursos.get(id), estado);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (estado == EstadoReserva.REJEITADA) {</span>
+<span class="fc" id="L111">                reserva.rejeitar(rs.getString(&quot;justificativa_rejeicao&quot;));</span>
+            }
+<span class="fc" id="L113">            lidas.put(id, reserva);</span>
+<span class="fc" id="L114">        });</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (!incompletas.isEmpty()) {</span>
+<span class="nc" id="L116">            LOG.warn(&quot;{} reserva(s) do banco nao recarregadas: recurso fora do catalogo&quot;, incompletas.size());</span>
+        }
+<span class="fc" id="L118">        Banco.reservas.putAll(lidas);</span>
+<span class="fc" id="L119">        return lidas.size();</span>
+    }
+
+    private static Object resolver(String tipo, UUID id) {
+<span class="pc bpc" id="L123" title="1 of 4 branches missed.">        return switch (tipo) {</span>
+<span class="fc" id="L124">            case &quot;SALA&quot; -&gt; Banco.salas.get(id);</span>
+<span class="fc" id="L125">            case &quot;PROFESSOR&quot; -&gt; Banco.professores.get(id);</span>
+<span class="fc" id="L126">            case &quot;MATERIAL&quot; -&gt; Banco.materiais.get(id);</span>
+<span class="nc" id="L127">            default -&gt; null;</span>
+        };
+    }
+
+    @Override
+    public Reserva buscar(UUID id) {
+<span class="fc" id="L133">        return Banco.reservas.get(id);</span>
+    }
+
+    /** Mesma fonte de {@link #buscar}: o cache preenchido depois do commit. */
+    @Override
+    public List&lt;Reserva&gt; listar() {
+<span class="fc" id="L139">        return List.copyOf(Banco.reservas.values());</span>
+    }
+
+    @Override
+    public void atualizar(Reserva reserva) {
+<span class="fc" id="L144">        traduzindoSobreposicao(() -&gt; transacao.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L145">            jdbc.update(&quot;UPDATE reserva SET inicio = ?, fim = ?, estado = ?, justificativa_rejeicao = ? WHERE id = ?&quot;,</span>
+<span class="fc" id="L146">                    ts(reserva.getInicio()), ts(reserva.getFim()), reserva.getEstado().name(),</span>
+<span class="fc" id="L147">                    reserva.getJustificativaRejeicao(), reserva.getId());</span>
+<span class="fc" id="L148">            jdbc.update(&quot;UPDATE reserva_recurso SET periodo = tstzrange(?, ?, '[)'), ativa = ? WHERE reserva_id = ?&quot;,</span>
+<span class="fc" id="L149">                    instante(reserva.getInicio()), instante(reserva.getFim()), reserva.getEstado().isAtiva(), reserva.getId());</span>
+<span class="fc" id="L150">        }));</span>
+<span class="fc" id="L151">    }</span>
+
+    @Override
+    public boolean existeConflito(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada) {
+<span class="fc" id="L155">        Boolean existe = jdbc.queryForObject(&quot;&quot;&quot;</span>
+                        SELECT EXISTS (
+                            SELECT 1 FROM reserva_recurso
+                             WHERE tipo_recurso = ? AND recurso_id = ? AND ativa AND reserva_id &lt;&gt; ?
+                               AND periodo &amp;&amp; tstzrange(?, ?, '[)'))&quot;&quot;&quot;,
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                Boolean.class, tipo(recurso), id(recurso), reservaIgnorada == null ? NENHUMA : reservaIgnorada,</span>
+<span class="fc" id="L161">                instante(inicio), instante(fim));</span>
+<span class="fc" id="L162">        return Boolean.TRUE.equals(existe);</span>
+    }
+
+    /**
+     * Dentro de uma transacao externa (ex.: reserva + historico), so publica no cache depois do commit, para que
+     * um rollback nao deixe no cache uma reserva que nao existe no banco.
+     */
+    private static void aposCommit(Runnable acao) {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (TransactionSynchronizationManager.isSynchronizationActive()) {</span>
+<span class="fc" id="L171">            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {</span>
+                @Override
+                public void afterCommit() {
+<span class="fc" id="L174">                    acao.run();</span>
+<span class="fc" id="L175">                }</span>
+            });
+        } else {
+<span class="fc" id="L178">            acao.run();</span>
+        }
+<span class="fc" id="L180">    }</span>
+
+    private static void traduzindoSobreposicao(Runnable gravacao) {
+        try {
+<span class="fc" id="L184">            gravacao.run();</span>
+<span class="fc" id="L185">        } catch (DataIntegrityViolationException e) {</span>
+<span class="pc bpc" id="L186" title="1 of 4 branches missed.">            if (e.getMostSpecificCause() instanceof SQLException sql &amp;&amp; EXCLUSION_VIOLATION.equals(sql.getSQLState())) {</span>
+<span class="fc" id="L187">                throw new RegraNegocioException(409, MENSAGEM_CONFLITO);</span>
+            }
+<span class="fc" id="L189">            throw e;</span>
+<span class="fc" id="L190">        }</span>
+<span class="fc" id="L191">    }</span>
+
+    static String tipo(Object recurso) {
+<span class="fc bfc" id="L194" title="All 4 branches covered.">        return switch (recurso) {</span>
+<span class="fc" id="L195">            case Sala s -&gt; &quot;SALA&quot;;</span>
+<span class="fc" id="L196">            case Professor p -&gt; &quot;PROFESSOR&quot;;</span>
+<span class="fc" id="L197">            case Material m -&gt; &quot;MATERIAL&quot;;</span>
+<span class="fc" id="L198">            default -&gt; throw new IllegalArgumentException(&quot;Tipo de recurso nao persistivel: &quot; + recurso.getClass().getSimpleName());</span>
+        };
+    }
+
+    static UUID id(Object recurso) {
+<span class="fc bfc" id="L203" title="All 4 branches covered.">        return switch (recurso) {</span>
+<span class="fc" id="L204">            case Sala s -&gt; s.getId();</span>
+<span class="fc" id="L205">            case Professor p -&gt; p.getId();</span>
+<span class="fc" id="L206">            case Material m -&gt; m.getId();</span>
+<span class="fc" id="L207">            default -&gt; throw new IllegalArgumentException(&quot;Tipo de recurso nao persistivel: &quot; + recurso.getClass().getSimpleName());</span>
+        };
+    }
+
+    private static Timestamp ts(LocalDateTime dataHora) {
+<span class="fc" id="L212">        return Timestamp.valueOf(dataHora);</span>
+    }
+
+    /** O dominio usa hora local da instituicao; o range guarda o instante absoluto (sem ambiguidade de horario de verao). */
+    private OffsetDateTime instante(LocalDateTime dataHora) {
+<span class="fc" id="L217">        return dataHora.atZone(fusoHorario).toOffsetDateTime();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

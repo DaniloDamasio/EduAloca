@@ -49,6 +49,12 @@ public final class Banco {
     public static final UUID SALA_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     public static final UUID PROFESSOR_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
     public static final UUID MATERIAL_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    /**
+     * Ids fixos das contas de Solicitante do seed (DEF-017). Sem eles o id era sorteado no primeiro login de cada subida e,
+     * com as reservas recarregadas do PostgreSQL, o Solicitante deixava de ser dono das proprias reservas.
+     */
+    public static final UUID SOLICITANTE_SEED_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
+    public static final UUID SOLICITANTE_2_SEED_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c2");
     public static final UUID RESPONSAVEL_BLOCO_A_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
     public static final UUID RESPONSAVEL_BLOCO_B_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
     public static final UUID ADMINISTRADOR_ID = UUID.fromString("00000000-0000-0000-0000-0000000000ad");
@@ -108,6 +114,8 @@ public final class Banco {
             materiais.put(materialSeed.getId(), materialSeed);
 
             credenciais.putAll(HashesSeed.SOLICITANTES);
+            usuarioIdPorEmail.put("usuario@example.com", SOLICITANTE_SEED_ID);
+            usuarioIdPorEmail.put("novo@example.com", SOLICITANTE_2_SEED_ID);
             contaSeed("responsavel@example.com", RESPONSAVEL_BLOCO_A_ID, Perfil.RESPONSAVEL);
             contaSeed("responsavel.b@example.com", RESPONSAVEL_BLOCO_B_ID, Perfil.RESPONSAVEL);
             contaSeed("admin@example.com", ADMINISTRADOR_ID, Perfil.ADMINISTRADOR);

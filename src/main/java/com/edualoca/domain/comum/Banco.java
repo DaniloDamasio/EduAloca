@@ -39,11 +39,17 @@ public final class Banco {
     public static final Map<String, Perfil> perfilPorEmail = new ConcurrentHashMap<>();
     public static final Map<UUID, NotificacaoEnviada> notificacoes = new ConcurrentHashMap<>();
     public static final Map<String, UUID> responsavelPorLocalizacao = new ConcurrentHashMap<>();
+    /** E-mails de contas inativadas pelo Administrador: nao fazem login e nao podem ser recadastrados. */
+    public static final java.util.Set<String> usuariosInativos = ConcurrentHashMap.newKeySet();
+    /** Falhas de login por e-mail normalizado (limite contra forca bruta, AutenticacaoService). */
+    public static final Map<String, com.edualoca.domain.usuario.TentativasLogin> tentativasLogin = new ConcurrentHashMap<>();
 
     public static final UUID SALA_EXCLUIDA_POR_CONFLITO_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     public static final UUID RESPONSAVEL_BLOCO_A_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
     public static final UUID RESPONSAVEL_BLOCO_B_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
     public static final UUID ADMINISTRADOR_ID = UUID.fromString("00000000-0000-0000-0000-0000000000ad");
+    /** Autor das transicoes automaticas (ex.: nao comparecimento no fim do horario); nao e uma conta de login. */
+    public static final UUID SISTEMA_ID = UUID.fromString("00000000-0000-0000-0000-00000000005e");
 
     private static final Object SEED_LOCK = new Object();
     private static volatile boolean seeded = false;
@@ -66,6 +72,8 @@ public final class Banco {
             perfilPorEmail.clear();
             notificacoes.clear();
             responsavelPorLocalizacao.clear();
+            usuariosInativos.clear();
+            tentativasLogin.clear();
             seeded = false;
         }
     }

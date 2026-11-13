@@ -95,7 +95,8 @@ class ConcorrenciaReservaMultiInstanciaIT {
         jdbc = new JdbcTemplate(dataSource);
         // A instancia B sobe depois do contexto A, quando o esquema ja existe no banco.
         if (instanciaB == null) {
-            Path log = Path.of("target", "instancia-externa.log");
+            // Um log por instancia: uma falha de subida nao e sobrescrita pela instancia seguinte.
+            Path log = Path.of("target", "instancia-externa-" + System.currentTimeMillis() + ".log");
             Files.createDirectories(log.getParent());
             instanciaB = InstanciaExterna.iniciar(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword(),
                     SALA_ID, PROFESSOR_ID, SOLICITACOES / 2, log);

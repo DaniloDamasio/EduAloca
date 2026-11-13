@@ -1,0 +1,105 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-11-12T18:07:32.079-03:00  INFO 9205 --- [edualoca] [           main] com.edualoca.EduAlocaApplication         : Starting EduAlocaApplication v0.0.1-SNAPSHOT using Java 21.0.9 with PID 9205 (/Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca/target/edualoca-0.0.1-SNAPSHOT.jar started by danilo.damasio in /Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca)
+2026-11-12T18:07:32.081-03:00  INFO 9205 --- [edualoca] [           main] com.edualoca.EduAlocaApplication         : The following 1 profile is active: "perf"
+2026-11-12T18:07:32.369-03:00  INFO 9205 --- [edualoca] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-11-12T18:07:32.375-03:00  INFO 9205 --- [edualoca] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-12T18:07:32.375-03:00  INFO 9205 --- [edualoca] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-11-12T18:07:32.382-03:00  INFO 9205 --- [edualoca] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 285 ms
+2026-11-12T18:07:32.414-03:00  INFO 9205 --- [edualoca] [           main] com.zaxxer.hikari.HikariDataSource       : edualoca - Starting...
+2026-11-12T18:07:32.501-03:00  INFO 9205 --- [edualoca] [           main] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@4a8a0099
+2026-11-12T18:07:32.502-03:00  INFO 9205 --- [edualoca] [           main] com.zaxxer.hikari.HikariDataSource       : edualoca - Start completed.
+2026-11-12T18:07:32.596-03:00  INFO 9205 --- [edualoca] [           main] o.s.b.w.a.WelcomePageHandlerMapping      : Adding welcome page: class path resource [static/index.html]
+2026-11-12T18:07:32.607-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=1/10, idle=1/10, active=0, waiting=0)
+2026-11-12T18:07:32.620-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@202d5e22
+2026-11-12T18:07:32.651-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=2/10, idle=2/10, active=0, waiting=0)
+2026-11-12T18:07:32.661-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@2eeaa457
+2026-11-12T18:07:32.686-03:00  INFO 9205 --- [edualoca] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-11-12T18:07:32.697-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=3/10, idle=3/10, active=0, waiting=0)
+2026-11-12T18:07:32.698-03:00  INFO 9205 --- [edualoca] [           main] com.edualoca.EduAlocaApplication         : Started EduAlocaApplication in 0.769 seconds (process running for 0.963)
+2026-11-12T18:07:32.711-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@2ad53552
+2026-11-12T18:07:32.742-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=4/10, idle=4/10, active=0, waiting=0)
+2026-11-12T18:07:32.756-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@6fd7ae6c
+2026-11-12T18:07:32.774-03:00  INFO 9205 --- [edualoca] [0.1-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-12T18:07:32.774-03:00  INFO 9205 --- [edualoca] [0.1-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-12T18:07:32.775-03:00  INFO 9205 --- [edualoca] [0.1-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-11-12T18:07:32.791-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=5/10, idle=5/10, active=0, waiting=0)
+2026-11-12T18:07:32.800-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@254121fa
+2026-11-12T18:07:32.836-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=6/10, idle=6/10, active=0, waiting=0)
+2026-11-12T18:07:32.846-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@5e72e119
+2026-11-12T18:07:32.881-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=7/10, idle=7/10, active=0, waiting=0)
+2026-11-12T18:07:32.891-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@5d0e3020
+2026-11-12T18:07:32.926-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=8/10, idle=8/10, active=0, waiting=0)
+2026-11-12T18:07:32.936-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@ff85123
+2026-11-12T18:07:32.971-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=9/10, idle=9/10, active=0, waiting=0)
+2026-11-12T18:07:32.984-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - Added connection org.postgresql.jdbc.PgConnection@231aefd7
+2026-11-12T18:07:33.017-03:00 DEBUG 9205 --- [edualoca] [onnection-adder] com.zaxxer.hikari.pool.HikariPool        : edualoca - After adding stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:07:35.377-03:00  INFO 9205 --- [edualoca] [           main] com.edualoca.perf.SeedUsuariosPerf       : Perfil perf: 50 usuarios ficticios de carga cadastrados a partir de perf/usuarios.csv
+2026-11-12T18:08:02.612-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:08:02.613-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:08:32.618-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:08:32.620-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:09:02.625-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:09:02.626-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:09:13.116-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@254121fa is alive
+2026-11-12T18:09:14.643-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2eeaa457 is alive
+2026-11-12T18:09:17.289-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@6fd7ae6c is alive
+2026-11-12T18:09:17.393-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@4a8a0099 is alive
+2026-11-12T18:09:18.386-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5d0e3020 is alive
+2026-11-12T18:09:20.817-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@202d5e22 is alive
+2026-11-12T18:09:21.500-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@ff85123 is alive
+2026-11-12T18:09:27.863-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2ad53552 is alive
+2026-11-12T18:09:28.488-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5e72e119 is alive
+2026-11-12T18:09:30.548-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@231aefd7 is alive
+2026-11-12T18:09:32.631-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:09:32.632-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:10:02.636-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:10:02.636-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:10:32.642-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:10:32.643-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:10:53.432-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@254121fa is alive
+2026-11-12T18:10:56.629-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2eeaa457 is alive
+2026-11-12T18:11:01.822-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@6fd7ae6c is alive
+2026-11-12T18:11:02.290-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@4a8a0099 is alive
+2026-11-12T18:11:02.648-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:11:02.648-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:11:03.879-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5d0e3020 is alive
+2026-11-12T18:11:09.015-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@202d5e22 is alive
+2026-11-12T18:11:10.064-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@ff85123 is alive
+2026-11-12T18:11:23.019-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2ad53552 is alive
+2026-11-12T18:11:24.131-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5e72e119 is alive
+2026-11-12T18:11:28.115-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@231aefd7 is alive
+2026-11-12T18:11:32.651-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:11:32.652-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:12:02.657-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:12:02.657-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:12:32.658-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=9/10, active=1, waiting=0)
+2026-11-12T18:12:32.659-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:12:33.749-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@254121fa is alive
+2026-11-12T18:12:38.616-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2eeaa457 is alive
+2026-11-12T18:12:46.351-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@6fd7ae6c is alive
+2026-11-12T18:12:47.184-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@4a8a0099 is alive
+2026-11-12T18:12:49.371-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5d0e3020 is alive
+2026-11-12T18:12:57.216-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@202d5e22 is alive
+2026-11-12T18:12:58.628-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@ff85123 is alive
+2026-11-12T18:13:02.663-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:13:02.663-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:13:18.174-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@2ad53552 is alive
+2026-11-12T18:13:19.779-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@5e72e119 is alive
+2026-11-12T18:13:25.677-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - keepalive: connection org.postgresql.jdbc.PgConnection@231aefd7 is alive
+2026-11-12T18:13:32.666-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Pool stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:13:32.667-03:00 DEBUG 9205 --- [edualoca] [oca:housekeeper] com.zaxxer.hikari.pool.HikariPool        : edualoca - Fill pool skipped, pool has sufficient level or currently being filled.
+2026-11-12T18:13:35.205-03:00  INFO 9205 --- [edualoca] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-12T18:13:35.206-03:00  INFO 9205 --- [edualoca] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-11-12T18:13:35.207-03:00  INFO 9205 --- [edualoca] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : edualoca - Shutdown initiated...
+2026-11-12T18:13:35.207-03:00 DEBUG 9205 --- [edualoca] [ionShutdownHook] com.zaxxer.hikari.pool.HikariPool        : edualoca - Before shutdown stats (total=10/10, idle=10/10, active=0, waiting=0)
+2026-11-12T18:13:35.208-03:00 DEBUG 9205 --- [edualoca] [ionShutdownHook] com.zaxxer.hikari.pool.HikariPool        : edualoca - After  shutdown stats (total=0/10, idle=0/10, active=0, waiting=0)
+2026-11-12T18:13:35.208-03:00  INFO 9205 --- [edualoca] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : edualoca - Shutdown completed.

@@ -84,6 +84,7 @@ public class AprovacaoBloqueioSteps {
     private MvcResult ultimaResposta;
     private String justificativaInformada;
     private Usuario atorDaTransicao;
+    private int eventosAntesDaAcao;
     private int proximoDiaLivre;
     private int manutencoesAntesDoCadastro;
 
@@ -141,15 +142,20 @@ public class AprovacaoBloqueioSteps {
         prepararReserva(SOLICITANTE, sala, intervalo(dia, inicio, fim), EstadoReserva.APROVADA);
     }
 
-    @Dado("^uma reserva no estado (SOLICITADA|APROVADA|EM_USO)$")
-    public void umaReservaNoEstado(String estado) throws Exception {
+    @Dado("^uma reserva no estado (SOLICITADA|APROVADA|EM_USO)( já iniciada há 15 min)?$")
+    public void umaReservaNoEstado(String estado, String jaIniciada) throws Exception {
         EstadoReserva origem = EstadoReserva.valueOf(estado);
         boolean restrita = origem == EstadoReserva.SOLICITADA;
         EstadoReserva aoCriar = restrita ? EstadoReserva.SOLICITADA : EstadoReserva.APROVADA;
-        prepararReserva(SOLICITANTE, salaDeApoio(restrita), proximoHorarioLivre(), aoCriar);
+        // P-08: o nao comparecimento so vale a partir de inicio + 15 min; o relogio dos cenarios e fixo, entao a reserva
+        // comeca exatamente 15 min antes dele (borda inclusiva).
+        LocalDateTime[] horario = jaIniciada == null ? proximoHorarioLivre()
+                : new LocalDateTime[]{LocalDateTime.now(relogio).minusMinutes(15), LocalDateTime.now(relogio).plusMinutes(45)};
+        prepararReserva(SOLICITANTE, salaDeApoio(restrita), horario, aoCriar);
         if (origem == EstadoReserva.EM_USO) {
-            // Nao ha endpoint para APROVADA -> EM_USO: o gatilho esta em aberto (P-07).
-            Banco.reservas.get(reservaAtual).setEstado(EstadoReserva.EM_USO);
+            // P-07 (decidido em 12/11/2026): inicio de uso manual pela API, como na aplicacao real.
+            MvcResult inicio = chamar(post("/reservas/{id}/inicio-uso", reservaAtual), RESPONSAVEL);
+            assertEquals(200, inicio.getResponse().getStatus(), "preparacao do EM_USO: " + corpo(inicio));
         }
     }
 
@@ -193,11 +199,15 @@ public class AprovacaoBloqueioSteps {
         ultimaResposta = chamar(post("/reservas/{id}/cancelamento", reservaPorDono.get(dono)), usuario, Map.of("motivo", motivo));
     }
 
-    @Quando("^(Responsável|Solicitante) executa \"(aprovar|rejeitar \\(com justificativa\\)|cancelar \\(com motivo\\))\"$")
+    @Quando("^(Responsável|Solicitante) executa \"(aprovar|rejeitar \\(com justificativa\\)|cancelar \\(com motivo\\)|iniciar uso|concluir|registrar não comparecimento)\"$")
     public void atorExecuta(String ator, String acao) throws Exception {
         atorDaTransicao = usuario(ator);
+        eventosAntesDaAcao = eventosDaReservaAtual().size();
         ultimaResposta = switch (acao) {
             case "aprovar" -> chamar(post("/reservas/{id}/aprovacao", reservaAtual), ator);
+            case "iniciar uso" -> chamar(post("/reservas/{id}/inicio-uso", reservaAtual), ator);
+            case "concluir" -> chamar(post("/reservas/{id}/conclusao", reservaAtual), ator);
+            case "registrar não comparecimento" -> chamar(post("/reservas/{id}/nao-comparecimento", reservaAtual), ator);
             case "rejeitar (com justificativa)" ->
                     chamar(post("/reservas/{id}/rejeicao", reservaAtual), ator, Map.of("justificativa", "Laboratório reservado para banca"));
             default -> chamar(post("/reservas/{id}/cancelamento", reservaAtual), ator, Map.of("motivo", "Aula remarcada"));
@@ -289,7 +299,9 @@ public class AprovacaoBloqueioSteps {
 
     @Entao("^exatamente um evento de auditoria é registrado para essa transição, com o ator e o instante$")
     public void exatamenteUmEventoDeAuditoria() {
-        List<AuditoriaEvento> transicoes = eventosDaReservaAtual().stream()
+        // So os eventos gerados pela acao do "Quando" (a preparacao de EM_USO ja gera um INICIO_USO).
+        List<AuditoriaEvento> todos = eventosDaReservaAtual();
+        List<AuditoriaEvento> transicoes = todos.subList(eventosAntesDaAcao, todos.size()).stream()
                 .filter(e -> !e.getAcao().equals("CRIACAO"))
                 .toList();
         assertEquals(1, transicoes.size(), "eventos de transicao: " + transicoes.size());

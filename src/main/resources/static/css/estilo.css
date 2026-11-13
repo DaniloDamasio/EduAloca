@@ -200,3 +200,14 @@ th { color: var(--azul); background: var(--azul-claro); }
 /* Titulos de secao dentro de resultados */
 #resultado-relatorio h3, .reserva__extra h3 { margin-top: 1rem; }
 .reserva__extra h3:first-child { margin-top: .25rem; }
+
+/* Devolucoes em atraso (RF-26) */
+.pendencias {
+    margin-bottom: 1rem; padding: .75rem;
+    border: 1px solid var(--laranja); border-left: 5px solid var(--laranja); border-radius: 6px;
+    background: var(--laranja-claro);
+}
+.pendencias h3 { margin: 0 0 .25rem; color: #9a4d00; }
+.pendencias .lista li { background: var(--branco); }
+#catalogo-consulta h3 { margin-top: 1rem; }
+#catalogo-consulta h3:first-child { margin-top: 0; }

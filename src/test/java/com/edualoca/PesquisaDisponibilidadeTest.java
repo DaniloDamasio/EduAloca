@@ -119,17 +119,20 @@ class PesquisaDisponibilidadeTest {
     }
 
     @Test
-    @DisplayName("RF-10-T2 [gap Q12, assumindo soma de reservas parciais]: material com quantidade total 3 e 2 reservadas deve aparecer disponivel para busca de 1 unidade")
-    void rf10T2_materialComUmaUnidadeLivre_deveAparecerDisponivel() {
-        // arrange
+    @DisplayName("RF-10-T2 (DEF-016, opcao A): material com quantidade total 3 e 2 reservadas no intervalo NAO aparece para 1 unidade, porque o material e exclusivo no intervalo")
+    void rf10T2_materialParcialmenteReservado_naoApareceNaBusca() {
+        // arrange: antes da decisao do DEF-016 este teste assumia soma de reservas parciais (gap Q12) e nem reservava nada
+        Material material = new Material(UUID.randomUUID(), "Projetor Parcial", "projetor-parcial", 3, false);
+        com.edualoca.domain.comum.Banco.materiais.put(material.getId(), material);
         LocalDateTime inicio = LocalDateTime.of(2026, 3, 10, 10, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 3, 10, 12, 0);
+        reservaService.criar(solicitante(), inicio, fim, "Aula com 2 projetores", List.of(new ReservaRecurso(material, 2)));
 
         // act
-        List<Material> materiais = pesquisaRecursoService.buscarMateriais("projetor", 1, inicio, fim);
+        List<Material> materiais = pesquisaRecursoService.buscarMateriais("projetor-parcial", 1, inicio, fim);
 
         // assert
-        assertFalse(materiais.isEmpty());
+        assertTrue(materiais.stream().noneMatch(m -> m.getId().equals(material.getId())));
     }
 
     @Test

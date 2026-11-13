@@ -132,6 +132,12 @@ do `.jtl`.
 | Rodada | Data | Ambiente | Consulta p95 | Criação p95 | Erro consulta | Erro criação | 5xx | Duplas | Veredito |
 |---|---|---|---|---|---|---|---|---|---|
 | 01 | 2026-11-10 | Notebook (macOS, JDK 21), app + PostgreSQL 16 local, JMeter 5.6.3 na mesma máquina | **2 ms** | **8 ms** | 0,00 % | 0,00 % | 0 | 0 | Atende à proposta (com a ressalva abaixo) |
+| **02 (vigente)** | 2026-11-12 | Mesmo ambiente; commit `38bbc04`; 8 cenários de 50 a 400 usuários, incluindo 10 salas | **2–3 ms** | **8–12 ms** | 0,00 % | 0,00 % | 0 | 0 | Atende, sem saturar até 400 usuários ([resultado-02.md](resultado-02.md)) |
+
+**Rodada 02:** ver [resultado-02.md](resultado-02.md). Escada 50 → 400 usuários, variante com a disputa espalhada por
+10 salas, 3 repetições de 50 usuários e coleta de CPU, memória, GC e pool. Vazão de até 264,5 req/s (3.174 criações/min),
+ainda limitada pelo tempo de pensamento do modelo, não pelo sistema. 6.308 janelas disputadas, todas com exatamente
+uma reserva aceita.
 
 **Rodada 01, detalhes:**
 

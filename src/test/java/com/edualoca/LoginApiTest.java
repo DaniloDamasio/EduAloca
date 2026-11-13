@@ -60,7 +60,7 @@ class LoginApiTest {
         api.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"usuario@example.com\",\"senha\":\"" + senha + "\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.mensagem").value("Credenciais invalidas"))
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"))
                 .andExpect(jsonPath("$.token").doesNotExist());
     }
 
@@ -70,7 +70,7 @@ class LoginApiTest {
         api.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"ninguem@example.com\",\"senha\":\"qualquer\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.mensagem").value("Credenciais invalidas"));
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"));
     }
 
     @ParameterizedTest(name = "corpo {0} -> 400")

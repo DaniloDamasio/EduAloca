@@ -5,7 +5,7 @@
   Executar SOMENTE em modo CLI e SOMENTE contra a aplicacao local:
     jmeter -n -t perf/reservas.jmx -l perf/resultados/rodada-01.jtl -e -o perf/relatorio-01
   Parametros (-J): HOST, PORT, USUARIOS, RAMPUP, DURACAO, PENSAR_MS, PENSAR_VAR_MS,
-                   PCT_CRIACAO, DISPUTA_POR_JANELA, SALA_ID
+                   PCT_CRIACAO, DISPUTA_POR_JANELA, SALA_ID, SALA_IDS (opcional: espalha as janelas por K salas)
 -->
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
@@ -233,6 +233,12 @@ long janela = n.intdiv(vars.get('DISPUTA_POR_JANELA') as long)
 def inicio = props.get('BASE_JANELA').plusHours(janela)
 def fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 vars.put('JANELA', String.valueOf(janela))
+// Variante de controle (rodada 02): com -JSALA_IDS=id1,id2,... cada janela vai para a sala ids[janela % K].
+// Cada janela continua com uma unica sala disputada; sem SALA_IDS, vale SALA_ID (comportamento da rodada 01).
+def salas = (props.get('SALA_IDS') ?: '').split(',').findAll { it.trim() }
+if (salas) {
+    vars.put('SALA_ID', salas[(int) (janela % salas.size())].trim())
+}
 vars.put('INICIO', inicio.format(fmt))
 vars.put('FIM', inicio.plusHours(1).format(fmt))</stringProp>
           </JSR223PreProcessor>

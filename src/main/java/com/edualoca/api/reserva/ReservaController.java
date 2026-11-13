@@ -82,6 +82,18 @@ public class ReservaController {
         return ReservaResposta.de(reservaService.iniciarUso(usuario, id));
     }
 
+    /** P-07: EM_USO -> CONCLUIDA, por Responsavel competente ou Administrador. */
+    @PostMapping("/{id}/conclusao")
+    public ReservaResposta concluir(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return ReservaResposta.de(reservaService.concluir(usuario, id));
+    }
+
+    /** P-05 / P-08: APROVADA -> NAO_COMPARECEU, so depois de inicio + 15 min. */
+    @PostMapping("/{id}/nao-comparecimento")
+    public ReservaResposta registrarNaoComparecimento(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+        return ReservaResposta.de(reservaService.registrarNaoComparecimento(usuario, id));
+    }
+
     @PostMapping("/{id}/rejeicao")
     public ReservaResposta rejeitar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
                                     @RequestBody JustificativaRequisicao requisicao) {
@@ -105,14 +117,14 @@ public class ReservaController {
             return List.of();
         }
         if (recursos.size() > MAX_RECURSOS_POR_RESERVA) {
-            throw new RegraNegocioException(400, "Uma reserva aceita no maximo " + MAX_RECURSOS_POR_RESERVA + " recursos");
+            throw new RegraNegocioException(400, "Uma reserva aceita no máximo " + MAX_RECURSOS_POR_RESERVA + " recursos");
         }
         return recursos.stream().map(this::recurso).toList();
     }
 
     private ReservaRecurso recurso(CriarReservaRequisicao.RecursoRequisicao r) {
         if (r == null) {
-            throw new RegraNegocioException(400, "Recurso da reserva nao pode ser vazio");
+            throw new RegraNegocioException(400, "Recurso da reserva não pode ser vazio");
         }
         int quantidade = r.quantidade() == null ? 1 : r.quantidade();
         if (quantidade < 1) {

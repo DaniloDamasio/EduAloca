@@ -1,0 +1,37 @@
+WARNING: package sun.awt.X11 not in java.desktop
+WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release
+WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release
+WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release
+WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release
+Creating summariser <summary>
+Created the tree successfully using perf/reservas.jmx
+Starting standalone test @ 2026 Nov 12 18:50:33 BRT (1794520233918)
+Waiting for possible Shutdown/StopTestNow/HeapDump/ThreadDump message on port 4445
+summary +   1379 in 00:00:26 =   53.1/s Avg:     7 Min:     0 Max:   112 Err:     0 (0.00%) Active: 172 Started: 172 Finished: 0
+summary +   5320 in 00:00:30 =  177.3/s Avg:     2 Min:     0 Max:    76 Err:     0 (0.00%) Active: 372 Started: 372 Finished: 0
+summary =   6699 in 00:00:56 =  119.7/s Avg:     3 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7878 in 00:00:30 =  262.7/s Avg:     1 Min:     0 Max:    75 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  14577 in 00:01:26 =  169.6/s Avg:     2 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7987 in 00:00:30 =  266.2/s Avg:     1 Min:     0 Max:    20 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  22564 in 00:01:56 =  194.6/s Avg:     2 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7962 in 00:00:30 =  265.4/s Avg:     1 Min:     0 Max:    19 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  30526 in 00:02:26 =  209.1/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7965 in 00:00:30 =  265.4/s Avg:     1 Min:     0 Max:    16 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  38491 in 00:02:56 =  218.7/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7981 in 00:00:30 =  266.1/s Avg:     1 Min:     0 Max:    18 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  46472 in 00:03:26 =  225.6/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7957 in 00:00:30 =  265.2/s Avg:     1 Min:     0 Max:    12 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  54429 in 00:03:56 =  230.7/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7951 in 00:00:30 =  265.0/s Avg:     1 Min:     0 Max:    13 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  62380 in 00:04:26 =  234.5/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7993 in 00:00:30 =  266.5/s Avg:     1 Min:     0 Max:    19 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  70373 in 00:04:56 =  237.8/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7967 in 00:00:30 =  265.5/s Avg:     2 Min:     0 Max:    14 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  78340 in 00:05:26 =  240.3/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+summary +   7970 in 00:00:30 =  265.7/s Avg:     1 Min:     0 Max:    11 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary =  86310 in 00:05:56 =  242.5/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+RESUMO DISPUTA: 201=1738 409=15614 janelas_com_vencedor=1738 duplas=0
+summary +   1170 in 00:00:04 =  265.4/s Avg:     1 Min:     0 Max:     9 Err:     0 (0.00%) Active: 0 Started: 1 Finished: 1
+summary =  87480 in 00:06:00 =  242.8/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+Tidying up ...    @ 2026 Nov 12 18:56:34 BRT (1794520594410)
+... end of run

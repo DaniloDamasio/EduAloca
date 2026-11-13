@@ -33,7 +33,10 @@ class ArquiteturaCamadasTest {
                         "com.edualoca.perf", "org.springframework", "jakarta.servlet", "java.sql")),
                 Arguments.of("api", List.of("com.edualoca.persistencia", "com.edualoca.integracao", "java.sql")),
                 Arguments.of("persistencia", List.of("com.edualoca.api", "com.edualoca.integracao")),
-                Arguments.of("integracao", List.of("com.edualoca.api", "com.edualoca.persistencia", "java.sql")));
+                Arguments.of("integracao", List.of("com.edualoca.api", "com.edualoca.persistencia", "java.sql")),
+                // Tarefas periodicas so chamam servicos de dominio (P-08 automatico, RF-26).
+                Arguments.of("agendamento", List.of("com.edualoca.api", "com.edualoca.persistencia", "com.edualoca.integracao",
+                        "java.sql")));
     }
 
     @ParameterizedTest(name = "{0} nao importa {1}")

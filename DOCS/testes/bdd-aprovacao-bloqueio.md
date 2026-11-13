@@ -89,7 +89,8 @@ Funcionalidade: Aprovação obrigatória para recursos restritos
     Quando chega o horário de início da reserva / é acionado o início de uso
     Então a reserva NÃO passa a EM_USO
     E permanece no estado SOLICITADA
-    # ❓ P-07: o gatilho de início de uso não está definido (ver Regra 4).
+    # P-07 decidido em 12/11/2026: início de uso manual (`POST /reservas/{id}/inicio-uso`); de SOLICITADA responde 409.
+    # Coberto por InicioUsoReservaTest.restritaSolicitada_naoPulaAprovacao e MaquinaEstadosReservaTest.estT8.
 
   # BDD-R1-09 (RF-19 + RF-32)
   Cenário: Aprovação por Responsável sem autoridade sobre o recurso
@@ -278,12 +279,12 @@ Funcionalidade: Máquina de estados da Reserva
     Exemplos:
       | origem     | ator        | acao                         | destino        | observação                   |
       | SOLICITADA | Responsável | aprovar                      | APROVADA       | RF-19                        |
-      | APROVADA   | ❓ P-07     | iniciar uso                  | EM_USO         | gatilho indefinido           |
-      | EM_USO     | ❓ P-07     | concluir                     | CONCLUIDA      | gatilho indefinido           |
+      | APROVADA   | Responsável | iniciar uso                  | EM_USO         | RF-18, P-07 (manual)         |
+      | EM_USO     | Responsável | concluir                     | CONCLUIDA      | P-07 (manual)                |
       | SOLICITADA | Responsável | rejeitar (com justificativa) | REJEITADA      | RF-20                        |
       | SOLICITADA | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
       | APROVADA   | Solicitante | cancelar (com motivo)        | CANCELADA      | RF-14                        |
-      | ❓ P-05    | ❓ P-08     | registrar não comparecimento | NAO_COMPARECEU | origem e gatilho indefinidos |
+      | APROVADA (início + 15 min) | Responsável | registrar não comparecimento | NAO_COMPARECEU | P-05 (de APROVADA), P-08 (tolerância de 15 min) |
 ```
 
 ### 4.2 Transições proibidas
@@ -344,15 +345,17 @@ Funcionalidade: Máquina de estados da Reserva
 ```
 
 > **Observações de código (não são critério):**
-> - Não existem métodos para `iniciar uso`, `concluir` nem `registrar não comparecimento` em
->   `ReservaService`. As transições APROVADA → EM_USO → CONCLUÍDA e → NAO_COMPARECEU não são
->   exercitáveis hoje.
+> - ~~Não existem métodos para `iniciar uso`, `concluir` nem `registrar não comparecimento`.~~ Desde 12/11/2026 existem
+>   `ReservaService.iniciarUso`, `concluir` e `registrarNaoComparecimento`, com rotas, e as transições são exercitadas
+>   pela feature (BDD-R4-01) e por `MaquinaEstadosReservaTest` com reservas reais.
 > - `ReservaService.cancelar` aceita cancelar reserva `EM_USO`. Isso segue RF-14, mas diverge do J9 (P-06).
 > - Os testes `MaquinaEstadosReservaTest.estT2/T3/T8/T10–T13` e
 >   `AprovacaoRecursosRestritosTest.rf18T1/rf19T4` chamam `aprovar` com um `UUID.randomUUID()`
 >   que não existe no `Banco`. O 409 vem do ramo `reserva == null` ("Reserva inexistente"), não
 >   da regra de transição. **Eles passam pelo motivo errado** e não protegem a Regra 4. Ao
 >   implementar BDD-R4-01/02, os testes precisam montar a reserva no estado de origem real.
+>   **Resolvido em 12/11/2026:** os `estT*` passaram a montar a reserva no estado de origem real (inclusive os terminais,
+>   tentando todas as transições de decisor), e `rf18T1` foi renomeado para `rf19T5`, que é o que ele testa.
 
 ---
 
@@ -364,10 +367,10 @@ Funcionalidade: Máquina de estados da Reserva
 | P-02 | Qualquer Responsável aprova qualquer recurso restrito, ou só o Responsável "competente" por aquele recurso? Como esse vínculo é modelado? | BDD-R1-09 | Mesma raiz de Q23 |
 | P-03 | Na fronteira com a manutenção, o intervalo é fechado `[início, fim]` ou semiaberto `[início, fim)`? Reserva que **termina exatamente** no início da manutenção (F1) e reserva que **começa exatamente** no fim (F2) são aceitas? | F1, F2 | Reafirma Q2 (continua aberta) |
 | P-04 | Ao aprovar uma reserva SOLICITADA, o sistema deve revalidar manutenção/conflito surgidos depois da criação? Ou o cadastro de manutenção (RF-23) também deve proteger reservas SOLICITADA? | BDD-R3-07 | Nova |
-| P-05 | `NAO_COMPARECEU` parte de `APROVADA` ou de `EM_USO`? O diagrama J9 (JORNADAS.md) desenha o ramo saindo de APROVADA; o plano-tdd §4 escreve `EM_USO → NAO_COMPARECEU`. | BDD-R4-01, BDD-R4-02 | Divergência nova; complementa Q25 |
-| P-06 | Reserva `EM_USO` pode ser cancelada? RF-14 sugere que sim; J9 não desenha a transição. | BDD-R4-06 | Nova |
-| P-07 | O gatilho de `APROVADA → EM_USO` e `EM_USO → CONCLUIDA` é automático (horário/job) ou manual? Quem aciona? **Decidido em 12/11/2026 para `APROVADA → EM_USO`:** manual, por Responsável competente pelo local ou Administrador (`ReservaService.iniciarUso`, mesmo controle da aprovação), com histórico e evento `INICIO_USO`. `EM_USO → CONCLUIDA` continua em aberto. | BDD-R1-08, BDD-R4-01, BDD-R4-02 | = Q24 |
-| P-08 | Qual o critério e quem registra o não comparecimento (tolerância de atraso, ator)? | BDD-R4-01 | = Q25 |
+| P-05 | `NAO_COMPARECEU` parte de `APROVADA` ou de `EM_USO`? O diagrama J9 (JORNADAS.md) desenha o ramo saindo de APROVADA; o plano-tdd §4 escreve `EM_USO → NAO_COMPARECEU`. **Decidido em 12/11/2026:** parte de `APROVADA` (como no J9); de `EM_USO` responde 409 (`ReservaService.registrarNaoComparecimento`). | BDD-R4-01, BDD-R4-02 | Divergência nova; complementa Q25 |
+| P-06 | Reserva `EM_USO` pode ser cancelada? RF-14 sugere que sim; J9 não desenha a transição. **Decidido em 12/11/2026, pelo texto do RF-14** ("qualquer estado anterior a `CONCLUÍDA`"): sim, pelo dono, com motivo; o serviço já aceitava e a interface passou a oferecer o botão. | BDD-R4-06 | Nova |
+| P-07 | O gatilho de `APROVADA → EM_USO` e `EM_USO → CONCLUIDA` é automático (horário/job) ou manual? Quem aciona? **Decidido em 12/11/2026 para `APROVADA → EM_USO`:** manual, por Responsável competente pelo local ou Administrador (`ReservaService.iniciarUso`, mesmo controle da aprovação), com histórico e evento `INICIO_USO`. **`EM_USO → CONCLUIDA` decidido em 12/11/2026:** manual, pelos mesmos perfis (`ReservaService.concluir`). | BDD-R1-08, BDD-R4-01, BDD-R4-02 | = Q24 |
+| P-08 | Qual o critério e quem registra o não comparecimento (tolerância de atraso, ator)? **Decidido em 12/11/2026:** Responsável competente ou Administrador, só a partir de início + 15 min pelo relógio do servidor (borda inclusiva); antes disso, 409 com a tolerância na mensagem. **Complemento automático (12/11/2026, decisão do autor):** a reserva que chega ao **fim do horário** ainda `APROVADA` vira `NAO_COMPARECEU` sem ação humana (`ReservaService.registrarNaoComparecimentosVencidos`, chamado a cada 60 s por `AgendamentoConfig`), com histórico e evento `NAO_COMPARECIMENTO` em nome do sistema (`Banco.SISTEMA_ID`). Borda inclusiva no `fim`. | BDD-R4-01 | = Q25 |
 | P-09 | Qual código HTTP para transição inválida (409? 422?) e é o mesmo para todos os pares proibidos? | BDD-R4-02 | = Q16 |
 
 ---
@@ -406,11 +409,11 @@ unidade prova a lógica e a API prova que a borda não a contorna.
 | BDD-R3-03 alterar para dentro da manutenção | ✅ | | Revalidação no domínio |
 | BDD-R3-04 fora da busca de disponibilidade | ✅ | ✅ | Unidade: filtro. API: resposta de `GET` de disponibilidade |
 | BDD-R3-05 manutenção por tipo de recurso (parametrizado) | ✅ | | Regra de domínio por tipo |
-| BDD-R3-06 manutenção sobre APROVADA exige confirmação | ✅ | ✅ | API: fluxo de confirmação explícita do Administrador |
+| BDD-R3-06 manutenção sobre APROVADA exige confirmação | ✅ | ✅ | API: sem `confirmarColisao` → 409; com `confirmarColisao: true` as reservas `APROVADA` do período são canceladas e a manutenção entra; `EM_USO` no período continua 409 (`AdministracaoApiTest`) |
 | BDD-R3-07 aprovação após manutenção | ⏸ | ⏸ | Aguarda P-04 |
 | BDD-R3-08 F3, F4, F5, F6, F7 (fronteiras) | ✅ | | `@ParameterizedTest`/`@CsvSource` sobre a comparação de intervalos. Precisão de segundo é lógica pura e na API seria lento e redundante |
 | BDD-R3-08 F1, F2 (encostar exatamente) | ⏸ | | Aguarda P-03. Depois de decidido, vira linha do mesmo `@CsvSource` |
-| BDD-R4-01 transições permitidas (parametrizado) | ✅ | | Tabela de transição: `@ParameterizedTest` montando a reserva **no estado de origem real** (linhas com P-05/P-07/P-08 aguardam decisão) |
+| BDD-R4-01 transições permitidas (parametrizado) | ✅ | | Tabela de transição: `@ParameterizedTest` montando a reserva **no estado de origem real** (desde 12/11/2026 inclui iniciar uso, concluir e não comparecimento, com P-05/P-07/P-08 decididos; nenhuma linha `@bloqueado`) |
 | BDD-R4-01 auditoria por transição | ✅ | ✅ | API (com Testcontainers) prova que auditoria e transição persistem juntas (RF-27) |
 | BDD-R4-02 transições proibidas (parametrizado) | ✅ | | Tabela de pares proibidos. O código HTTP aguarda P-09 |
 | BDD-R4-03 cancelar sem motivo → 400 | ✅ | ✅ | Validação de entrada também na borda |

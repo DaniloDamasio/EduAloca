@@ -67,7 +67,11 @@ public final class InstanciaExterna implements AutoCloseable {
         Instant limite = Instant.now().plus(Duration.ofSeconds(90));
         while (Instant.now().isBefore(limite)) {
             if (!processo.isAlive()) {
-                throw new IllegalStateException("Instancia externa terminou (codigo " + processo.exitValue() + "); ver " + log);
+                // As ultimas linhas do log vao na mensagem: a falha (porta ocupada, banco, contexto) aparece no relatorio.
+                List<String> linhas = Files.readAllLines(log, StandardCharsets.UTF_8);
+                String fim = String.join("\n", linhas.subList(Math.max(0, linhas.size() - 25), linhas.size()));
+                throw new IllegalStateException("Instancia externa terminou (codigo " + processo.exitValue() + "); ver " + log
+                        + "\n--- ultimas linhas ---\n" + fim);
             }
             for (String linha : Files.readAllLines(log, StandardCharsets.UTF_8)) {
                 if (linha.startsWith(MARCADOR_PRONTA)) {

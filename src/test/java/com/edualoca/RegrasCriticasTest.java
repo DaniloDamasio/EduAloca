@@ -399,20 +399,54 @@ class RegrasCriticasTest {
         assertEquals(n - 1, conflitos.get());
     }
 
-    @Test
-    @DisplayName("RC-03-T4: falha parcial durante criacao concorrente nao deve deixar estado intermediario inconsistente (limitacao: sem Testcontainers, simulado em memoria)")
-    void rc03T4_falhaParcialDuranteCriacao_naoDeveDeixarEstadoInconsistente() {
-        // arrange
+    @org.junit.jupiter.params.ParameterizedTest(name = "falha na gravacao: {0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"constraint do banco (409)", "conexao perdida (erro inesperado)"})
+    @DisplayName("RC-03-T4: falha na gravacao da reserva nao deixa reserva, historico nem evento de criacao, e libera o lock do recurso")
+    void rc03T4_falhaParcialDuranteCriacao_naoDeveDeixarEstadoInconsistente(String falha) throws Exception {
+        // arrange: repositorio que recusa a gravacao, como a constraint do PostgreSQL ou uma queda de conexao
+        com.edualoca.domain.comum.Banco.seedSeNecessario();
+        RuntimeException erro = falha.startsWith("constraint")
+                ? new RegraNegocioException(409, "Recurso indisponível: sobreposição com reserva ativa")
+                : new IllegalStateException("conexao com o banco perdida");
+        com.edualoca.domain.reserva.HistoricoReservaRepositorioEmMemoria historico =
+                new com.edualoca.domain.reserva.HistoricoReservaRepositorioEmMemoria();
+        ReservaService comFalha = new ReservaService(java.time.Clock.systemDefaultZone(),
+                new com.edualoca.domain.reserva.ReservaRepositorioEmMemoria() {
+                    @Override
+                    public void inserir(Reserva reserva) {
+                        throw erro;
+                    }
+                }, historico, com.edualoca.domain.reserva.Transacao.direta());
         Usuario autor = solicitante();
         Sala salaX = sala(false);
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 10, 10, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 3, 10, 12, 0);
+        LocalDateTime inicio = LocalDateTime.of(2027, 3, 10, 10, 0);
+        LocalDateTime fim = LocalDateTime.of(2027, 3, 10, 12, 0);
+        int reservasAntes = com.edualoca.domain.comum.Banco.reservas.size();
 
         // act
-        Reserva reserva = reservaService.criar(autor, inicio, fim, "Aula com falha simulada", List.of(new ReservaRecurso(salaX, 1)));
+        RuntimeException lancada = assertThrows(RuntimeException.class,
+                () -> comFalha.criar(autor, inicio, fim, "Aula com falha simulada", List.of(new ReservaRecurso(salaX, 1))));
 
-        // assert
-        assertTrue(reserva.getEstado() == EstadoReserva.SOLICITADA || reserva.getEstado() == EstadoReserva.APROVADA);
+        // assert: o erro chega ao chamador e nada da tentativa fica gravado
+        assertEquals(erro, lancada);
+        assertEquals(reservasAntes, com.edualoca.domain.comum.Banco.reservas.size(), "nenhuma reserva gravada");
+        assertTrue(com.edualoca.domain.comum.Banco.reservas.values().stream().noneMatch(r -> r.getRecursos().stream()
+                .anyMatch(rr -> rr.getRecurso() == salaX)), "a sala nao ficou ocupada");
+        assertTrue(com.edualoca.domain.comum.Banco.auditoria.stream().noneMatch(e -> "CRIACAO".equals(e.getAcao())
+                && autor.getId().equals(e.getAutorId())), "nenhum evento de criacao");
+        assertEquals(falha.startsWith("constraint"), com.edualoca.domain.comum.Banco.auditoria.stream()
+                .anyMatch(e -> "REJEICAO_SOBREPOSICAO".equals(e.getAcao())), "so a recusa do banco conta como conflito evitado (RF-35)");
+
+        // o lock do recurso foi liberado: outra thread reserva a mesma sala no mesmo horario sem ficar bloqueada
+        java.util.concurrent.ExecutorService outraThread = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            Reserva depois = outraThread.submit(() -> reservaService.criar(autor, inicio, fim, "Aula refeita",
+                    List.of(new ReservaRecurso(salaX, 1)))).get(5, java.util.concurrent.TimeUnit.SECONDS);
+            assertEquals(EstadoReserva.APROVADA, depois.getEstado());
+            assertTrue(historico.listarPorReserva(depois.getId()).isEmpty(), "o historico do servico com falha ficou vazio");
+        } finally {
+            outraThread.shutdownNow();
+        }
     }
 
     @Test

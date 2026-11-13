@@ -106,6 +106,15 @@
             <version>3.13.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- E2E em navegador real (Chromium headless) sobre a interface em static/. Versao fixa; sem vulnerabilidade
+             conhecida no OSV em 12/11/2026. Os navegadores ficam no cache do Playwright, fora do repositorio. -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.64.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -187,5 +196,56 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Mutacao automatizada (PIT) das regras de dominio. Fora do verify padrao e do CI pelo tempo de execucao:
+             ./mvnw -B -Pmutacao test-compile org.pitest:pitest-maven:mutationCoverage
+             Relatorio em target/pit-reports; resumo versionado em DOCS/testes/mutacao-pit.md. -->
+        <profile>
+            <id>mutacao</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.19.1</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.2</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <targetClasses>
+                                <param>com.edualoca.domain.*</param>
+                            </targetClasses>
+                            <targetTests>
+                                <param>com.edualoca.*</param>
+                            </targetTests>
+                            <excludedTestClasses>
+                                <param>com.edualoca.*IT</param>
+                                <param>com.edualoca.persistencia.*IT</param>
+                            </excludedTestClasses>
+                            <excludedClasses>
+                                <!-- seed e estado em memoria, nao regra de negocio -->
+                                <param>com.edualoca.domain.comum.Banco*</param>
+                            </excludedClasses>
+                            <mutators>
+                                <mutator>DEFAULTS</mutator>
+                            </mutators>
+                            <threads>4</threads>
+                            <timeoutConstant>8000</timeoutConstant>
+                            <outputFormats>
+                                <param>HTML</param>
+                                <param>XML</param>
+                            </outputFormats>
+                            <timestampedReports>false</timestampedReports>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

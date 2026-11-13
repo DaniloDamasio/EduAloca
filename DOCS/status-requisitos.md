@@ -6,6 +6,10 @@
 >
 > **Atualização 11/11/2026** (branch `relatorio-utilizacao`): entrega de `GET /relatorios/utilizacao`. Revistos o item #12,
 > a lista de rotas, a execução da suíte e as pendências P6 e P8. As demais linhas continuam como na auditoria de 10/11.
+>
+> **Atualização 12/11/2026:** a seção 6 passou a registrar a execução das pendências (trabalho individual). As seções 2 a 5
+> continuam descrevendo a auditoria de 10/11 e não foram reescritas; a situação atual de cada requisito está na seção 6,
+> na [RTM.md](RTM.md) e no [relatório de qualidade](relatorio-qualidade.md).
 
 ## 1. Método e critério
 
@@ -102,20 +106,66 @@ asseguram pontuação máxima"; a cobertura de 95,9 % inclui esses testes.
 | P9 | Requisito #13 | Interface responsiva mínima (páginas estáticas consumindo a API) para os fluxos criar, aprovar/rejeitar e buscar, validada em 360/768/1920 px. | G |
 | P10 | Requisito #14 e RTM | OpenAPI (springdoc) com exemplos; completar a [RTM.md](RTM.md) com todos os RFs críticos (RNF-11), usando só testes da seção 2 e não os da seção 4. | M |
 
-## 6. Proposta de divisão até a Semana 46 (09–15/11/2026)
+## 6. Execução das pendências (trabalho individual)
 
-Integrantes identificados pelos colaboradores do repositório no GitHub. Hoje é terça, 10/11, o que deixa cerca de
-5 dias úteis. A divisão abaixo é uma proposta para o grupo validar. A regra comum: **todo PR é revisado e aprovado por
-outro integrante antes do merge**, o que também fecha a lacuna de revisão por pares (P3).
+Trabalho **individual**: todas as pendências foram executadas por Danilo Damasio (DaniloDamasio), único autor dos commits do
+repositório. A versão anterior desta seção propunha dividir as pendências entre quatro pessoas, a partir da lista de
+colaboradores do repositório no GitHub. Essa divisão não aconteceu: quem aparece como colaborador não atuou no projeto.
+Sem outro integrante, a revisão por pares foi substituída por verificações automáticas que bloqueiam o merge (README,
+seção "Autoria e revisão").
 
-| Integrante | Pendências | Entrega até | Revisa PRs de |
-|---|---|---|---|
-| DaniloDamasio | P1 (README de execução, compose, Docker/Testcontainers), P2 (decisão do modo de demonstração e correção das leituras de `Banco.reservas`), P5 (dupla reserva: material, manutenção × reserva) | P1 qua 11/11; P5 qui 12/11; P2 sex 13/11 | renatarsilva |
-| renatarsilva | P4 (perfis no login, BCrypt, expiração de token, autorização em cadastro/retirada/relatório) e P3 (required reviews, `sonar.qualitygate.wait`) | P3 ter 10/11; P4 qui 12/11 | CaiosAguiar |
-| CaiosAguiar | P7 (transições EM_USO/CONCLUÍDA/NÃO_COMPARECEU) e P6 (remover auditoria fabricada, autor, `REJEICAO_SOBREPOSICAO`), com reescrita dos testes da seção 4 | P6 qua 11/11; P7 sex 13/11 | Samwel-Merces |
-| Samwel-Merces | P8 (rotas de cadastro, busca, alteração, retirada, relatório, auditoria e ligação da notificação), P10 (OpenAPI) | P8 sáb 14/11; P10 sáb 14/11 | DaniloDamasio |
-| Todos (dom 15/11) | P9 (interface mínima, dividida por fluxo), atualização final da RTM, novo `./mvnw -B verify` e nova rodada desta auditoria | dom 15/11 | — |
+Situação em 12/11/2026. "Na árvore de trabalho" = alteração feita no código mas ainda **não verificada pela suíte**
+(a execução do `./mvnw -B verify` ficou para depois da rodada 02 de carga, para não interferir na medição).
 
-Dependências: P4 (perfis reais) e P7 (estados) liberam P8 (rotas de aprovação, retirada e relatório), então P8 deve
-começar pelo CRUD e pela busca, que não dependem delas. Se o prazo apertar, P9 (interface) é a pendência a cortar
-primeiro; nesse caso, registrar a decisão e o risco no relatório final de qualidade.
+| Pendência | Situação | Onde |
+|---|---|---|
+| P1 README de execução e Docker/Testcontainers | Feito (sem `docker compose`; o modo padrão em memória não precisa de banco) | README, "Executando a Aplicação" e "Executando a Suíte" |
+| P2 Modo PostgreSQL | Decidido: memória é o modo de demonstração; escopo do PostgreSQL registrado | [ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md) |
+| P3 Revisão por pares e gate | Revisão substituída por CI obrigatório, gate JaCoCo, SonarCloud e E2E (trabalho individual). A etapa Sonar continua condicional a `SONAR_TOKEN` | README, "Autoria e revisão"; `.github/workflows/ci.yml` |
+| P4 Perfis, senha e autorização | Feito: perfis reais no login (DEF-003), PBKDF2 com sal (DEF-013), logout revoga token, autorização em cadastro, retirada e relatório. Expiração de token continua pendente | [defeitos/](defeitos/) |
+| P5 Dupla reserva | Feito para sala e professor (ITs em PostgreSQL, 1 e 2 instâncias). Material × material na árvore de trabalho (`SobreposicaoMaterialTest`), que expôs a divergência entre busca e criação ([DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md), aberto) | [RTM.md](RTM.md) |
+| P6 Auditoria | Feito: evento fabricado removido (DEF-011), `REJEICAO_SOBREPOSICAO`. Na árvore de trabalho: consulta `GET /auditoria`, autor do token em cadastro de recurso, manutenção e usuário, e auditoria de retirada e devolução | DEF-011; `AdministracaoApiTest` |
+| P7 Estados | Feito: iniciar uso, concluir, não comparecimento manual (início + 15 min). Não comparecimento automático no fim do horário na árvore de trabalho | `ConclusaoNaoComparecimentoTest`; `NaoComparecimentoAutomaticoTest` |
+| P8 Rotas | Feito: CRUD de recursos, buscas, alteração, retirada/devolução, relatório, notificação ligada às transições. Usuários, manutenções, pendências de devolução e auditoria na árvore de trabalho | [api.md](api.md); `static/openapi.yaml` |
+| P9 Interface | Feito, com E2E em Chromium (375 px). Telas novas (usuários, auditoria, manutenções, catálogo, busca do Responsável) e E2E em 360/1920 px na árvore de trabalho | `src/main/resources/static`; `FluxoCompletoNavegadorIT` |
+| P10 OpenAPI e RTM | RTM com 32/32 críticos. `openapi.yaml` com as 39 operações e teste de sincronia na árvore de trabalho | [RTM.md](RTM.md); `DocumentacaoOpenApiTest` |
+
+**Execução da suíte (12/11/2026, ~19:24, depois da rodada 02 de carga):** `./mvnw -B verify` sobre a árvore de trabalho
+com todas as alterações acima. Unitários: 517 casos, 513 verdes e **4 erros em `SobreposicaoMaterialTest.mesmoMaterial`**
+(horas `"08"`/`"09"` no `@CsvSource`, que o JUnit não converte para `int`; correção pendente). Integração e E2E: **18/18
+verdes**, incluindo os extremos de 360 e 1920 px. As 3 linhas antes `@bloqueado` de BDD-R4-01 rodaram e passaram (0
+casos pulados). Gate JaCoCo atendido: linhas 96,01 %, ramos 85,54 %. O que a tabela chama de "na árvore de trabalho"
+passou a estar **verificado localmente**, menos o `SobreposicaoMaterialTest`. CI ainda não executado.
+
+**Carga:** rodada 02 em [performance/resultado-02.md](performance/resultado-02.md) (resultado vigente): até 400
+usuários, 0 duplas reservas em 6.308 janelas, 0 erros, p95 de criação de 8–12 ms e sem saturação.
+
+**Seção 4 (testes que não protegiam a regra), situação em 12/11:**
+
+| Teste | Situação |
+|---|---|
+| `MaquinaEstadosReservaTest` :: `estT2`, `estT3`, `estT7`, `estT8`, `estT10`–`estT13` | **Resolvido:** reserva real no estado de origem; terminais tentam todas as transições de decisor |
+| `AprovacaoRecursosRestritosTest` :: `rf18T1` | **Resolvido:** renomeado para `rf19T5`; RF-18 coberto por `InicioUsoReservaTest` |
+| `AuditoriaTest` :: `rf27T1`, `rf28T1`, `rf28T2` | **Resolvido** em DEF-011 (ações reais) |
+| `RequisitosNaoFuncionaisTest` :: `rnf05T1` | Continua fraco; RNF-05 coberto por `ArmazenamentoSenhaTest` (DEF-013) |
+| `AutenticacaoAutorizacaoTest` :: `rf02T1` | Asserção explícita (Sonar S2699); continua testando `autorizar`, sem uso em produção |
+| `NotificacoesTest` :: `rf31T1`, `rf32T1` | Continuam chamando o serviço direto; o fluxo real é coberto por `NotificacaoNosFluxosTest` e `NotificacaoExternaIntegradaApiTest` |
+| `RetiradaDevolucaoMaterialTest` :: `rf24T1` | Continua conferindo só a reserva; item, autor e instante cobertos por `RetiradaVinculoItemTest` (DEF-014) |
+| `RelatoriosTest` :: `rf34T1`, `rf35T1`; `RequisitosNaoFuncionaisTest` :: `rnf09T1`, `rnf06T1`; `RegrasCriticasTest` :: `rc03T4` | **Continuam fracos.** As regras estão cobertas por `RelatorioUtilizacaoApiTest`, `HistoricoReservaTransacaoIT`, `MatrizAutorizacaoApiTest` e `ReservaAlteracaoFalhaGravacaoTest`; esses testes poderiam ser removidos ou reescritos |
+
+**Verificação final antes do commit (12/11/2026, ~19:46):** `./mvnw -B verify` **verde**: 523 unitários e 19 ITs
+(PostgreSQL, concorrência, E2E), 0 falhas, 0 pulados; linhas 95,93 %, ramos 85,65 %. Resolvido desde a nota das ~19:24:
+`SobreposicaoMaterialTest` (horas sem zero à esquerda), [DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md)
+corrigido (opção A), E2E das telas do Administrador e do Responsável, mensagens acentuadas (com o nome do campo da API
+quando a palavra acentuada era o campo) e código morto removido (relatório antigo sem rota e `AutenticacaoService.autorizar`;
+`RelatorioService` passou a ser testado pelo método da rota). Detalhes em [relatório de qualidade §10](relatorio-qualidade.md).
+Na seção 4: `RelatoriosTest` :: `rf34T1`, `rf35T1` **resolvidos** (testes de valor sobre `gerarUtilizacaoPorPeriodo`);
+`AutenticacaoAutorizacaoTest` :: `rf02T1`–`rf02T3` **removidos** com o método sem uso que testavam.
+
+**Segurança do login (12/11/2026, ~20:15):** token com expiração (30 min sem uso, 8 h no total) e bloqueio de 15 min
+após 5 senhas erradas para o mesmo e-mail (429). `verify` verde: 536 unitários e 19 ITs; linhas 96,05 %, ramos 85,59 %.
+P4 ("expiração de token continua pendente") passa a **feito**.
+
+**Testes fracos e PIT (12/11/2026, noite):** `rnf05T1`, `rnf06T1`, `rnf09T1` e `rc03T4` (seção 4) **resolvidos**,
+reescritos para falhar quando a regra quebra. Mutação automatizada com PIT no domínio: 577/637 mutantes mortos
+(**90,6%**), ver [testes/mutacao-pit.md](testes/mutacao-pit.md).

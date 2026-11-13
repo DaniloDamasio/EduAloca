@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -63,7 +64,7 @@ public class CatalogoController {
     public CatalogoResposta catalogo(@UsuarioAutenticado Usuario usuario) {
         Banco.seedSeNecessario();
         return new CatalogoResposta(
-                Banco.salas.values().stream().filter(Sala::isAtivo).sorted(Comparator.comparing(Sala::getNome))
+                cadastro.listarSalasAtivas().stream().sorted(Comparator.comparing(Sala::getNome))
                         .map(SalaResposta::de).toList(),
                 Banco.professores.values().stream().filter(Professor::isAtivo)
                         .sorted(Comparator.comparing(Professor::getNome)).map(ProfessorResposta::de).toList(),
@@ -89,7 +90,7 @@ public class CatalogoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
         if (quantidade < 1) {
-            throw new RegraNegocioException(400, "Quantidade invalida: informe ao menos 1 unidade");
+            throw new RegraNegocioException(400, "Quantidade inválida: informe ao menos 1 unidade");
         }
         return pesquisa.buscarMateriais(opcional(tipo, "tipo"), quantidade, inicio, fim).stream()
                 .map(MaterialResposta::de).toList();
@@ -99,7 +100,7 @@ public class CatalogoController {
     @ResponseStatus(HttpStatus.CREATED)
     public SalaResposta cadastrarSala(@UsuarioAutenticado Usuario usuario, @RequestBody SalaRequisicao r) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        return SalaResposta.de(cadastro.cadastrarSala(opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+        return SalaResposta.de(cadastro.por(usuario).cadastrarSala(opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
                 numero(r.capacidade()), opcional(r.localizacao(), "localizacao"), Boolean.TRUE.equals(r.restrito())));
     }
 
@@ -107,7 +108,7 @@ public class CatalogoController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProfessorResposta cadastrarProfessor(@UsuarioAutenticado Usuario usuario, @RequestBody ProfessorRequisicao r) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        return ProfessorResposta.de(cadastro.cadastrarProfessor(opcional(r.nome(), "nome"),
+        return ProfessorResposta.de(cadastro.por(usuario).cadastrarProfessor(opcional(r.nome(), "nome"),
                 opcional(r.identificadorInstitucional(), "identificadorInstitucional"), competencias(r.competencias())));
     }
 
@@ -115,7 +116,32 @@ public class CatalogoController {
     @ResponseStatus(HttpStatus.CREATED)
     public MaterialResposta cadastrarMaterial(@UsuarioAutenticado Usuario usuario, @RequestBody MaterialRequisicao r) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        return MaterialResposta.de(cadastro.cadastrarMaterial(opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+        return MaterialResposta.de(cadastro.por(usuario).cadastrarMaterial(opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+                numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));
+    }
+
+    /** RF-04 / DEF-015: edicao no lugar; reservas e manutencoes continuam apontando para a mesma sala. */
+    @PutMapping("/salas/{id}")
+    public SalaResposta editarSala(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id, @RequestBody SalaRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return SalaResposta.de(cadastro.por(usuario).atualizarSala(id, opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
+                numero(r.capacidade()), opcional(r.localizacao(), "localizacao"), Boolean.TRUE.equals(r.restrito())));
+    }
+
+    /** RF-05 / DEF-015: nome e competencias; o identificador institucional nao muda (e a chave de unicidade). */
+    @PutMapping("/professores/{id}")
+    public ProfessorResposta editarProfessor(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                             @RequestBody ProfessorRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return ProfessorResposta.de(cadastro.por(usuario).atualizarProfessor(id, opcional(r.nome(), "nome"), competencias(r.competencias())));
+    }
+
+    /** RF-06 / DEF-015. */
+    @PutMapping("/materiais/{id}")
+    public MaterialResposta editarMaterial(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                           @RequestBody MaterialRequisicao r) {
+        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
+        return MaterialResposta.de(cadastro.por(usuario).atualizarMaterial(id, opcional(r.nome(), "nome"), opcional(r.tipo(), "tipo"),
                 numero(r.quantidadeTotal()), Boolean.TRUE.equals(r.restrito())));
     }
 
@@ -123,21 +149,21 @@ public class CatalogoController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void inativarSala(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        cadastro.inativarSala((Sala) recursoResolver.resolver("SALA", id));
+        cadastro.por(usuario).inativarSala((Sala) recursoResolver.resolver("SALA", id));
     }
 
     @PostMapping("/professores/{id}/inativacao")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void inativarProfessor(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        cadastro.inativarProfessor(id);
+        cadastro.por(usuario).inativarProfessor(id);
     }
 
     @PostMapping("/materiais/{id}/inativacao")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void inativarMaterial(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
         Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);
-        cadastro.inativarMaterial(id);
+        cadastro.por(usuario).inativarMaterial(id);
     }
 
     private static List<Competencia> competencias(List<String> nomes) {
@@ -145,7 +171,7 @@ public class CatalogoController {
             return List.of();
         }
         if (nomes.size() > MAX_COMPETENCIAS) {
-            throw new RegraNegocioException(400, "Informe no maximo " + MAX_COMPETENCIAS + " competencias");
+            throw new RegraNegocioException(400, "Informe no máximo " + MAX_COMPETENCIAS + " competências");
         }
         return nomes.stream().map(nome -> new Competencia(texto(nome, "competencias"))).toList();
     }
@@ -157,7 +183,7 @@ public class CatalogoController {
     /** Texto obrigatorio, sem espacos nas pontas e com tamanho limitado. */
     private static String texto(String valor, String campo) {
         if (valor == null || valor.isBlank()) {
-            throw new RegraNegocioException(400, "Campo obrigatorio ausente: informe '" + campo + "'");
+            throw new RegraNegocioException(400, "Campo obrigatório ausente: informe '" + campo + "'");
         }
         return opcional(valor, campo);
     }

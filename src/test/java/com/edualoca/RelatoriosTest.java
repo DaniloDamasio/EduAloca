@@ -4,7 +4,7 @@ import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.comum.RegraNegocioException;
 import com.edualoca.domain.recurso.Sala;
 import com.edualoca.domain.relatorio.RelatorioService;
-import com.edualoca.domain.relatorio.RelatorioUtilizacao;
+import com.edualoca.domain.relatorio.UtilizacaoPorPeriodo;
 import com.edualoca.domain.reserva.EstadoReserva;
 import com.edualoca.domain.reserva.Reserva;
 import com.edualoca.domain.reserva.ReservaRecurso;
@@ -13,175 +13,148 @@ import com.edualoca.domain.usuario.Perfil;
 import com.edualoca.domain.usuario.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * RF-34 a RF-36 no dominio, sobre {@link RelatorioService#gerarUtilizacaoPorPeriodo}, o mesmo metodo da rota
+ * {@code GET /relatorios/utilizacao}. Os valores pela API, com recorte na borda e fuso, estao em
+ * {@code RelatorioUtilizacaoApiTest} e {@code RelatorioFusoHorarioTest}.
+ *
+ * <p>Antes estes testes exercitavam {@code gerarRelatorioUtilizacao} e {@code contarRejeicoesPorSobreposicao}, metodos
+ * antigos sem rota e com regra diferente da rota (removidos como codigo morto em 12/11/2026); dois deles
+ * ({@code rf34T1}, {@code rf35T1}) so conferiam {@code >= 0} e passavam com qualquer implementacao.
+ */
 class RelatoriosTest {
+
+    private static final LocalDateTime INICIO_MARCO = LocalDateTime.of(2026, 3, 1, 0, 0);
+    private static final LocalDateTime FIM_MARCO = LocalDateTime.of(2026, 4, 1, 0, 0);
 
     private final RelatorioService relatorioService = new RelatorioService();
 
-    private Usuario responsavel() {
-        return new Usuario(UUID.randomUUID(), "resp@example.com", "hash", Perfil.RESPONSAVEL);
+    private static Usuario usuario(Perfil perfil) {
+        return new Usuario(UUID.randomUUID(), perfil.name().toLowerCase() + "@example.com", "hash", perfil);
+    }
+
+    private static Sala sala(String nome, boolean restrita) {
+        return new Sala(UUID.randomUUID(), nome, "aula", 10, "Bloco A", restrita);
     }
 
     @Test
-    @DisplayName("RF-34-T1: relatorio de utilizacao para intervalo com reservas conhecidas deve refletir 100% delas")
-    void rf34T1_relatorioComReservasConhecidas_deveRefletirTodas() {
-        // arrange
-        Usuario autor = responsavel();
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 3, 31, 0, 0);
-
-        // act
-        RelatorioUtilizacao relatorio = relatorioService.gerarRelatorioUtilizacao(autor, inicio, fim);
-
-        // assert
-        assertTrue(relatorio.getRegistros().size() >= 0);
-    }
-
-    @Test
-    @DisplayName("RF-34-T2: relatorio para intervalo sem nenhuma reserva deve retornar zerado sem erro")
-    void rf34T2_relatorioSemReservasNoPeriodo_deveRetornarZerado() {
-        // arrange
-        Usuario autor = responsavel();
-        LocalDateTime inicio = LocalDateTime.of(2099, 1, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2099, 1, 2, 0, 0);
-
-        // act
-        RelatorioUtilizacao relatorio = relatorioService.gerarRelatorioUtilizacao(autor, inicio, fim);
-
-        // assert
-        assertTrue(relatorio.getRegistros().isEmpty());
-    }
-
-    @Test
-    @DisplayName("RF-34-T3: relatorio com fim <= inicio no filtro deve ser rejeitado com HTTP 400")
-    void rf34T3_filtroComFimMenorOuIgualInicio_deveSerRejeitado() {
-        // arrange
-        Usuario autor = responsavel();
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 31, 0, 0);
-        LocalDateTime fimInvalido = LocalDateTime.of(2026, 3, 1, 0, 0);
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> relatorioService.gerarRelatorioUtilizacao(autor, inicio, fimInvalido));
-
-        // assert
-        assertEquals(400, ex.getStatusHttp());
-    }
-
-    @Test
-    @DisplayName("RF-35-T1 [depende da resolucao de Q21 sobre nomenclatura de 'acao']: contagem de rejeicoes por sobreposicao deve bater com HTTP 409 registrados em auditoria")
-    void rf35T1_contagemDeRejeicoesPorSobreposicao_deveBaterComAuditoria() {
-        // arrange
-        Usuario autor = responsavel();
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 3, 31, 0, 0);
-
-        // act
-        long contagem = relatorioService.contarRejeicoesPorSobreposicao(autor, inicio, fim);
-
-        // assert
-        assertTrue(contagem >= 0);
-    }
-
-    @Test
-    @DisplayName("RF-36-T1: solicitante tentando acessar endpoint de relatorio deve receber HTTP 403")
-    void rf36T1_solicitanteAcessandoRelatorio_deveRetornar403() {
-        // arrange
-        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 3, 31, 0, 0);
-
-        // act
-        RegraNegocioException ex = assertThrows(RegraNegocioException.class,
-                () -> relatorioService.gerarRelatorioUtilizacao(solicitante, inicio, fim));
-
-        // assert
-        assertEquals(403, ex.getStatusHttp());
-    }
-
-    @Test
-    @DisplayName("RF-36-T2: responsavel ou administrador acessando relatorio deve ser permitido")
-    void rf36T2_responsavelOuAdministradorAcessandoRelatorio_devePermitir() {
-        // arrange
-        Usuario autor = responsavel();
-        LocalDateTime inicio = LocalDateTime.of(2026, 3, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 3, 31, 0, 0);
-
-        // act
-        RelatorioUtilizacao relatorio = relatorioService.gerarRelatorioUtilizacao(autor, inicio, fim);
-
-        // assert
-        assertTrue(relatorio.getRegistros() != null);
-    }
-
-    @Test
-    @DisplayName("RF-34 [risco]: relatorio deve incluir reservas CONCLUIDA/EM_USO dentro do periodo e excluir as demais e as fora do periodo")
-    void rf34_relatorioComReservasReais_deveFiltrarPorEstadoEPeriodo() {
+    @DisplayName("RF-34-T1: reservas APROVADA, EM_USO e CONCLUIDA do periodo contam com as horas reais; SOLICITADA e fora do periodo nao")
+    void rf34T1_contaSoReservasEmUsoNoPeriodo() {
         // arrange
         ReservaService reservaService = new ReservaService();
-        Usuario solicitante = new Usuario(UUID.randomUUID(), "aluno@example.com", "hash", Perfil.SOLICITANTE);
-        LocalDateTime inicioFiltro = LocalDateTime.of(2026, 3, 1, 0, 0);
-        LocalDateTime fimFiltro = LocalDateTime.of(2026, 3, 31, 0, 0);
-
-        Reserva concluidaDentroDoPeriodo = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 5, 10, 0),
-                LocalDateTime.of(2026, 3, 5, 12, 0), "Aula concluida",
-                List.of(new ReservaRecurso(new Sala(UUID.randomUUID(), "Sala 1", "aula", 10, "Bloco A", false), 1)));
-        concluidaDentroDoPeriodo.setEstado(EstadoReserva.CONCLUIDA);
-
-        Reserva emUsoDentroDoPeriodo = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 6, 10, 0),
-                LocalDateTime.of(2026, 3, 6, 12, 0), "Aula em uso",
-                List.of(new ReservaRecurso(new Sala(UUID.randomUUID(), "Sala 2", "aula", 10, "Bloco A", false), 1)));
-        emUsoDentroDoPeriodo.setEstado(EstadoReserva.EM_USO);
-
-        Reserva solicitadaDentroDoPeriodo = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 7, 10, 0),
-                LocalDateTime.of(2026, 3, 7, 12, 0), "Aula ainda solicitada",
-                List.of(new ReservaRecurso(new Sala(UUID.randomUUID(), "Sala Restrita", "aula", 10, "Bloco A", true), 1)));
-
-        Reserva concluidaForaDoPeriodo = reservaService.criar(solicitante, LocalDateTime.of(2026, 4, 5, 10, 0),
-                LocalDateTime.of(2026, 4, 5, 12, 0), "Aula concluida em abril",
-                List.of(new ReservaRecurso(new Sala(UUID.randomUUID(), "Sala 3", "aula", 10, "Bloco A", false), 1)));
-        concluidaForaDoPeriodo.setEstado(EstadoReserva.CONCLUIDA);
+        Usuario solicitante = usuario(Perfil.SOLICITANTE);
+        Sala aprovada = sala("Sala Aprovada", false);
+        Sala emUso = sala("Sala Em Uso", false);
+        Sala concluida = sala("Sala Concluida", false);
+        Sala solicitada = sala("Sala Restrita", true);
+        Sala foraDoPeriodo = sala("Sala Abril", false);
+        reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 4, 10, 0), LocalDateTime.of(2026, 3, 4, 11, 0),
+                "Aula aprovada", List.of(new ReservaRecurso(aprovada, 1)));
+        reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 5, 10, 0), LocalDateTime.of(2026, 3, 5, 12, 0),
+                "Aula em uso", List.of(new ReservaRecurso(emUso, 1))).setEstado(EstadoReserva.EM_USO);
+        reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 6, 10, 0), LocalDateTime.of(2026, 3, 6, 13, 0),
+                "Aula concluida", List.of(new ReservaRecurso(concluida, 1))).setEstado(EstadoReserva.CONCLUIDA);
+        Reserva pendente = reservaService.criar(solicitante, LocalDateTime.of(2026, 3, 7, 10, 0),
+                LocalDateTime.of(2026, 3, 7, 12, 0), "Aula pendente", List.of(new ReservaRecurso(solicitada, 1)));
+        reservaService.criar(solicitante, LocalDateTime.of(2026, 4, 5, 10, 0), LocalDateTime.of(2026, 4, 5, 12, 0),
+                "Aula de abril", List.of(new ReservaRecurso(foraDoPeriodo, 1))).setEstado(EstadoReserva.CONCLUIDA);
+        assertEquals(EstadoReserva.SOLICITADA, pendente.getEstado(), "pre-condicao: sala restrita nasce SOLICITADA");
 
         // act
-        RelatorioUtilizacao relatorio = relatorioService.gerarRelatorioUtilizacao(responsavel(), inicioFiltro, fimFiltro);
-        List<UUID> idsNoRelatorio = relatorio.getRegistros().stream()
-                .map(r -> ((Reserva) r).getId())
-                .toList();
+        UtilizacaoPorPeriodo relatorio = relatorioService.gerarUtilizacaoPorPeriodo(usuario(Perfil.RESPONSAVEL),
+                INICIO_MARCO, FIM_MARCO);
+        Map<UUID, Long> minutosPorSala = relatorio.recursos().stream()
+                .collect(Collectors.toMap(UtilizacaoPorPeriodo.UsoRecurso::id, UtilizacaoPorPeriodo.UsoRecurso::minutos));
 
         // assert
-        assertTrue(idsNoRelatorio.contains(concluidaDentroDoPeriodo.getId()));
-        assertTrue(idsNoRelatorio.contains(emUsoDentroDoPeriodo.getId()));
-        assertFalse(idsNoRelatorio.contains(solicitadaDentroDoPeriodo.getId()));
-        assertFalse(idsNoRelatorio.contains(concluidaForaDoPeriodo.getId()));
+        assertAll(
+                () -> assertEquals(60L, minutosPorSala.get(aprovada.getId())),
+                () -> assertEquals(120L, minutosPorSala.get(emUso.getId())),
+                () -> assertEquals(180L, minutosPorSala.get(concluida.getId())),
+                () -> assertFalse(minutosPorSala.containsKey(solicitada.getId()), "SOLICITADA nao conta"),
+                () -> assertFalse(minutosPorSala.containsKey(foraDoPeriodo.getId()), "fora do periodo nao conta"));
     }
 
     @Test
-    @DisplayName("RF-35 [risco]: contagem de rejeicoes por sobreposicao deve contar apenas eventos REJEICAO_SOBREPOSICAO dentro do periodo filtrado")
-    void rf35_contagemDeRejeicoesReais_deveRespeitarAcaoEPeriodo() {
-        // arrange
-        UUID reservaRejeitadaPorSobreposicao = UUID.randomUUID();
-        UUID reservaComOutraAcao = UUID.randomUUID();
-        AuditoriaService.registrar("Reserva", reservaRejeitadaPorSobreposicao, "REJEICAO_SOBREPOSICAO", UUID.randomUUID());
-        AuditoriaService.registrar("Reserva", reservaComOutraAcao, "CRIACAO", UUID.randomUUID());
-        AuditoriaService.registrar("Sala", UUID.randomUUID(), "REJEICAO_SOBREPOSICAO", UUID.randomUUID());
+    @DisplayName("RF-34-T2: periodo sem nenhuma reserva devolve listas vazias e zero conflitos, sem erro")
+    void rf34T2_periodoSemReservas_devolveZerado() {
+        UtilizacaoPorPeriodo relatorio = relatorioService.gerarUtilizacaoPorPeriodo(usuario(Perfil.ADMINISTRADOR),
+                LocalDateTime.of(2099, 1, 1, 0, 0), LocalDateTime.of(2099, 1, 2, 0, 0));
 
-        LocalDateTime inicioFiltro = LocalDateTime.now().minusMinutes(1);
-        LocalDateTime fimFiltro = LocalDateTime.now().plusMinutes(1);
+        assertAll(
+                () -> assertTrue(relatorio.recursos().isEmpty()),
+                () -> assertTrue(relatorio.professores().isEmpty()),
+                () -> assertEquals(0, relatorio.conflitosEvitados()));
+    }
+
+    @Test
+    @DisplayName("RF-34-T3: fim menor ou igual ao inicio e recusado com 400")
+    void rf34T3_fimMenorOuIgualInicio_400() {
+        Usuario responsavel = usuario(Perfil.RESPONSAVEL);
+
+        assertAll(
+                () -> assertEquals(400, assertThrows(RegraNegocioException.class,
+                        () -> relatorioService.gerarUtilizacaoPorPeriodo(responsavel, FIM_MARCO, INICIO_MARCO)).getStatusHttp()),
+                () -> assertEquals(400, assertThrows(RegraNegocioException.class,
+                        () -> relatorioService.gerarUtilizacaoPorPeriodo(responsavel, INICIO_MARCO, INICIO_MARCO)).getStatusHttp()));
+    }
+
+    @Test
+    @DisplayName("RF-35-T1: conflitos evitados contam so REJEICAO_SOBREPOSICAO de Reserva registrada dentro do periodo")
+    void rf35T1_conflitosEvitados_respeitamEntidadeAcaoEPeriodo() {
+        // arrange: um evento que conta e tres que nao contam (outra acao, outra entidade, fora do periodo)
+        AuditoriaService.registrar("Reserva", UUID.randomUUID(), "REJEICAO_SOBREPOSICAO", UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 9, 0));
+        AuditoriaService.registrar("Reserva", UUID.randomUUID(), "CRIACAO", UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 9, 5));
+        AuditoriaService.registrar("Sala", UUID.randomUUID(), "REJEICAO_SOBREPOSICAO", UUID.randomUUID(),
+                LocalDateTime.of(2026, 3, 10, 9, 10));
+        AuditoriaService.registrar("Reserva", UUID.randomUUID(), "REJEICAO_SOBREPOSICAO", UUID.randomUUID(),
+                FIM_MARCO);
 
         // act
-        long contagem = relatorioService.contarRejeicoesPorSobreposicao(responsavel(), inicioFiltro, fimFiltro);
+        long conflitos = relatorioService.gerarUtilizacaoPorPeriodo(usuario(Perfil.RESPONSAVEL), INICIO_MARCO, FIM_MARCO)
+                .conflitosEvitados();
 
-        // assert: apenas o evento de "Reserva" com acao REJEICAO_SOBREPOSICAO deve ser contado,
-        // nao o de outra acao nem o de outra entidade
-        assertEquals(1, contagem);
+        // assert: periodo semiaberto [inicio, fim): o evento exatamente no fim fica de fora
+        assertEquals(1, conflitos);
+    }
+
+    @Test
+    @DisplayName("RF-36-T1: Solicitante recebe 403, antes da validacao do periodo")
+    void rf36T1_solicitante_403() {
+        Usuario solicitante = usuario(Perfil.SOLICITANTE);
+
+        assertAll(
+                () -> assertEquals(403, assertThrows(RegraNegocioException.class,
+                        () -> relatorioService.gerarUtilizacaoPorPeriodo(solicitante, INICIO_MARCO, FIM_MARCO)).getStatusHttp()),
+                () -> assertEquals(403, assertThrows(RegraNegocioException.class,
+                        () -> relatorioService.gerarUtilizacaoPorPeriodo(solicitante, FIM_MARCO, INICIO_MARCO)).getStatusHttp()));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(value = Perfil.class, names = {"RESPONSAVEL", "ADMINISTRADOR"})
+    @DisplayName("RF-36-T2: Responsavel e Administrador geram o relatorio")
+    void rf36T2_responsavelEAdministrador_podem(Perfil perfil) {
+        UtilizacaoPorPeriodo relatorio = relatorioService.gerarUtilizacaoPorPeriodo(usuario(perfil), INICIO_MARCO, FIM_MARCO);
+
+        assertAll(
+                () -> assertTrue(relatorio.recursos() != null),
+                () -> assertTrue(relatorio.professores() != null));
     }
 }

@@ -90,6 +90,8 @@ const Api = (() => {
         rejeitarReserva: (reservaId, justificativa) =>
             requisitar('POST', '/reservas/' + id(reservaId) + '/rejeicao', { justificativa }),
         iniciarUso: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/inicio-uso'),
+        concluirReserva: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/conclusao'),
+        registrarNaoComparecimento: (reservaId) => requisitar('POST', '/reservas/' + id(reservaId) + '/nao-comparecimento'),
         historico: (reservaId) => requisitar('GET', '/reservas/' + id(reservaId) + '/historico'),
 
         retiradas: (reservaId) => requisitar('GET', '/reservas/' + id(reservaId) + '/retiradas'),
@@ -107,6 +109,18 @@ const Api = (() => {
             const base = { SALA: '/salas/', PROFESSOR: '/professores/', MATERIAL: '/materiais/' }[tipo];
             return requisitar('POST', base + id(recursoId) + '/inativacao');
         },
+        editar: (tipo, recursoId, corpo) => {
+            const base = { SALA: '/salas/', PROFESSOR: '/professores/', MATERIAL: '/materiais/' }[tipo];
+            return requisitar('PUT', base + id(recursoId), corpo);
+        },
         cadastrarManutencao: (corpo) => requisitar('POST', '/manutencoes', corpo),
+        manutencoes: () => requisitar('GET', '/manutencoes'),
+        encerrarManutencao: (manutencaoId) => requisitar('POST', '/manutencoes/' + id(manutencaoId) + '/encerramento'),
+        retiradasPendentes: () => requisitar('GET', '/retiradas/pendentes'),
+
+        usuarios: () => requisitar('GET', '/usuarios'),
+        cadastrarUsuario: (corpo) => requisitar('POST', '/usuarios', corpo),
+        inativarUsuario: (usuarioId) => requisitar('POST', '/usuarios/' + id(usuarioId) + '/inativacao'),
+        auditoria: (p) => requisitar('GET', comParametros('/auditoria', p)),
     };
 })();

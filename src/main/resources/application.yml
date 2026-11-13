@@ -5,7 +5,9 @@ spring:
 edualoca:
   notificacao:
     externa:
+      # false = notificacao simulada (registrada em memoria). true = adaptador HTTP para a URL abaixo.
+      habilitada: false
       url: http://localhost:8089
-      api-key: ""
+      api-key: ${EDUALOCA_NOTIFICACAO_API_KEY:}
       timeout-conexao-ms: 1000
       timeout-leitura-ms: 2000

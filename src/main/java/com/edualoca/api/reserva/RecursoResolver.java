@@ -19,10 +19,10 @@ public class RecursoResolver {
             case "SALA" -> Banco.salas.get(id);
             case "MATERIAL" -> Banco.materiais.get(id);
             case "PROFESSOR" -> Banco.professores.get(id);
-            default -> throw new RegraNegocioException(400, "Tipo de recurso invalido: use SALA, MATERIAL ou PROFESSOR");
+            default -> throw new RegraNegocioException(400, "Tipo de recurso inválido: use SALA, MATERIAL ou PROFESSOR");
         };
         if (recurso == null) {
-            throw new RegraNegocioException(400, "Recurso informado nao existe");
+            throw new RegraNegocioException(400, "Recurso informado não existe");
         }
         return recurso;
     }

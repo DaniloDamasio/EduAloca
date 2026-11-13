@@ -1,0 +1,904 @@
+2026-11-12 18:50:33,762 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2026-11-12 18:50:33,780 INFO o.a.j.JMeter: Loading user properties from: /opt/homebrew/Cellar/jmeter/5.6.3/libexec/bin/user.properties
+2026-11-12 18:50:33,780 INFO o.a.j.JMeter: Loading system properties from: /opt/homebrew/Cellar/jmeter/5.6.3/libexec/bin/system.properties
+2026-11-12 18:50:33,780 INFO o.a.j.JMeter: Setting JMeter property: USUARIOS=400
+2026-11-12 18:50:33,780 INFO o.a.j.JMeter: Setting JMeter property: SALA_IDS=995a57ea-2e1d-422d-8803-4f0bbac3cd6a,2ce57438-c0fd-4fc9-b45b-c659be6e39f5,9800036e-f122-47bb-8d03-6767982af636,07400ab6-d420-494e-a7fd-13884fe8e790,952a82b5-89fb-4664-9e74-db05c529fdec,ce7f54eb-7aa3-45b6-a493-a926ebb7e11e,6ae49668-afcc-4839-96e8-a6cfcaa163ad,1978d865-43e7-4dac-a37e-109a7bd77c10,ae0fea68-5600-4e8d-98aa-b0b291565fd4,b7a8d64a-746d-458a-b496-b41deeb31ac5
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: Version 5.6.3
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: java.version=21.0.13.0.3
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: os.name=Mac OS X
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: os.arch=aarch64
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: os.version=26.7.2
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: file.encoding=UTF-8
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: java.awt.headless=true
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: Max memory     =1073741824
+2026-11-12 18:50:33,783 INFO o.a.j.JMeter: Available Processors =12
+2026-11-12 18:50:33,786 INFO o.a.j.JMeter: Default Locale=English (EN)
+2026-11-12 18:50:33,787 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2026-11-12 18:50:33,787 INFO o.a.j.JMeter: JMeterHome=/opt/homebrew/Cellar/jmeter/5.6.3/libexec
+2026-11-12 18:50:33,787 INFO o.a.j.JMeter: user.dir  =/Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca
+2026-11-12 18:50:33,787 INFO o.a.j.JMeter: PWD       =/Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca
+2026-11-12 18:50:33,791 INFO o.a.j.JMeter: IP: 192.168.51.199 Name: danilo.damasio FullName: 192.168.51.199
+2026-11-12 18:50:33,797 INFO o.a.j.s.FileServer: Default base='/Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca'
+2026-11-12 18:50:33,797 INFO o.a.j.s.FileServer: Set new base='/Users/danilo.damasio/Desktop/FACULDADE SENAC/QS/EduAloca/perf'
+2026-11-12 18:50:33,859 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2026-11-12 18:50:33,871 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2026-11-12 18:50:33,872 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2026-11-12 18:50:33,873 INFO o.a.j.s.SaveService: Loading file: perf/reservas.jmx
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2026-11-12 18:50:33,905 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2026-11-12 18:50:33,914 INFO o.a.j.JMeter: Creating summariser <summary>
+2026-11-12 18:50:33,921 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2026-11-12 18:50:33,921 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2026-11-12 18:50:33,921 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2026-11-12 18:50:33,923 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2026-11-12 18:50:33,923 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2026-11-12 18:50:33,937 INFO o.a.j.r.ClassFinder: Will scan jar /opt/homebrew/Cellar/jmeter/5.6.3/libexec/lib/ext/jmeter-plugins-manager-1.9.jar with filter ExtendsClassFilter [parents=[interface org.apache.jmeter.functions.Function], inner=false, contains=null, notContains=null]. Consider exposing JMeter plugins via META-INF/services, and add JMeter-Skip-Class-Scanning=true manifest attribute so JMeter can skip classfile scanning
+2026-11-12 18:50:34,047 INFO o.a.j.JMeter: Running test (1794520234047)
+2026-11-12 18:50:34,047 INFO o.a.j.e.StandardJMeterEngine: Starting setUp thread groups
+2026-11-12 18:50:34,047 INFO o.a.j.e.StandardJMeterEngine: Starting setUp ThreadGroup: 1 : setUp - trava somente localhost 
+2026-11-12 18:50:34,047 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group setUp - trava somente localhost.
+2026-11-12 18:50:34,047 INFO o.a.j.e.StandardJMeterEngine: Test will stop abruptly on error
+2026-11-12 18:50:34,047 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=0 delayedStart=false
+2026-11-12 18:50:34,048 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2026-11-12 18:50:34,049 INFO o.a.j.e.StandardJMeterEngine: Waiting for all setup thread groups to exit
+2026-11-12 18:50:34,049 INFO o.a.j.t.JMeterThread: Thread started: setUp - trava somente localhost 1-1
+2026-11-12 18:50:34,050 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2026-11-12 18:50:34,050 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
+2026-11-12 18:50:34,050 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2026-11-12 18:50:34,050 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2026-11-12 18:50:34,325 INFO o.a.j.p.j.s.J.Trava: HOST deve ser local: Trava OK: alvo http://localhost:8080, base das janelas 2026-12-12T00:00
+2026-11-12 18:50:34,327 INFO o.a.j.t.JMeterThread: Thread is done: setUp - trava somente localhost 1-1
+2026-11-12 18:50:34,327 INFO o.a.j.t.JMeterThread: Thread finished: setUp - trava somente localhost 1-1
+2026-11-12 18:50:34,329 INFO o.a.j.e.StandardJMeterEngine: All Setup Threads have ended
+2026-11-12 18:50:34,338 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Usuarios
+2026-11-12 18:50:34,339 INFO o.a.j.e.StandardJMeterEngine: Starting 400 threads for group Usuarios.
+2026-11-12 18:50:34,339 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2026-11-12 18:50:34,339 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=400 ramp-up=60 delayedStart=false
+2026-11-12 18:50:34,342 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-1
+2026-11-12 18:50:34,343 INFO o.a.j.s.FileServer: Stored: usuarios.csv
+2026-11-12 18:50:34,401 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2026-11-12 18:50:34,401 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2026-11-12 18:50:34,495 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-2
+2026-11-12 18:50:34,647 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-3
+2026-11-12 18:50:34,796 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-4
+2026-11-12 18:50:34,946 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-5
+2026-11-12 18:50:35,097 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-6
+2026-11-12 18:50:35,245 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-7
+2026-11-12 18:50:35,396 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-8
+2026-11-12 18:50:35,546 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-9
+2026-11-12 18:50:35,696 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-10
+2026-11-12 18:50:35,845 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-11
+2026-11-12 18:50:35,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-12
+2026-11-12 18:50:36,036 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = danilo.damasio
+2026-11-12 18:50:36,038 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2026-11-12 18:50:36,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-13
+2026-11-12 18:50:36,295 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-14
+2026-11-12 18:50:36,439 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-15
+2026-11-12 18:50:36,594 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-16
+2026-11-12 18:50:36,745 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-17
+2026-11-12 18:50:36,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-18
+2026-11-12 18:50:37,041 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-19
+2026-11-12 18:50:37,190 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-20
+2026-11-12 18:50:37,340 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-21
+2026-11-12 18:50:37,494 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-22
+2026-11-12 18:50:37,641 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-23
+2026-11-12 18:50:37,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-24
+2026-11-12 18:50:37,943 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-25
+2026-11-12 18:50:38,095 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-26
+2026-11-12 18:50:38,245 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-27
+2026-11-12 18:50:38,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-28
+2026-11-12 18:50:38,544 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-29
+2026-11-12 18:50:38,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-30
+2026-11-12 18:50:38,845 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-31
+2026-11-12 18:50:38,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-32
+2026-11-12 18:50:39,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-33
+2026-11-12 18:50:39,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-34
+2026-11-12 18:50:39,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-35
+2026-11-12 18:50:39,594 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-36
+2026-11-12 18:50:39,745 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-37
+2026-11-12 18:50:39,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-38
+2026-11-12 18:50:40,039 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-39
+2026-11-12 18:50:40,189 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-40
+2026-11-12 18:50:40,340 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-41
+2026-11-12 18:50:40,495 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-42
+2026-11-12 18:50:40,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-43
+2026-11-12 18:50:40,795 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-44
+2026-11-12 18:50:40,940 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-45
+2026-11-12 18:50:41,094 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-46
+2026-11-12 18:50:41,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-47
+2026-11-12 18:50:41,391 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-48
+2026-11-12 18:50:41,540 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-49
+2026-11-12 18:50:41,696 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-50
+2026-11-12 18:50:41,840 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-51
+2026-11-12 18:50:41,995 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-52
+2026-11-12 18:50:42,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-53
+2026-11-12 18:50:42,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-54
+2026-11-12 18:50:42,440 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-55
+2026-11-12 18:50:42,595 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-56
+2026-11-12 18:50:42,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-57
+2026-11-12 18:50:42,895 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-58
+2026-11-12 18:50:43,044 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-59
+2026-11-12 18:50:43,190 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-60
+2026-11-12 18:50:43,339 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-61
+2026-11-12 18:50:43,494 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-62
+2026-11-12 18:50:43,641 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-63
+2026-11-12 18:50:43,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-64
+2026-11-12 18:50:43,944 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-65
+2026-11-12 18:50:44,091 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-66
+2026-11-12 18:50:44,241 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-67
+2026-11-12 18:50:44,389 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-68
+2026-11-12 18:50:44,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-69
+2026-11-12 18:50:44,695 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-70
+2026-11-12 18:50:44,840 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-71
+2026-11-12 18:50:44,989 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-72
+2026-11-12 18:50:45,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-73
+2026-11-12 18:50:45,289 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-74
+2026-11-12 18:50:45,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-75
+2026-11-12 18:50:45,591 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-76
+2026-11-12 18:50:45,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-77
+2026-11-12 18:50:45,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-78
+2026-11-12 18:50:46,044 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-79
+2026-11-12 18:50:46,189 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-80
+2026-11-12 18:50:46,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-81
+2026-11-12 18:50:46,489 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-82
+2026-11-12 18:50:46,640 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-83
+2026-11-12 18:50:46,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-84
+2026-11-12 18:50:46,942 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-85
+2026-11-12 18:50:47,093 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-86
+2026-11-12 18:50:47,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-87
+2026-11-12 18:50:47,390 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-88
+2026-11-12 18:50:47,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-89
+2026-11-12 18:50:47,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-90
+2026-11-12 18:50:47,846 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-91
+2026-11-12 18:50:47,991 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-92
+2026-11-12 18:50:48,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-93
+2026-11-12 18:50:48,293 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-94
+2026-11-12 18:50:48,440 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-95
+2026-11-12 18:50:48,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-96
+2026-11-12 18:50:48,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-97
+2026-11-12 18:50:48,890 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-98
+2026-11-12 18:50:49,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-99
+2026-11-12 18:50:49,192 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-100
+2026-11-12 18:50:49,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-101
+2026-11-12 18:50:49,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-102
+2026-11-12 18:50:49,640 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-103
+2026-11-12 18:50:49,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-104
+2026-11-12 18:50:49,943 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-105
+2026-11-12 18:50:50,093 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-106
+2026-11-12 18:50:50,245 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-107
+2026-11-12 18:50:50,393 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-108
+2026-11-12 18:50:50,540 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-109
+2026-11-12 18:50:50,689 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-110
+2026-11-12 18:50:50,842 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-111
+2026-11-12 18:50:50,992 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-112
+2026-11-12 18:50:51,143 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-113
+2026-11-12 18:50:51,290 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-114
+2026-11-12 18:50:51,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-115
+2026-11-12 18:50:51,589 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-116
+2026-11-12 18:50:51,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-117
+2026-11-12 18:50:51,893 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-118
+2026-11-12 18:50:52,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-119
+2026-11-12 18:50:52,191 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-120
+2026-11-12 18:50:52,342 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-121
+2026-11-12 18:50:52,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-122
+2026-11-12 18:50:52,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-123
+2026-11-12 18:50:52,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-124
+2026-11-12 18:50:52,943 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-125
+2026-11-12 18:50:53,093 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-126
+2026-11-12 18:50:53,242 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-127
+2026-11-12 18:50:53,389 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-128
+2026-11-12 18:50:53,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-129
+2026-11-12 18:50:53,696 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-130
+2026-11-12 18:50:53,843 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-131
+2026-11-12 18:50:53,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-132
+2026-11-12 18:50:54,140 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-133
+2026-11-12 18:50:54,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-134
+2026-11-12 18:50:54,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-135
+2026-11-12 18:50:54,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-136
+2026-11-12 18:50:54,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-137
+2026-11-12 18:50:54,890 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-138
+2026-11-12 18:50:55,043 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-139
+2026-11-12 18:50:55,193 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-140
+2026-11-12 18:50:55,343 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-141
+2026-11-12 18:50:55,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-142
+2026-11-12 18:50:55,643 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-143
+2026-11-12 18:50:55,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-144
+2026-11-12 18:50:55,943 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-145
+2026-11-12 18:50:56,093 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-146
+2026-11-12 18:50:56,246 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-147
+2026-11-12 18:50:56,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-148
+2026-11-12 18:50:56,541 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-149
+2026-11-12 18:50:56,692 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-150
+2026-11-12 18:50:56,844 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-151
+2026-11-12 18:50:56,993 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-152
+2026-11-12 18:50:57,141 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-153
+2026-11-12 18:50:57,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-154
+2026-11-12 18:50:57,440 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-155
+2026-11-12 18:50:57,590 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-156
+2026-11-12 18:50:57,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-157
+2026-11-12 18:50:57,893 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-158
+2026-11-12 18:50:58,045 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-159
+2026-11-12 18:50:58,193 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-160
+2026-11-12 18:50:58,343 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-161
+2026-11-12 18:50:58,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-162
+2026-11-12 18:50:58,641 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-163
+2026-11-12 18:50:58,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-164
+2026-11-12 18:50:58,941 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-165
+2026-11-12 18:50:59,095 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-166
+2026-11-12 18:50:59,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-167
+2026-11-12 18:50:59,393 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-168
+2026-11-12 18:50:59,544 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-169
+2026-11-12 18:50:59,693 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-170
+2026-11-12 18:50:59,843 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-171
+2026-11-12 18:50:59,996 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-172
+2026-11-12 18:51:00,002 INFO o.a.j.r.Summariser: summary +   1379 in 00:00:26 =   53.1/s Avg:     7 Min:     0 Max:   112 Err:     0 (0.00%) Active: 172 Started: 172 Finished: 0
+2026-11-12 18:51:00,142 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-173
+2026-11-12 18:51:00,290 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-174
+2026-11-12 18:51:00,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-175
+2026-11-12 18:51:00,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-176
+2026-11-12 18:51:00,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-177
+2026-11-12 18:51:00,892 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-178
+2026-11-12 18:51:01,043 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-179
+2026-11-12 18:51:01,191 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-180
+2026-11-12 18:51:01,343 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-181
+2026-11-12 18:51:01,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-182
+2026-11-12 18:51:01,639 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-183
+2026-11-12 18:51:01,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-184
+2026-11-12 18:51:01,945 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-185
+2026-11-12 18:51:02,092 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-186
+2026-11-12 18:51:02,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-187
+2026-11-12 18:51:02,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-188
+2026-11-12 18:51:02,545 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-189
+2026-11-12 18:51:02,695 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-190
+2026-11-12 18:51:02,842 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-191
+2026-11-12 18:51:02,993 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-192
+2026-11-12 18:51:03,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-193
+2026-11-12 18:51:03,292 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-194
+2026-11-12 18:51:03,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-195
+2026-11-12 18:51:03,595 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-196
+2026-11-12 18:51:03,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-197
+2026-11-12 18:51:03,891 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-198
+2026-11-12 18:51:04,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-199
+2026-11-12 18:51:04,190 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-200
+2026-11-12 18:51:04,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-201
+2026-11-12 18:51:04,493 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-202
+2026-11-12 18:51:04,643 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-203
+2026-11-12 18:51:04,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-204
+2026-11-12 18:51:04,944 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-205
+2026-11-12 18:51:05,094 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-206
+2026-11-12 18:51:05,245 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-207
+2026-11-12 18:51:05,392 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-208
+2026-11-12 18:51:05,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-209
+2026-11-12 18:51:05,692 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-210
+2026-11-12 18:51:05,843 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-211
+2026-11-12 18:51:05,993 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-212
+2026-11-12 18:51:06,141 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-213
+2026-11-12 18:51:06,293 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-214
+2026-11-12 18:51:06,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-215
+2026-11-12 18:51:06,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-216
+2026-11-12 18:51:06,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-217
+2026-11-12 18:51:06,890 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-218
+2026-11-12 18:51:07,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-219
+2026-11-12 18:51:07,189 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-220
+2026-11-12 18:51:07,343 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-221
+2026-11-12 18:51:07,495 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-222
+2026-11-12 18:51:07,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-223
+2026-11-12 18:51:07,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-224
+2026-11-12 18:51:07,941 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-225
+2026-11-12 18:51:08,090 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-226
+2026-11-12 18:51:08,243 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-227
+2026-11-12 18:51:08,393 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-228
+2026-11-12 18:51:08,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-229
+2026-11-12 18:51:08,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-230
+2026-11-12 18:51:08,842 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-231
+2026-11-12 18:51:08,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-232
+2026-11-12 18:51:09,143 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-233
+2026-11-12 18:51:09,296 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-234
+2026-11-12 18:51:09,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-235
+2026-11-12 18:51:09,594 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-236
+2026-11-12 18:51:09,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-237
+2026-11-12 18:51:09,890 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-238
+2026-11-12 18:51:10,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-239
+2026-11-12 18:51:10,194 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-240
+2026-11-12 18:51:10,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-241
+2026-11-12 18:51:10,491 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-242
+2026-11-12 18:51:10,645 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-243
+2026-11-12 18:51:10,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-244
+2026-11-12 18:51:10,943 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-245
+2026-11-12 18:51:11,093 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-246
+2026-11-12 18:51:11,243 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-247
+2026-11-12 18:51:11,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-248
+2026-11-12 18:51:11,545 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-249
+2026-11-12 18:51:11,695 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-250
+2026-11-12 18:51:11,844 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-251
+2026-11-12 18:51:11,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-252
+2026-11-12 18:51:12,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-253
+2026-11-12 18:51:12,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-254
+2026-11-12 18:51:12,443 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-255
+2026-11-12 18:51:12,595 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-256
+2026-11-12 18:51:12,743 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-257
+2026-11-12 18:51:12,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-258
+2026-11-12 18:51:13,044 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-259
+2026-11-12 18:51:13,193 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-260
+2026-11-12 18:51:13,342 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-261
+2026-11-12 18:51:13,489 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-262
+2026-11-12 18:51:13,643 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-263
+2026-11-12 18:51:13,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-264
+2026-11-12 18:51:13,940 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-265
+2026-11-12 18:51:14,091 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-266
+2026-11-12 18:51:14,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-267
+2026-11-12 18:51:14,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-268
+2026-11-12 18:51:14,542 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-269
+2026-11-12 18:51:14,690 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-270
+2026-11-12 18:51:14,843 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-271
+2026-11-12 18:51:14,992 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-272
+2026-11-12 18:51:15,142 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-273
+2026-11-12 18:51:15,292 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-274
+2026-11-12 18:51:15,439 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-275
+2026-11-12 18:51:15,592 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-276
+2026-11-12 18:51:15,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-277
+2026-11-12 18:51:15,893 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-278
+2026-11-12 18:51:16,042 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-279
+2026-11-12 18:51:16,190 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-280
+2026-11-12 18:51:16,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-281
+2026-11-12 18:51:16,494 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-282
+2026-11-12 18:51:16,643 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-283
+2026-11-12 18:51:16,794 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-284
+2026-11-12 18:51:16,939 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-285
+2026-11-12 18:51:17,092 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-286
+2026-11-12 18:51:17,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-287
+2026-11-12 18:51:17,390 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-288
+2026-11-12 18:51:17,539 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-289
+2026-11-12 18:51:17,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-290
+2026-11-12 18:51:17,840 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-291
+2026-11-12 18:51:17,991 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-292
+2026-11-12 18:51:18,141 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-293
+2026-11-12 18:51:18,290 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-294
+2026-11-12 18:51:18,440 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-295
+2026-11-12 18:51:18,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-296
+2026-11-12 18:51:18,745 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-297
+2026-11-12 18:51:18,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-298
+2026-11-12 18:51:19,045 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-299
+2026-11-12 18:51:19,193 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-300
+2026-11-12 18:51:19,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-301
+2026-11-12 18:51:19,489 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-302
+2026-11-12 18:51:19,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-303
+2026-11-12 18:51:19,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-304
+2026-11-12 18:51:19,945 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-305
+2026-11-12 18:51:20,089 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-306
+2026-11-12 18:51:20,243 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-307
+2026-11-12 18:51:20,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-308
+2026-11-12 18:51:20,544 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-309
+2026-11-12 18:51:20,691 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-310
+2026-11-12 18:51:20,841 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-311
+2026-11-12 18:51:20,992 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-312
+2026-11-12 18:51:21,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-313
+2026-11-12 18:51:21,292 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-314
+2026-11-12 18:51:21,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-315
+2026-11-12 18:51:21,593 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-316
+2026-11-12 18:51:21,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-317
+2026-11-12 18:51:21,893 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-318
+2026-11-12 18:51:22,040 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-319
+2026-11-12 18:51:22,194 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-320
+2026-11-12 18:51:22,342 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-321
+2026-11-12 18:51:22,489 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-322
+2026-11-12 18:51:22,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-323
+2026-11-12 18:51:22,793 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-324
+2026-11-12 18:51:22,944 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-325
+2026-11-12 18:51:23,094 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-326
+2026-11-12 18:51:23,243 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-327
+2026-11-12 18:51:23,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-328
+2026-11-12 18:51:23,541 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-329
+2026-11-12 18:51:23,690 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-330
+2026-11-12 18:51:23,845 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-331
+2026-11-12 18:51:23,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-332
+2026-11-12 18:51:24,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-333
+2026-11-12 18:51:24,289 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-334
+2026-11-12 18:51:24,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-335
+2026-11-12 18:51:24,594 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-336
+2026-11-12 18:51:24,744 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-337
+2026-11-12 18:51:24,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-338
+2026-11-12 18:51:25,043 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-339
+2026-11-12 18:51:25,192 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-340
+2026-11-12 18:51:25,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-341
+2026-11-12 18:51:25,490 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-342
+2026-11-12 18:51:25,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-343
+2026-11-12 18:51:25,791 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-344
+2026-11-12 18:51:25,945 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-345
+2026-11-12 18:51:26,094 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-346
+2026-11-12 18:51:26,243 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-347
+2026-11-12 18:51:26,395 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-348
+2026-11-12 18:51:26,543 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-349
+2026-11-12 18:51:26,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-350
+2026-11-12 18:51:26,841 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-351
+2026-11-12 18:51:26,995 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-352
+2026-11-12 18:51:27,142 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-353
+2026-11-12 18:51:27,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-354
+2026-11-12 18:51:27,442 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-355
+2026-11-12 18:51:27,590 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-356
+2026-11-12 18:51:27,740 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-357
+2026-11-12 18:51:27,889 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-358
+2026-11-12 18:51:28,045 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-359
+2026-11-12 18:51:28,194 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-360
+2026-11-12 18:51:28,340 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-361
+2026-11-12 18:51:28,494 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-362
+2026-11-12 18:51:28,641 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-363
+2026-11-12 18:51:28,791 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-364
+2026-11-12 18:51:28,944 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-365
+2026-11-12 18:51:29,092 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-366
+2026-11-12 18:51:29,244 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-367
+2026-11-12 18:51:29,395 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-368
+2026-11-12 18:51:29,542 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-369
+2026-11-12 18:51:29,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-370
+2026-11-12 18:51:29,841 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-371
+2026-11-12 18:51:29,990 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-372
+2026-11-12 18:51:30,008 INFO o.a.j.r.Summariser: summary +   5320 in 00:00:30 =  177.3/s Avg:     2 Min:     0 Max:    76 Err:     0 (0.00%) Active: 372 Started: 372 Finished: 0
+2026-11-12 18:51:30,008 INFO o.a.j.r.Summariser: summary =   6699 in 00:00:56 =  119.7/s Avg:     3 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:51:30,144 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-373
+2026-11-12 18:51:30,290 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-374
+2026-11-12 18:51:30,442 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-375
+2026-11-12 18:51:30,589 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-376
+2026-11-12 18:51:30,740 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-377
+2026-11-12 18:51:30,893 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-378
+2026-11-12 18:51:31,044 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-379
+2026-11-12 18:51:31,192 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-380
+2026-11-12 18:51:31,344 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-381
+2026-11-12 18:51:31,494 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-382
+2026-11-12 18:51:31,644 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-383
+2026-11-12 18:51:31,795 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-384
+2026-11-12 18:51:31,945 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-385
+2026-11-12 18:51:32,094 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-386
+2026-11-12 18:51:32,245 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-387
+2026-11-12 18:51:32,394 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-388
+2026-11-12 18:51:32,544 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-389
+2026-11-12 18:51:32,694 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-390
+2026-11-12 18:51:32,845 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-391
+2026-11-12 18:51:32,994 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-392
+2026-11-12 18:51:33,145 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-393
+2026-11-12 18:51:33,294 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-394
+2026-11-12 18:51:33,444 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-395
+2026-11-12 18:51:33,594 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-396
+2026-11-12 18:51:33,740 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-397
+2026-11-12 18:51:33,894 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-398
+2026-11-12 18:51:34,041 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-399
+2026-11-12 18:51:34,194 INFO o.a.j.t.JMeterThread: Thread started: Usuarios 1-400
+2026-11-12 18:52:00,002 INFO o.a.j.r.Summariser: summary +   7878 in 00:00:30 =  262.7/s Avg:     1 Min:     0 Max:    75 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:52:00,003 INFO o.a.j.r.Summariser: summary =  14577 in 00:01:26 =  169.6/s Avg:     2 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:52:30,002 INFO o.a.j.r.Summariser: summary +   7987 in 00:00:30 =  266.2/s Avg:     1 Min:     0 Max:    20 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:52:30,003 INFO o.a.j.r.Summariser: summary =  22564 in 00:01:56 =  194.6/s Avg:     2 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:53:00,005 INFO o.a.j.r.Summariser: summary +   7962 in 00:00:30 =  265.4/s Avg:     1 Min:     0 Max:    19 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:53:00,006 INFO o.a.j.r.Summariser: summary =  30526 in 00:02:26 =  209.1/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:53:30,010 INFO o.a.j.r.Summariser: summary +   7965 in 00:00:30 =  265.4/s Avg:     1 Min:     0 Max:    16 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:53:30,011 INFO o.a.j.r.Summariser: summary =  38491 in 00:02:56 =  218.7/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:54:00,002 INFO o.a.j.r.Summariser: summary +   7981 in 00:00:30 =  266.1/s Avg:     1 Min:     0 Max:    18 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:54:00,002 INFO o.a.j.r.Summariser: summary =  46472 in 00:03:26 =  225.6/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:54:30,001 INFO o.a.j.r.Summariser: summary +   7957 in 00:00:30 =  265.2/s Avg:     1 Min:     0 Max:    12 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:54:30,002 INFO o.a.j.r.Summariser: summary =  54429 in 00:03:56 =  230.7/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:55:00,007 INFO o.a.j.r.Summariser: summary +   7951 in 00:00:30 =  265.0/s Avg:     1 Min:     0 Max:    13 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:55:00,008 INFO o.a.j.r.Summariser: summary =  62380 in 00:04:26 =  234.5/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:55:30,004 INFO o.a.j.r.Summariser: summary +   7993 in 00:00:30 =  266.5/s Avg:     1 Min:     0 Max:    19 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:55:30,004 INFO o.a.j.r.Summariser: summary =  70373 in 00:04:56 =  237.8/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:56:00,007 INFO o.a.j.r.Summariser: summary +   7967 in 00:00:30 =  265.5/s Avg:     2 Min:     0 Max:    14 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:56:00,008 INFO o.a.j.r.Summariser: summary =  78340 in 00:05:26 =  240.3/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:56:30,002 INFO o.a.j.r.Summariser: summary +   7970 in 00:00:30 =  265.7/s Avg:     1 Min:     0 Max:    11 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+2026-11-12 18:56:30,002 INFO o.a.j.r.Summariser: summary =  86310 in 00:05:56 =  242.5/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)
+2026-11-12 18:56:32,425 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-371
+2026-11-12 18:56:32,429 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-219
+2026-11-12 18:56:32,509 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-88
+2026-11-12 18:56:32,538 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-144
+2026-11-12 18:56:32,564 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-49
+2026-11-12 18:56:32,596 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-37
+2026-11-12 18:56:32,598 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-313
+2026-11-12 18:56:32,609 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-48
+2026-11-12 18:56:32,626 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-209
+2026-11-12 18:56:32,628 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-393
+2026-11-12 18:56:32,633 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-63
+2026-11-12 18:56:32,634 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-9
+2026-11-12 18:56:32,643 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-272
+2026-11-12 18:56:32,654 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-241
+2026-11-12 18:56:32,658 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-351
+2026-11-12 18:56:32,658 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-44
+2026-11-12 18:56:32,666 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-194
+2026-11-12 18:56:32,686 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-276
+2026-11-12 18:56:32,692 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-126
+2026-11-12 18:56:32,698 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-337
+2026-11-12 18:56:32,728 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-4
+2026-11-12 18:56:32,751 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-355
+2026-11-12 18:56:32,751 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-76
+2026-11-12 18:56:32,755 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-292
+2026-11-12 18:56:32,755 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-270
+2026-11-12 18:56:32,779 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-335
+2026-11-12 18:56:32,784 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-193
+2026-11-12 18:56:32,791 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-55
+2026-11-12 18:56:32,793 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-75
+2026-11-12 18:56:32,814 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-230
+2026-11-12 18:56:32,822 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-143
+2026-11-12 18:56:32,822 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-325
+2026-11-12 18:56:32,837 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-77
+2026-11-12 18:56:32,842 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-198
+2026-11-12 18:56:32,851 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-112
+2026-11-12 18:56:32,859 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-254
+2026-11-12 18:56:32,866 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-196
+2026-11-12 18:56:32,873 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-18
+2026-11-12 18:56:32,873 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-318
+2026-11-12 18:56:32,879 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-138
+2026-11-12 18:56:32,894 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-297
+2026-11-12 18:56:32,916 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-60
+2026-11-12 18:56:32,929 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-146
+2026-11-12 18:56:32,933 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-298
+2026-11-12 18:56:32,934 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-145
+2026-11-12 18:56:32,934 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-28
+2026-11-12 18:56:32,959 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-1
+2026-11-12 18:56:32,963 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-45
+2026-11-12 18:56:32,975 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-159
+2026-11-12 18:56:32,981 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-81
+2026-11-12 18:56:32,981 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-295
+2026-11-12 18:56:32,981 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-97
+2026-11-12 18:56:32,998 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-299
+2026-11-12 18:56:32,998 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-110
+2026-11-12 18:56:33,002 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-133
+2026-11-12 18:56:33,008 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-310
+2026-11-12 18:56:33,022 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-65
+2026-11-12 18:56:33,022 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-132
+2026-11-12 18:56:33,024 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-20
+2026-11-12 18:56:33,027 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-370
+2026-11-12 18:56:33,031 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-22
+2026-11-12 18:56:33,041 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-266
+2026-11-12 18:56:33,041 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-233
+2026-11-12 18:56:33,051 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-69
+2026-11-12 18:56:33,051 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-238
+2026-11-12 18:56:33,054 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-15
+2026-11-12 18:56:33,064 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-185
+2026-11-12 18:56:33,075 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-303
+2026-11-12 18:56:33,076 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-180
+2026-11-12 18:56:33,076 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-321
+2026-11-12 18:56:33,079 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-353
+2026-11-12 18:56:33,080 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-167
+2026-11-12 18:56:33,081 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-30
+2026-11-12 18:56:33,084 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-246
+2026-11-12 18:56:33,086 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-203
+2026-11-12 18:56:33,088 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-197
+2026-11-12 18:56:33,089 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-248
+2026-11-12 18:56:33,099 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-56
+2026-11-12 18:56:33,099 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-115
+2026-11-12 18:56:33,107 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-333
+2026-11-12 18:56:33,107 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-173
+2026-11-12 18:56:33,122 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-363
+2026-11-12 18:56:33,139 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-250
+2026-11-12 18:56:33,142 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-289
+2026-11-12 18:56:33,151 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-29
+2026-11-12 18:56:33,155 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-359
+2026-11-12 18:56:33,159 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-242
+2026-11-12 18:56:33,160 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-239
+2026-11-12 18:56:33,163 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-50
+2026-11-12 18:56:33,168 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-378
+2026-11-12 18:56:33,180 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-101
+2026-11-12 18:56:33,182 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-232
+2026-11-12 18:56:33,201 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-35
+2026-11-12 18:56:33,203 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-291
+2026-11-12 18:56:33,217 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-6
+2026-11-12 18:56:33,221 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-392
+2026-11-12 18:56:33,224 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-253
+2026-11-12 18:56:33,227 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-217
+2026-11-12 18:56:33,227 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-334
+2026-11-12 18:56:33,227 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-240
+2026-11-12 18:56:33,229 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-46
+2026-11-12 18:56:33,240 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-330
+2026-11-12 18:56:33,247 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-308
+2026-11-12 18:56:33,247 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-106
+2026-11-12 18:56:33,249 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-33
+2026-11-12 18:56:33,250 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-130
+2026-11-12 18:56:33,256 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-17
+2026-11-12 18:56:33,258 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-304
+2026-11-12 18:56:33,259 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-170
+2026-11-12 18:56:33,265 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-244
+2026-11-12 18:56:33,272 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-70
+2026-11-12 18:56:33,274 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-350
+2026-11-12 18:56:33,275 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-202
+2026-11-12 18:56:33,275 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-366
+2026-11-12 18:56:33,281 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-98
+2026-11-12 18:56:33,282 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-90
+2026-11-12 18:56:33,287 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-24
+2026-11-12 18:56:33,290 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-210
+2026-11-12 18:56:33,292 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-183
+2026-11-12 18:56:33,292 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-41
+2026-11-12 18:56:33,298 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-163
+2026-11-12 18:56:33,299 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-324
+2026-11-12 18:56:33,306 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-19
+2026-11-12 18:56:33,312 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-273
+2026-11-12 18:56:33,326 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-191
+2026-11-12 18:56:33,333 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-47
+2026-11-12 18:56:33,342 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-255
+2026-11-12 18:56:33,356 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-129
+2026-11-12 18:56:33,357 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-5
+2026-11-12 18:56:33,357 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-383
+2026-11-12 18:56:33,361 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-201
+2026-11-12 18:56:33,367 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-164
+2026-11-12 18:56:33,371 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-165
+2026-11-12 18:56:33,374 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-128
+2026-11-12 18:56:33,379 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-309
+2026-11-12 18:56:33,381 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-374
+2026-11-12 18:56:33,386 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-51
+2026-11-12 18:56:33,386 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-31
+2026-11-12 18:56:33,386 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-86
+2026-11-12 18:56:33,386 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-361
+2026-11-12 18:56:33,389 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-247
+2026-11-12 18:56:33,396 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-358
+2026-11-12 18:56:33,397 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-192
+2026-11-12 18:56:33,398 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-188
+2026-11-12 18:56:33,412 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-95
+2026-11-12 18:56:33,414 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-377
+2026-11-12 18:56:33,415 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-10
+2026-11-12 18:56:33,416 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-226
+2026-11-12 18:56:33,427 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-379
+2026-11-12 18:56:33,434 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-214
+2026-11-12 18:56:33,434 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-11
+2026-11-12 18:56:33,434 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-338
+2026-11-12 18:56:33,437 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-348
+2026-11-12 18:56:33,445 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-293
+2026-11-12 18:56:33,447 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-382
+2026-11-12 18:56:33,449 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-341
+2026-11-12 18:56:33,462 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-176
+2026-11-12 18:56:33,465 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-320
+2026-11-12 18:56:33,468 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-354
+2026-11-12 18:56:33,478 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-72
+2026-11-12 18:56:33,479 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-109
+2026-11-12 18:56:33,480 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-82
+2026-11-12 18:56:33,482 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-119
+2026-11-12 18:56:33,494 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-89
+2026-11-12 18:56:33,495 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-236
+2026-11-12 18:56:33,497 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-280
+2026-11-12 18:56:33,497 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-365
+2026-11-12 18:56:33,497 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-168
+2026-11-12 18:56:33,497 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-206
+2026-11-12 18:56:33,503 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-317
+2026-11-12 18:56:33,505 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-187
+2026-11-12 18:56:33,505 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-36
+2026-11-12 18:56:33,511 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-391
+2026-11-12 18:56:33,513 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-53
+2026-11-12 18:56:33,528 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-32
+2026-11-12 18:56:33,528 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-182
+2026-11-12 18:56:33,528 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-62
+2026-11-12 18:56:33,537 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-271
+2026-11-12 18:56:33,538 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-92
+2026-11-12 18:56:33,539 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-332
+2026-11-12 18:56:33,542 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-16
+2026-11-12 18:56:33,544 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-155
+2026-11-12 18:56:33,550 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-231
+2026-11-12 18:56:33,551 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-23
+2026-11-12 18:56:33,552 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-245
+2026-11-12 18:56:33,555 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-13
+2026-11-12 18:56:33,556 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-368
+2026-11-12 18:56:33,562 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-96
+2026-11-12 18:56:33,569 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-222
+2026-11-12 18:56:33,569 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-305
+2026-11-12 18:56:33,575 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-154
+2026-11-12 18:56:33,577 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-114
+2026-11-12 18:56:33,577 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-3
+2026-11-12 18:56:33,580 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-117
+2026-11-12 18:56:33,581 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-213
+2026-11-12 18:56:33,596 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-258
+2026-11-12 18:56:33,605 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-380
+2026-11-12 18:56:33,609 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-316
+2026-11-12 18:56:33,611 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-160
+2026-11-12 18:56:33,617 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-376
+2026-11-12 18:56:33,622 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-284
+2026-11-12 18:56:33,623 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-177
+2026-11-12 18:56:33,631 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-103
+2026-11-12 18:56:33,636 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-312
+2026-11-12 18:56:33,647 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-339
+2026-11-12 18:56:33,656 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-235
+2026-11-12 18:56:33,662 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-52
+2026-11-12 18:56:33,663 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-287
+2026-11-12 18:56:33,667 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-43
+2026-11-12 18:56:33,678 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-174
+2026-11-12 18:56:33,684 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-344
+2026-11-12 18:56:33,690 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-161
+2026-11-12 18:56:33,693 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-61
+2026-11-12 18:56:33,695 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-121
+2026-11-12 18:56:33,695 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-64
+2026-11-12 18:56:33,698 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-386
+2026-11-12 18:56:33,698 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-79
+2026-11-12 18:56:33,701 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-329
+2026-11-12 18:56:33,701 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-367
+2026-11-12 18:56:33,704 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-200
+2026-11-12 18:56:33,705 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-283
+2026-11-12 18:56:33,706 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-362
+2026-11-12 18:56:33,708 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-260
+2026-11-12 18:56:33,708 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-140
+2026-11-12 18:56:33,710 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-186
+2026-11-12 18:56:33,711 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-259
+2026-11-12 18:56:33,711 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-398
+2026-11-12 18:56:33,711 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-352
+2026-11-12 18:56:33,712 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-229
+2026-11-12 18:56:33,712 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-290
+2026-11-12 18:56:33,717 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-349
+2026-11-12 18:56:33,718 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-306
+2026-11-12 18:56:33,719 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-208
+2026-11-12 18:56:33,722 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-14
+2026-11-12 18:56:33,730 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-142
+2026-11-12 18:56:33,730 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-268
+2026-11-12 18:56:33,739 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-111
+2026-11-12 18:56:33,739 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-25
+2026-11-12 18:56:33,745 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-389
+2026-11-12 18:56:33,745 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-136
+2026-11-12 18:56:33,745 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-175
+2026-11-12 18:56:33,747 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-127
+2026-11-12 18:56:33,747 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-195
+2026-11-12 18:56:33,750 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-326
+2026-11-12 18:56:33,754 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-68
+2026-11-12 18:56:33,755 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-152
+2026-11-12 18:56:33,763 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-216
+2026-11-12 18:56:33,769 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-104
+2026-11-12 18:56:33,772 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-2
+2026-11-12 18:56:33,775 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-288
+2026-11-12 18:56:33,777 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-263
+2026-11-12 18:56:33,779 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-224
+2026-11-12 18:56:33,779 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-274
+2026-11-12 18:56:33,781 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-169
+2026-11-12 18:56:33,789 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-319
+2026-11-12 18:56:33,802 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-8
+2026-11-12 18:56:33,804 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-347
+2026-11-12 18:56:33,805 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-261
+2026-11-12 18:56:33,814 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-42
+2026-11-12 18:56:33,820 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-387
+2026-11-12 18:56:33,820 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-397
+2026-11-12 18:56:33,822 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-218
+2026-11-12 18:56:33,823 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-21
+2026-11-12 18:56:33,824 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-26
+2026-11-12 18:56:33,834 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-7
+2026-11-12 18:56:33,839 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-364
+2026-11-12 18:56:33,842 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-58
+2026-11-12 18:56:33,844 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-137
+2026-11-12 18:56:33,846 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-158
+2026-11-12 18:56:33,850 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-256
+2026-11-12 18:56:33,855 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-215
+2026-11-12 18:56:33,858 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-243
+2026-11-12 18:56:33,863 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-204
+2026-11-12 18:56:33,870 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-211
+2026-11-12 18:56:33,872 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-93
+2026-11-12 18:56:33,875 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-99
+2026-11-12 18:56:33,879 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-124
+2026-11-12 18:56:33,888 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-105
+2026-11-12 18:56:33,891 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-157
+2026-11-12 18:56:33,891 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-345
+2026-11-12 18:56:33,899 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-153
+2026-11-12 18:56:33,900 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-369
+2026-11-12 18:56:33,903 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-281
+2026-11-12 18:56:33,905 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-34
+2026-11-12 18:56:33,911 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-340
+2026-11-12 18:56:33,911 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-302
+2026-11-12 18:56:33,913 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-394
+2026-11-12 18:56:33,924 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-277
+2026-11-12 18:56:33,924 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-74
+2026-11-12 18:56:33,930 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-311
+2026-11-12 18:56:33,930 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-156
+2026-11-12 18:56:33,934 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-375
+2026-11-12 18:56:33,950 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-249
+2026-11-12 18:56:33,954 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-91
+2026-11-12 18:56:33,962 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-40
+2026-11-12 18:56:33,967 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-108
+2026-11-12 18:56:33,967 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-12
+2026-11-12 18:56:33,980 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-135
+2026-11-12 18:56:33,981 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-122
+2026-11-12 18:56:33,985 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-184
+2026-11-12 18:56:33,986 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-251
+2026-11-12 18:56:33,991 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-252
+2026-11-12 18:56:34,002 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-107
+2026-11-12 18:56:34,008 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-57
+2026-11-12 18:56:34,011 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-323
+2026-11-12 18:56:34,011 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-59
+2026-11-12 18:56:34,013 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-343
+2026-11-12 18:56:34,017 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-73
+2026-11-12 18:56:34,022 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-38
+2026-11-12 18:56:34,026 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-190
+2026-11-12 18:56:34,027 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-39
+2026-11-12 18:56:34,029 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-141
+2026-11-12 18:56:34,041 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-225
+2026-11-12 18:56:34,051 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-54
+2026-11-12 18:56:34,052 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-328
+2026-11-12 18:56:34,053 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-396
+2026-11-12 18:56:34,053 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-100
+2026-11-12 18:56:34,055 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-139
+2026-11-12 18:56:34,063 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-264
+2026-11-12 18:56:34,063 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-336
+2026-11-12 18:56:34,066 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-322
+2026-11-12 18:56:34,067 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-205
+2026-11-12 18:56:34,067 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-178
+2026-11-12 18:56:34,072 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-83
+2026-11-12 18:56:34,072 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-80
+2026-11-12 18:56:34,075 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-120
+2026-11-12 18:56:34,079 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-331
+2026-11-12 18:56:34,091 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-94
+2026-11-12 18:56:34,100 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-395
+2026-11-12 18:56:34,108 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-227
+2026-11-12 18:56:34,110 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-149
+2026-11-12 18:56:34,116 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-66
+2026-11-12 18:56:34,119 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-307
+2026-11-12 18:56:34,126 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-278
+2026-11-12 18:56:34,128 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-125
+2026-11-12 18:56:34,144 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-400
+2026-11-12 18:56:34,147 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-346
+2026-11-12 18:56:34,158 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-282
+2026-11-12 18:56:34,173 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-150
+2026-11-12 18:56:34,180 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-381
+2026-11-12 18:56:34,183 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-84
+2026-11-12 18:56:34,184 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-172
+2026-11-12 18:56:34,186 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-223
+2026-11-12 18:56:34,187 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-171
+2026-11-12 18:56:34,198 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-267
+2026-11-12 18:56:34,201 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-131
+2026-11-12 18:56:34,201 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-212
+2026-11-12 18:56:34,201 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-384
+2026-11-12 18:56:34,201 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-113
+2026-11-12 18:56:34,205 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-67
+2026-11-12 18:56:34,209 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-199
+2026-11-12 18:56:34,209 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-116
+2026-11-12 18:56:34,212 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-315
+2026-11-12 18:56:34,213 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-207
+2026-11-12 18:56:34,218 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-148
+2026-11-12 18:56:34,219 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-228
+2026-11-12 18:56:34,219 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-179
+2026-11-12 18:56:34,234 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-294
+2026-11-12 18:56:34,234 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-360
+2026-11-12 18:56:34,237 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-151
+2026-11-12 18:56:34,238 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-357
+2026-11-12 18:56:34,238 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-356
+2026-11-12 18:56:34,241 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-221
+2026-11-12 18:56:34,245 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-71
+2026-11-12 18:56:34,245 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-147
+2026-11-12 18:56:34,246 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-123
+2026-11-12 18:56:34,257 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-327
+2026-11-12 18:56:34,257 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-78
+2026-11-12 18:56:34,259 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-275
+2026-11-12 18:56:34,259 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-314
+2026-11-12 18:56:34,259 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-102
+2026-11-12 18:56:34,267 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-166
+2026-11-12 18:56:34,272 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-301
+2026-11-12 18:56:34,284 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-87
+2026-11-12 18:56:34,287 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-300
+2026-11-12 18:56:34,293 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-162
+2026-11-12 18:56:34,299 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-385
+2026-11-12 18:56:34,303 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-265
+2026-11-12 18:56:34,305 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-388
+2026-11-12 18:56:34,311 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-279
+2026-11-12 18:56:34,313 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-262
+2026-11-12 18:56:34,314 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-237
+2026-11-12 18:56:34,320 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-220
+2026-11-12 18:56:34,320 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-27
+2026-11-12 18:56:34,321 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-134
+2026-11-12 18:56:34,321 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-234
+2026-11-12 18:56:34,322 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-189
+2026-11-12 18:56:34,323 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-269
+2026-11-12 18:56:34,329 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-257
+2026-11-12 18:56:34,329 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-373
+2026-11-12 18:56:34,336 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-285
+2026-11-12 18:56:34,336 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-181
+2026-11-12 18:56:34,337 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-372
+2026-11-12 18:56:34,342 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-85
+2026-11-12 18:56:34,342 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-296
+2026-11-12 18:56:34,345 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-118
+2026-11-12 18:56:34,350 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-390
+2026-11-12 18:56:34,363 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-342
+2026-11-12 18:56:34,377 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-286
+2026-11-12 18:56:34,393 INFO o.a.j.t.JMeterThread: Thread finished: Usuarios 1-399
+2026-11-12 18:56:34,393 INFO o.a.j.e.StandardJMeterEngine: Starting tearDown thread groups
+2026-11-12 18:56:34,393 INFO o.a.j.e.StandardJMeterEngine: Starting tearDown ThreadGroup: 1 : tearDown - resumo da disputa
+2026-11-12 18:56:34,393 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group tearDown - resumo da disputa.
+2026-11-12 18:56:34,393 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2026-11-12 18:56:34,393 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=0 delayedStart=false
+2026-11-12 18:56:34,393 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2026-11-12 18:56:34,393 INFO o.a.j.t.JMeterThread: Thread started: tearDown - resumo da disputa 1-1
+2026-11-12 18:56:34,406 INFO o.a.j.p.j.s.J.Resumo: RESUMO DISPUTA: 201=1738 409=15614 janelas_com_vencedor=1738 duplas=0
+2026-11-12 18:56:34,408 INFO o.a.j.t.JMeterThread: Thread is done: tearDown - resumo da disputa 1-1
+2026-11-12 18:56:34,408 INFO o.a.j.t.JMeterThread: Thread finished: tearDown - resumo da disputa 1-1
+2026-11-12 18:56:34,408 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2026-11-12 18:56:34,408 INFO o.a.j.s.FileServer: Close: usuarios.csv
+2026-11-12 18:56:34,410 INFO o.a.j.r.Summariser: summary +   1170 in 00:00:04 =  265.4/s Avg:     1 Min:     0 Max:     9 Err:     0 (0.00%) Active: 0 Started: 1 Finished: 1
+2026-11-12 18:56:34,410 INFO o.a.j.r.Summariser: summary =  87480 in 00:06:00 =  242.8/s Avg:     1 Min:     0 Max:   112 Err:     0 (0.00%)

@@ -1,5 +1,9 @@
 # Resultado da rodada 01: consulta de disponibilidade e criação de reserva sob disputa
 
+> **Histórico.** O resultado vigente é o da [rodada 02](resultado-02.md) (12/11/2026, commit `38bbc04`), que refez
+> esta medição a partir de um commit limpo e acrescentou escada de carga, variante de controle, repetições e métricas
+> de CPU, memória, GC e pool. Este arquivo fica como registro da primeira rodada.
+
 - **Data da rodada:** 2026-11-10, das 16:29:01 às 16:35:01 (UTC−3)
 - **Plano:** [rnf.md](rnf.md) (requisitos, seções 2 a 4) e [perf/reservas.jmx](../../perf/reservas.jmx)
 - **Brutos:** `perf/resultados/rodada-01.jtl`, `perf/resultados/jmeter-rodada-01.log`,
@@ -200,3 +204,19 @@ de 2 vCPUs do banco ou o pool de 10 conexões.
 6. **Critério de parada:** o degrau em que o p95 de `POST /reservas` passar de 500 ms, ou a taxa de
    erro real passar de 1 %, ou aparecer algum 5xx, define o ponto de saturação **nesta máquina**.
    Esse ponto também não deve ser tratado como capacidade de produção.
+
+## Onde estão os dados (atualização de 2026-11-12, ~19:55)
+
+A regra "os brutos não são versionados" mudou: os **resumos e logs de cada rodada passaram a ser versionados** em
+`perf/resultados/`, para que cada número deste documento aponte para um arquivo do repositório. Só os `.jtl` (uma linha
+por requisição) ficam fora do git, por tamanho, e estão compactados na release
+[`carga-rodada-02`](https://github.com/DaniloDamasio/EduAloca/releases/tag/carga-rodada-02) do GitHub:
+
+| Arquivo da release | Conteúdo | SHA-256 |
+|---|---|---|
+| `rodada-02-jtl.tar.gz` (2,9 MB) | os 11 `rodada.jtl` da rodada 02 (8 cenários e 3 repetições), com o caminho `rodada-02/<cenário>/` | `99cf7ff406e36877f86f38646dd85def550e385f4c81f014f08e056077ca42cf` |
+| `rodada-01.jtl.gz` (81 KB) | `rodada-01.jtl`; descompactado, o SHA-256 começa com `dcfeada7c825bdee`, igual ao da rodada 01 | `78bc783f22efdf20e49ca89bc04130c566169245e1d32498fee6298fe11cbbe0` |
+
+Para conferir: baixar o arquivo, `shasum -a 256 <arquivo>` e extrair em `perf/resultados/`
+(`tar -xzf rodada-02-jtl.tar.gz -C perf/resultados`). A tentativa descartada da rodada 02 (suspensão da máquina) e o
+relatório HTML do JMeter (regerável a partir do `.jtl`) não são publicados.

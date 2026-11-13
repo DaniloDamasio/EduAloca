@@ -1,0 +1,931 @@
+openapi: 3.0.3
+info:
+  title: EduAloca API
+  version: 0.0.1
+  description: |
+    API de alocacao de salas, professores e materiais (RF-39). Todas as rotas, exceto `POST /auth/login`, exigem
+    `Authorization: Bearer <token>`; o token sai do login e o perfil vem sempre do servidor, nunca do corpo.
+    A sessao vence apos 30 minutos sem uso ou 8 horas desde o login (401 "Sessão expirada").
+    Datas sao `aaaa-mm-ddThh:mm` no horario local do servidor. Erros seguem ProblemDetail (RFC 9457,
+    `application/problem+json`), com `title`, `status`, `detail` e a copia `mensagem`, sem detalhe tecnico.
+    Este arquivo e servido pela aplicacao em `/openapi.yaml` e o teste `DocumentacaoOpenApiTest` falha se alguma
+    rota da aplicacao nao estiver documentada aqui (ou se houver rota documentada que nao existe).
+servers:
+  - url: http://localhost:8080
+security:
+  - bearer: []
+tags:
+  - name: Sessao
+  - name: Catalogo
+  - name: Reservas
+  - name: Retirada
+  - name: Manutencao
+  - name: Relatorio
+  - name: Administracao
+
+paths:
+  /auth/login:
+    post:
+      tags: [Sessao]
+      summary: Troca e-mail e senha por um token (RF-01)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequisicao' }
+            example: { email: usuario@example.com, senha: senhaValida123 }
+      responses:
+        '200':
+          description: Token opaco de 256 bits
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResposta' }
+              example: { token: _7PmwBL1Aed-RtZwgcUj392mTqLmEusBBm0MO6MebEU }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401':
+          description: "Credenciais inválidas (mesma resposta para e-mail inexistente e senha errada)"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '429':
+          description: Depois de 5 senhas erradas para o mesmo e-mail em 15 minutos, o login desse e-mail fica bloqueado por 15 minutos (inclusive com a senha certa)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              example: { title: Muitas tentativas, status: 429, detail: 'Muitas tentativas de login: aguarde 15 minuto(s) e tente novamente' }
+  /auth/logout:
+    post:
+      tags: [Sessao]
+      summary: Revoga o token do cabecalho
+      description: Responde 204 mesmo sem token ou com token desconhecido, para nao revelar quais tokens existem.
+      security: []
+      responses:
+        '204': { description: Token revogado (ou ja inexistente) }
+  /auth/eu:
+    get:
+      tags: [Sessao]
+      summary: Usuario do token (id, e-mail e perfil)
+      responses:
+        '200':
+          description: Usuario autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Eu' }
+              example: { id: 00000000-0000-0000-0000-0000000000a1, email: responsavel@example.com, perfil: RESPONSAVEL }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+
+  /recursos:
+    get:
+      tags: [Catalogo]
+      summary: Catalogo de recursos ativos (RF-07), qualquer perfil
+      responses:
+        '200':
+          description: Salas, professores e materiais ativos, em ordem de nome
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Catalogo' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /salas/disponiveis:
+    get:
+      tags: [Catalogo]
+      summary: Salas livres no intervalo (RF-08, RF-11)
+      description: Exclui sala com reserva ativa sobreposta ou em manutencao.
+      parameters:
+        - $ref: '#/components/parameters/Inicio'
+        - $ref: '#/components/parameters/Fim'
+        - { name: tipo, in: query, schema: { type: string }, example: laboratorio }
+        - { name: capacidadeMinima, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: localizacao, in: query, schema: { type: string }, example: Bloco A }
+      responses:
+        '200':
+          description: Salas disponiveis
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Sala' } }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /professores/disponiveis:
+    get:
+      tags: [Catalogo]
+      summary: Professores com a competencia e livres no intervalo (RF-09)
+      parameters:
+        - { name: competencia, in: query, required: true, schema: { type: string, maxLength: 120 }, example: Robotica }
+        - $ref: '#/components/parameters/Inicio'
+        - $ref: '#/components/parameters/Fim'
+      responses:
+        '200':
+          description: Professores disponiveis
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Professor' } }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /materiais/disponiveis:
+    get:
+      tags: [Catalogo]
+      summary: Materiais livres no intervalo (RF-10); o material e exclusivo no intervalo (DEF-016)
+      parameters:
+        - { name: tipo, in: query, schema: { type: string }, example: projetor }
+        - { name: quantidade, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - $ref: '#/components/parameters/Inicio'
+        - $ref: '#/components/parameters/Fim'
+      responses:
+        '200':
+          description: Materiais disponiveis
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Material' } }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /salas:
+    post:
+      tags: [Catalogo]
+      summary: Cadastra sala (RF-04), so Administrador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SalaRequisicao' }
+            example: { nome: Lab de Robotica, tipo: laboratorio, capacidade: 30, localizacao: Bloco A, restrito: true }
+      responses:
+        '201':
+          description: Sala cadastrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Proibida' }
+  /salas/{id}:
+    put:
+      tags: [Catalogo]
+      summary: Edita sala (RF-04), so Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SalaRequisicao' }
+      responses:
+        '200':
+          description: Sala atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+  /salas/{id}/inativacao:
+    post:
+      tags: [Catalogo]
+      summary: Inativa sala (some do catalogo e da busca), so Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '204': { description: Sala inativada }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+  /professores:
+    post:
+      tags: [Catalogo]
+      summary: Cadastra professor (RF-05), so Administrador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfessorRequisicao' }
+            example: { nome: Prof. Ana, identificadorInstitucional: P-77, competencias: [Quimica, Fisica] }
+      responses:
+        '201':
+          description: Professor cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Professor' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /professores/{id}:
+    put:
+      tags: [Catalogo]
+      summary: Edita nome e competencias do professor (RF-05), so Administrador
+      description: O identificador institucional e a chave e nao muda.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfessorRequisicao' }
+      responses:
+        '200':
+          description: Professor atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Professor' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+  /professores/{id}/inativacao:
+    post:
+      tags: [Catalogo]
+      summary: Inativa professor, so Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '204': { description: Professor inativado }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+  /materiais:
+    post:
+      tags: [Catalogo]
+      summary: Cadastra material (RF-06), so Administrador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaterialRequisicao' }
+            example: { nome: Kit Arduino, tipo: kit, quantidadeTotal: 5, restrito: false }
+      responses:
+        '201':
+          description: Material cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+  /materiais/{id}:
+    put:
+      tags: [Catalogo]
+      summary: Edita material (RF-06), so Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaterialRequisicao' }
+      responses:
+        '200':
+          description: Material atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+  /materiais/{id}/inativacao:
+    post:
+      tags: [Catalogo]
+      summary: Inativa material, so Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '204': { description: Material inativado }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+
+  /reservas:
+    get:
+      tags: [Reservas]
+      summary: Reservas visiveis ao usuario, em ordem de inicio
+      description: Solicitante ve as proprias; Responsavel, as do seu local; Administrador, todas.
+      responses:
+        '200':
+          description: Reservas
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Reserva' } }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+    post:
+      tags: [Reservas]
+      summary: Cria reserva (RF-12, RF-15, RF-16, RF-17, RF-22), so Solicitante
+      description: |
+        Nasce SOLICITADA se algum recurso e restrito; senao, APROVADA. Sobreposicao com reserva ativa do mesmo recurso
+        (sala, material ou professor) ou com manutencao responde 409. No maximo 50 recursos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CriarReserva' }
+            example:
+              inicio: '2027-03-01T10:00'
+              fim: '2027-03-01T12:00'
+              finalidade: Aula de Robotica
+              recursos:
+                - { tipo: SALA, id: d3e2a763-e863-4ff2-99d1-82589afc71be }
+                - { tipo: MATERIAL, id: cb162227-23a0-4da0-b40f-85385d0f1744, quantidade: 2 }
+      responses:
+        '201':
+          description: Reserva criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reserva' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}:
+    get:
+      tags: [Reservas]
+      summary: Consulta reserva (Solicitante so a propria)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Reserva
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reserva' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+    put:
+      tags: [Reservas]
+      summary: Altera o horario da propria reserva SOLICITADA ou APROVADA (RF-13)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Intervalo' }
+            example: { inicio: '2027-03-01T14:00', fim: '2027-03-01T16:00' }
+      responses:
+        '200':
+          description: Reserva alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reserva' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+    delete:
+      tags: [Reservas]
+      summary: Exclusao fisica nunca e permitida (RF-30)
+      description: Sempre 403, sem consultar a reserva; para encerrar, cancele.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '403': { $ref: '#/components/responses/Proibida' }
+  /reservas/{id}/historico:
+    get:
+      tags: [Reservas]
+      summary: Historico auditavel da reserva (RF-27, RF-29), Responsavel e Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Registros, do mais antigo ao mais recente
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/RegistroHistorico' } }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/aprovacao:
+    post:
+      tags: [Reservas]
+      summary: SOLICITADA -> APROVADA (RF-19), Responsavel do local ou Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/rejeicao:
+    post:
+      tags: [Reservas]
+      summary: SOLICITADA -> REJEITADA com justificativa (RF-19, RF-20)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Justificativa' }
+            example: { justificativa: Laboratorio reservado para banca }
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/cancelamento:
+    post:
+      tags: [Reservas]
+      summary: Cancela a propria reserva antes de CONCLUIDA, com motivo (RF-14)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Motivo' }
+            example: { motivo: Aula remarcada }
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/inicio-uso:
+    post:
+      tags: [Reservas]
+      summary: APROVADA -> EM_USO (RF-18, P-07), Responsavel do local ou Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/conclusao:
+    post:
+      tags: [Reservas]
+      summary: EM_USO -> CONCLUIDA (P-07), Responsavel do local ou Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /reservas/{id}/nao-comparecimento:
+    post:
+      tags: [Reservas]
+      summary: APROVADA -> NAO_COMPARECEU manual (P-05, P-08), a partir de inicio + 15 min
+      description: |
+        Responsavel do local ou Administrador. Antes da tolerancia responde 409. Alem do registro manual, o sistema
+        encerra sozinho como NAO_COMPARECEU a reserva que chega ao fim do horario ainda APROVADA.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/ReservaOk' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /reservas/{id}/retiradas:
+    get:
+      tags: [Retirada]
+      summary: Retiradas da reserva, Responsavel do local ou Administrador
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Registros de retirada
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Retirada' } }
+        '403': { $ref: '#/components/responses/Proibida' }
+    post:
+      tags: [Retirada]
+      summary: Registra retirada de material da reserva EM_USO (RF-24)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { materialId: { type: string, format: uuid } }
+            example: { materialId: cb162227-23a0-4da0-b40f-85385d0f1744 }
+      responses:
+        '201':
+          description: Retirada registrada (data e autor do servidor)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Retirada' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /retiradas/{id}/devolucao:
+    post:
+      tags: [Retirada]
+      summary: Registra devolucao com a condicao do item (RF-25)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { condicao: { type: string, enum: [INTEGRO, DANIFICADO] } }
+            example: { condicao: INTEGRO }
+      responses:
+        '200':
+          description: Devolucao registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Retirada' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /retiradas/pendentes:
+    get:
+      tags: [Retirada]
+      summary: Devolucoes em atraso (RF-26), Responsavel do local ou Administrador
+      description: Retirada sem devolucao depois do fim da reserva; sinalizada pela tarefa periodica.
+      responses:
+        '200':
+          description: Retiradas pendentes
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Retirada' } }
+        '403': { $ref: '#/components/responses/Proibida' }
+
+  /manutencoes:
+    get:
+      tags: [Manutencao]
+      summary: Manutencoes cadastradas, so Administrador
+      responses:
+        '200':
+          description: Manutencoes, em ordem de inicio
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ManutencaoListada' } }
+        '403': { $ref: '#/components/responses/Proibida' }
+    post:
+      tags: [Manutencao]
+      summary: Bloqueia recurso para manutencao (RF-21, RF-23), so Administrador
+      description: |
+        Colisao com reserva APROVADA ou EM_USO responde 409 pedindo confirmacao. Com `confirmarColisao: true`, as
+        reservas APROVADA do periodo sao canceladas (historico, auditoria e aviso ao Solicitante) e a manutencao e
+        registrada; reserva EM_USO no periodo continua impedindo (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ManutencaoRequisicao' }
+            example:
+              tipoRecurso: SALA
+              recursoId: d3e2a763-e863-4ff2-99d1-82589afc71be
+              inicio: '2027-03-10T09:00'
+              fim: '2027-03-10T13:00'
+              motivo: Troca de fiacao
+              confirmarColisao: false
+      responses:
+        '201':
+          description: Manutencao registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Manutencao' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /manutencoes/{id}/encerramento:
+    post:
+      tags: [Manutencao]
+      summary: Encerra (ou cancela) a manutencao, so Administrador (RF-21)
+      description: O bloqueio deixa de valer na hora; o evento ENCERRAMENTO fica na auditoria com o autor.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Manutencao encerrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ManutencaoListada' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+
+  /relatorios/utilizacao:
+    get:
+      tags: [Relatorio]
+      summary: Horas por recurso, carga por professor e conflitos evitados (RF-34, RF-35, RF-36)
+      description: Periodo semiaberto [inicio, fim), no maximo 366 dias. Solicitante recebe 403 antes da validacao.
+      parameters:
+        - $ref: '#/components/parameters/Inicio'
+        - $ref: '#/components/parameters/Fim'
+      responses:
+        '200':
+          description: Relatorio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Utilizacao' }
+              example:
+                recursos: [{ tipo: SALA, id: 6f0c0000-0000-0000-0000-000000000001, nome: Sala 101, horasReservadas: 4.00 }]
+                professores: [{ id: c9d20000-0000-0000-0000-000000000001, nome: Prof. Ana, cargaHorariaAlocada: 3.50 }]
+                conflitosEvitados: 2
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+
+  /usuarios:
+    get:
+      tags: [Administracao]
+      summary: Contas de usuario, so Administrador (nunca traz senha)
+      responses:
+        '200':
+          description: Contas em ordem de e-mail
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ContaUsuario' } }
+        '403': { $ref: '#/components/responses/Proibida' }
+    post:
+      tags: [Administracao]
+      summary: Cadastra usuario, so Administrador
+      description: E-mail normalizado em minusculas; senha de 8 a 120 caracteres, guardada com PBKDF2; Responsavel exige local livre.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioRequisicao' }
+            example: { email: nova.resp@example.com, senha: senhaForte123, perfil: RESPONSAVEL, localizacao: Bloco C }
+      responses:
+        '201':
+          description: Conta criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContaUsuario' }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /usuarios/{id}/inativacao:
+    post:
+      tags: [Administracao]
+      summary: Inativa a conta e revoga os tokens dela, so Administrador
+      description: O Administrador nao inativa a propria conta (409).
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Conta inativada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContaUsuario' }
+        '403': { $ref: '#/components/responses/Proibida' }
+        '404': { $ref: '#/components/responses/NaoEncontrada' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /auditoria:
+    get:
+      tags: [Administracao]
+      summary: Eventos de auditoria (RF-28, RF-29), so Administrador, somente leitura
+      parameters:
+        - { name: entidade, in: query, schema: { type: string, maxLength: 60 }, example: Reserva }
+        - { name: acao, in: query, schema: { type: string, maxLength: 60 }, example: CRIACAO }
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        '200':
+          description: Eventos do mais recente para o mais antigo
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/EventoAuditoria' } }
+        '400': { $ref: '#/components/responses/Invalida' }
+        '403': { $ref: '#/components/responses/Proibida' }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: Token opaco de POST /auth/login
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Inicio:
+      name: inicio
+      in: query
+      required: true
+      schema: { type: string, example: '2027-03-01T08:00' }
+    Fim:
+      name: fim
+      in: query
+      required: true
+      schema: { type: string, example: '2027-03-01T10:00' }
+  responses:
+    ReservaOk:
+      description: Reserva no novo estado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Reserva' }
+    Invalida:
+      description: Entrada invalida; a mensagem nomeia o campo
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example: { title: Requisição inválida, status: 400, detail: "Intervalo inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')" }
+    NaoAutenticado:
+      description: Sem token ou token desconhecido
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+    Proibida:
+      description: Perfil, dono ou competencia nao autorizam a operacao
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+    NaoEncontrada:
+      description: Cadastro inexistente
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+    Conflito:
+      description: Estado, sobreposicao, manutencao ou duplicidade impedem a operacao
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example: { title: Conflito, status: 409, detail: 'Recurso indisponível: sobreposição com reserva ativa' }
+  schemas:
+    Problema:
+      type: object
+      properties:
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        mensagem: { type: string }
+    LoginRequisicao:
+      type: object
+      required: [email, senha]
+      properties: { email: { type: string }, senha: { type: string, format: password } }
+    LoginResposta:
+      type: object
+      properties: { token: { type: string } }
+    Eu:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        perfil: { $ref: '#/components/schemas/Perfil' }
+    Perfil:
+      type: string
+      enum: [SOLICITANTE, RESPONSAVEL, ADMINISTRADOR]
+    Estado:
+      type: string
+      enum: [SOLICITADA, APROVADA, EM_USO, CONCLUIDA, REJEITADA, CANCELADA, NAO_COMPARECEU]
+    Sala:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        tipo: { type: string }
+        capacidade: { type: integer }
+        localizacao: { type: string }
+        restrito: { type: boolean }
+    SalaRequisicao:
+      type: object
+      required: [nome, tipo, capacidade, localizacao]
+      properties:
+        nome: { type: string, maxLength: 120 }
+        tipo: { type: string, maxLength: 120 }
+        capacidade: { type: integer, minimum: 1 }
+        localizacao: { type: string, maxLength: 120 }
+        restrito: { type: boolean, default: false }
+    Professor:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        identificadorInstitucional: { type: string }
+        competencias: { type: array, items: { type: string } }
+    ProfessorRequisicao:
+      type: object
+      required: [nome]
+      properties:
+        nome: { type: string, maxLength: 120 }
+        identificadorInstitucional: { type: string, maxLength: 120, description: Obrigatorio no cadastro; ignorado na edicao }
+        competencias: { type: array, maxItems: 20, items: { type: string, maxLength: 120 } }
+    Material:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        tipo: { type: string }
+        quantidadeTotal: { type: integer }
+        restrito: { type: boolean }
+    MaterialRequisicao:
+      type: object
+      required: [nome, tipo, quantidadeTotal]
+      properties:
+        nome: { type: string, maxLength: 120 }
+        tipo: { type: string, maxLength: 120 }
+        quantidadeTotal: { type: integer, minimum: 1 }
+        restrito: { type: boolean, default: false }
+    Catalogo:
+      type: object
+      properties:
+        salas: { type: array, items: { $ref: '#/components/schemas/Sala' } }
+        professores: { type: array, items: { $ref: '#/components/schemas/Professor' } }
+        materiais: { type: array, items: { $ref: '#/components/schemas/Material' } }
+    Intervalo:
+      type: object
+      required: [inicio, fim]
+      properties: { inicio: { type: string }, fim: { type: string } }
+    CriarReserva:
+      type: object
+      required: [inicio, fim, finalidade, recursos]
+      properties:
+        inicio: { type: string }
+        fim: { type: string }
+        finalidade: { type: string }
+        recursos:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [tipo, id]
+            properties:
+              tipo: { type: string, enum: [SALA, MATERIAL, PROFESSOR] }
+              id: { type: string, format: uuid }
+              quantidade: { type: integer, minimum: 1, default: 1 }
+    Reserva:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        solicitanteId: { type: string, format: uuid }
+        estado: { $ref: '#/components/schemas/Estado' }
+        inicio: { type: string }
+        fim: { type: string }
+        finalidade: { type: string }
+        justificativaRejeicao: { type: string, nullable: true }
+        recursos:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo: { type: string }
+              id: { type: string, format: uuid }
+              nome: { type: string }
+              quantidade: { type: integer }
+    Justificativa:
+      type: object
+      required: [justificativa]
+      properties: { justificativa: { type: string } }
+    Motivo:
+      type: object
+      required: [motivo]
+      properties: { motivo: { type: string } }
+    RegistroHistorico:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        reservaId: { type: string, format: uuid }
+        usuarioId: { type: string, format: uuid, description: '00000000-0000-0000-0000-00000000005e = sistema' }
+        instante: { type: string, format: date-time }
+        estadoAnterior: { allOf: [{ $ref: '#/components/schemas/Estado' }], nullable: true }
+        estadoNovo: { $ref: '#/components/schemas/Estado' }
+        motivo: { type: string }
+    Retirada:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        reservaId: { type: string, format: uuid }
+        materialId: { type: string, format: uuid }
+        autorId: { type: string, format: uuid }
+        dataRetirada: { type: string }
+        dataDevolucao: { type: string, nullable: true }
+        condicaoDevolucao: { type: string, enum: [INTEGRO, DANIFICADO], nullable: true }
+        pendente: { type: boolean, description: Retirado e nao devolvido depois do fim da reserva (RF-26) }
+    ManutencaoRequisicao:
+      type: object
+      required: [tipoRecurso, recursoId, inicio, fim, motivo]
+      properties:
+        tipoRecurso: { type: string, enum: [SALA, MATERIAL, PROFESSOR] }
+        recursoId: { type: string, format: uuid }
+        inicio: { type: string }
+        fim: { type: string }
+        motivo: { type: string, maxLength: 120 }
+        confirmarColisao: { type: boolean, default: false }
+    Manutencao:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        inicio: { type: string }
+        fim: { type: string }
+        motivo: { type: string }
+    ManutencaoListada:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tipoRecurso: { type: string }
+        recursoId: { type: string, format: uuid }
+        recursoNome: { type: string }
+        inicio: { type: string }
+        fim: { type: string }
+        motivo: { type: string }
+    Utilizacao:
+      type: object
+      properties:
+        recursos:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo: { type: string }
+              id: { type: string, format: uuid }
+              nome: { type: string }
+              horasReservadas: { type: number }
+        professores:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              nome: { type: string }
+              cargaHorariaAlocada: { type: number }
+        conflitosEvitados: { type: integer }
+    UsuarioRequisicao:
+      type: object
+      required: [email, senha, perfil]
+      properties:
+        email: { type: string, maxLength: 120 }
+        senha: { type: string, format: password, minLength: 8, maxLength: 120 }
+        perfil: { $ref: '#/components/schemas/Perfil' }
+        localizacao: { type: string, maxLength: 120, description: Obrigatorio para RESPONSAVEL }
+    ContaUsuario:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        perfil: { $ref: '#/components/schemas/Perfil' }
+        ativo: { type: boolean }
+        localizacao: { type: string, nullable: true }
+    EventoAuditoria:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        entidade: { type: string }
+        entidadeId: { type: string, format: uuid }
+        acao: { type: string }
+        autorId: { type: string, format: uuid, nullable: true }
+        dataHora: { type: string }

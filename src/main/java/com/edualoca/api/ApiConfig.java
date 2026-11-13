@@ -1,6 +1,7 @@
 package com.edualoca.api;
 
 import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
+import com.edualoca.domain.notificacao.NotificacaoService;
 import com.edualoca.domain.recurso.CadastroRecursoService;
 import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.relatorio.RelatorioService;
@@ -11,7 +12,9 @@ import com.edualoca.domain.reserva.ReservaRepositorioEmMemoria;
 import com.edualoca.domain.reserva.ReservaService;
 import com.edualoca.domain.reserva.Transacao;
 import com.edualoca.domain.retirada.RetiradaMaterialService;
+import com.edualoca.domain.auditoria.AuditoriaService;
 import com.edualoca.domain.usuario.AutenticacaoService;
+import com.edualoca.domain.usuario.UsuarioService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,11 +42,11 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public ReservaService reservaService(Clock clock, ObjectProvider<ReservaRepositorio> repositorio,
                                          ObjectProvider<HistoricoReservaRepositorio> historico,
-                                         ObjectProvider<Transacao> transacao) {
+                                         ObjectProvider<Transacao> transacao, NotificacaoService notificacaoService) {
         // PostgreSQL quando configurado (PersistenciaPostgresConfig); caso contrario, memoria.
         return new ReservaService(clock, repositorio.getIfAvailable(ReservaRepositorioEmMemoria::new),
                 historico.getIfAvailable(HistoricoReservaRepositorioEmMemoria::new),
-                transacao.getIfAvailable(Transacao::direta));
+                transacao.getIfAvailable(Transacao::direta), notificacaoService);
     }
 
     @Bean
@@ -69,6 +72,16 @@ public class ApiConfig implements WebMvcConfigurer {
     @Bean
     public RetiradaMaterialService retiradaMaterialService() {
         return new RetiradaMaterialService();
+    }
+
+    @Bean
+    public UsuarioService usuarioService(Clock clock) {
+        return new UsuarioService(clock);
+    }
+
+    @Bean
+    public AuditoriaService auditoriaService() {
+        return new AuditoriaService();
     }
 
     @Override

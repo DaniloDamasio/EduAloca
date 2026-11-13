@@ -30,7 +30,7 @@ import java.util.UUID;
 @RestController
 public class RetiradaController {
 
-    private static final String SO_RESPONSAVEL = "Apenas Responsavel ou Administrador registram retirada e devolucao";
+    private static final String SO_RESPONSAVEL = "Apenas Responsável ou Administrador registram retirada e devolução";
 
     private final RetiradaMaterialService retiradas;
     private final ReservaService reservas;
@@ -48,13 +48,31 @@ public class RetiradaController {
     public record DevolucaoRequisicao(String condicao) {
     }
 
+    /** {@code pendente} (RF-26): retirado e nao devolvido depois do fim da reserva, sinalizado pelo agendador. */
     public record RetiradaResposta(UUID id, UUID reservaId, UUID materialId, UUID autorId, LocalDateTime dataRetirada,
-                                   LocalDateTime dataDevolucao, String condicaoDevolucao) {
+                                   LocalDateTime dataDevolucao, String condicaoDevolucao, boolean pendente) {
 
         static RetiradaResposta de(RegistroRetirada r) {
             return new RetiradaResposta(r.getId(), r.getReservaId(), r.getItemId(), r.getAutorId(), r.getDataRetirada(),
-                    r.getDataDevolucao(), r.getCondicaoDevolucao() == null ? null : r.getCondicaoDevolucao().name());
+                    r.getDataDevolucao(), r.getCondicaoDevolucao() == null ? null : r.getCondicaoDevolucao().name(),
+                    r.isPendenciaSinalizada() && r.getDataDevolucao() == null);
         }
+    }
+
+    /**
+     * RF-26: devolucoes em atraso das reservas que o usuario pode acompanhar (Responsavel do local ou Administrador),
+     * da retirada mais antiga para a mais recente.
+     */
+    @GetMapping("/retiradas/pendentes")
+    public List<RetiradaResposta> pendentes(@UsuarioAutenticado Usuario usuario) {
+        Perfis.exigir(usuario, SO_RESPONSAVEL, Perfil.RESPONSAVEL, Perfil.ADMINISTRADOR);
+        java.util.Set<UUID> visiveis = reservas.listar(usuario).stream()
+                .map(com.edualoca.domain.reserva.Reserva::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        return retiradas.listarPendentes().stream()
+                .filter(r -> visiveis.contains(r.getReservaId()))
+                .map(RetiradaResposta::de)
+                .toList();
     }
 
     @GetMapping("/reservas/{id}/retiradas")
@@ -78,7 +96,7 @@ public class RetiradaController {
         CondicaoItem condicao = condicao(requisicao.condicao());
         RegistroRetirada registro = retiradas.buscar(id);
         if (registro == null) {
-            throw new RegraNegocioException(409, "Nao existe retirada em aberto para este registro");
+            throw new RegraNegocioException(409, "Não existe retirada em aberto para este registro");
         }
         exigirCompetencia(usuario, registro.getReservaId());
         return RetiradaResposta.de(retiradas.registrarDevolucao(usuario, id, LocalDateTime.now(clock), condicao));
@@ -95,12 +113,12 @@ public class RetiradaController {
 
     private static CondicaoItem condicao(String valor) {
         if (valor == null || valor.isBlank()) {
-            throw new RegraNegocioException(400, "Condicao de devolucao e obrigatoria: use INTEGRO ou DANIFICADO");
+            throw new RegraNegocioException(400, "Condição de devolução é obrigatória: use INTEGRO ou DANIFICADO");
         }
         try {
             return CondicaoItem.valueOf(valor.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw new RegraNegocioException(400, "Condicao de devolucao invalida: use INTEGRO ou DANIFICADO");
+            throw new RegraNegocioException(400, "Condição de devolução inválida: use INTEGRO ou DANIFICADO");
         }
     }
 }

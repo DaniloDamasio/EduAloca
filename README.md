@@ -4,6 +4,22 @@ Sistema para organizar a alocação de salas, professores e materiais escolares,
 conflitos de horário e dupla reserva de recursos, com três perfis de acesso:
 **Solicitante**, **Responsável** e **Administrador**.
 
+## Autoria e revisão
+
+Trabalho **individual** de Danilo Damasio (QS, 4º semestre). Como não há outro integrante para revisar, a revisão por
+pares pedida no enunciado foi substituída por verificações que não dependem do autor, e todas impedem o merge quando
+falham:
+
+- **CI obrigatório na `main`:** o check "Build e Testes" é exigido pela proteção da branch (`strict`, `enforce_admins`),
+  e nenhum PR entra sem build, suíte completa (unitários, integração com PostgreSQL, E2E em navegador), gate JaCoCo
+  (≥ 80% linhas, ≥ 70% ramos) e análise do SonarCloud.
+- **Revisão adversarial dos testes:** mutação manual das regras críticas ([DOCS/testes/mutacao-manual.md](DOCS/testes/mutacao-manual.md)),
+  que encontrou testes que passavam com qualquer código (DEF-011) e regras sem teste (DEF-014, DEF-015).
+- **Relatório de qualidade** com evidência, interpretação e limite para cada afirmação
+  ([DOCS/relatorio-qualidade.md](DOCS/relatorio-qualidade.md)).
+
+Limite: nenhuma dessas verificações substitui o olhar de outra pessoa sobre legibilidade e decisões de projeto.
+
 ## Visão Geral
 
 O EduAloca organiza a reserva de salas, professores e materiais de uma instituição de
@@ -116,7 +132,33 @@ java -jar target/edualoca-0.0.1-SNAPSHOT.jar
 
 Abra <http://localhost:8080/>. A interface (HTML, CSS e JavaScript puros, sem dependências) é servida pela própria
 aplicação a partir de [src/main/resources/static](src/main/resources/static), adapta-se a celular e desktop e consome
-só a API pública abaixo. Os dados voltam ao seed a cada reinício.
+só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. Os dados voltam ao seed a cada reinício; o que é ou não
+persistido no PostgreSQL está no [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md).
+
+### Escopo da persistência (PostgreSQL)
+
+O PostgreSQL guarda o que as regras críticas do enunciado exigem que seja verificado em ambiente real: as **reservas**,
+os **recursos de cada reserva** e o **histórico de estados**. É no banco que fica a garantia de "duas solicitações
+simultâneas produzem uma única reserva aceita": a constraint de exclusão `ex_reserva_recurso_sem_sobreposicao`
+([ADR-009](DOCS/adr/ADR-009-exclusao-gist-tstzrange.md)) recusa sobreposição mesmo com duas instâncias da aplicação. O
+histórico é gravado na mesma transação da mudança de estado e um trigger recusa `UPDATE`/`DELETE`. Tudo isso é testado
+contra PostgreSQL real com Testcontainers (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
+`ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`) e foi medido sob carga ([resultado-02](DOCS/performance/resultado-02.md)).
+
+O restante (salas, professores, materiais, manutenções, usuários, auditoria, retiradas e notificações) fica **em
+memória**, e as leituras de reserva usam um cache em memória preenchido depois do commit. Consequência: ao reiniciar a
+aplicação, o catálogo volta ao seed e o que foi cadastrado pela interface se perde, mesmo com o PostgreSQL ligado.
+Foi uma decisão de escopo para a entrega ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)): levar
+todas as entidades ao banco exige repositórios para cada uma e trocar a comparação de recursos por referência de objeto
+pela comparação por id em todo o domínio, mexendo justamente nas partes já verificadas por concorrência e carga.
+
+Para rodar com PostgreSQL (opcional; o modo padrão em memória é o de demonstração):
+
+```
+java -jar target/edualoca-0.0.1-SNAPSHOT.jar \
+  --edualoca.persistencia.url=jdbc:postgresql://localhost:5432/edualoca \
+  --edualoca.persistencia.usuario=<usuario> --edualoca.persistencia.senha=<senha>
+```
 
 ### Contas de demonstração
 
@@ -124,11 +166,11 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
 
 | Perfil | E-mail | Senha | O que vê na interface |
 |---|---|---|---|
-| Solicitante | `usuario@example.com` | `senhaValida123` | Buscar e reservar; Minhas reservas (alterar horário, cancelar) |
+| Solicitante | `usuario@example.com` | `senhaValida123` | Buscar e reservar; Minhas reservas (alterar horário, cancelar inclusive em uso); Catálogo |
 | Solicitante (2º) | `novo@example.com` | `minhaSenha123` | Idem, para mostrar que um não vê a reserva do outro |
-| Responsável (Bloco A) | `responsavel@example.com` | `senhaResponsavel123` | Aprovações e uso (aprovar, rejeitar, iniciar uso, retirada/devolução, histórico); Relatório |
+| Responsável (Bloco A) | `responsavel@example.com` | `senhaResponsavel123` | Aprovações e uso (aprovar, rejeitar, iniciar uso, não compareceu, concluir, retirada/devolução, histórico, devoluções em atraso); Buscar disponibilidade; Relatório; Catálogo |
 | Responsável (Bloco B) | `responsavel.b@example.com` | `senhaResponsavelB123` | Idem, só para reservas com sala do Bloco B |
-| Administrador | `admin@example.com` | `senhaAdmin123` | Tudo do Responsável, em qualquer bloco, mais Cadastro e manutenção |
+| Administrador | `admin@example.com` | `senhaAdmin123` | Tudo do Responsável, em qualquer bloco, mais Cadastro e manutenção (criar, editar, inativar, bloquear com confirmação, lista de manutenções), Usuários e Auditoria |
 
 ### Roteiro de demonstração (cerca de 5 minutos)
 
@@ -140,10 +182,18 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
    Tente também fim antes do início (400).
 4. **Responsável (Bloco B)**: a lista vem vazia, porque a sala é do Bloco A (competência por local).
 5. **Responsável (Bloco A)** → *Aprovações e uso*: aprove, troque o filtro para *Todos*, **inicie o uso**, abra
-   *Retirada e devolução*, registre a retirada do kit e depois a devolução; abra o *Histórico* (Solicitada → Aprovada → Em uso).
+   *Retirada e devolução*, registre a retirada do kit e depois a devolução; **conclua** a reserva e abra o *Histórico*
+   (Solicitada → Aprovada → Em uso → Concluída). *Não compareceu* só é aceito a partir de 15 minutos depois do início.
 6. **Responsável** → *Relatório*: horas por recurso, carga por professor e conflitos evitados no período.
 7. **Administrador** → *Bloquear para manutenção*: bloqueie uma sala num horário; como Solicitante, ela some da busca
-   nesse horário.
+   nesse horário. Se houver reserva aprovada no período, a tela pede **confirmação explícita** (RF-23): confirmar cancela
+   essas reservas e avisa os solicitantes; reserva já em uso impede a manutenção.
+8. **Administrador** → *Usuários*: cadastre um Responsável para o "Bloco C"; saia e entre com essa conta. Ela só vê e
+   decide reservas de salas do Bloco C. Inative a conta e o acesso é encerrado na hora.
+9. **Administrador** → *Auditoria*: filtre por entidade (Reserva, Sala, Usuário…) e veja quem fez cada mudança.
+10. **Não comparecimento automático:** uma reserva aprovada que chega ao fim do horário sem início de uso vira
+    *Não compareceu* sozinha (tarefa a cada 60 s; o histórico mostra o autor "sistema"). Para ver ao vivo, crie uma
+    reserva que termine em poucos minutos.
 
 ### Rotas usadas pela interface
 
@@ -154,13 +204,21 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
 | `GET /salas/disponiveis`, `GET /professores/disponiveis`, `GET /materiais/disponiveis` | todos | busca por tipo, capacidade, localização, competência, quantidade e horário |
 | `GET /reservas` | todos | Solicitante: as próprias; Responsável: as do seu bloco; Administrador: todas |
 | `POST /reservas`, `PUT /reservas/{id}`, `POST /reservas/{id}/cancelamento` | Solicitante (dono) | criar, alterar horário, cancelar |
-| `POST /reservas/{id}/aprovacao`, `/rejeicao`, `/inicio-uso`, `GET /reservas/{id}/historico` | Responsável competente, Administrador | |
+| `POST /reservas/{id}/aprovacao`, `/rejeicao`, `/inicio-uso`, `/conclusao`, `/nao-comparecimento`, `GET /reservas/{id}/historico` | Responsável competente, Administrador | não comparecimento só a partir de início + 15 min |
 | `GET`/`POST /reservas/{id}/retiradas`, `POST /retiradas/{id}/devolucao` | Responsável competente, Administrador | retirada só com reserva `EM_USO`; condição `INTEGRO` ou `DANIFICADO` |
 | `GET /relatorios/utilizacao` | Responsável, Administrador | ver seção do relatório |
-| `POST /salas`, `/professores`, `/materiais`, `POST /{salas\|professores\|materiais}/{id}/inativacao`, `POST /manutencoes` | Administrador | |
+| `GET /retiradas/pendentes` | Responsável competente, Administrador | devoluções em atraso (RF-26) |
+| `POST /salas`, `/professores`, `/materiais`, `PUT /{salas\|professores\|materiais}/{id}`, `POST /{salas\|professores\|materiais}/{id}/inativacao` | Administrador | edição no lugar; identificador do professor não muda |
+| `GET`/`POST /manutencoes`, `POST /manutencoes/{id}/encerramento` | Administrador | `confirmarColisao: true` confirma a manutenção sobre reserva aprovada (RF-23); encerrar libera o recurso na hora |
+| `GET`/`POST /usuarios`, `POST /usuarios/{id}/inativacao`, `GET /auditoria` | Administrador | gestão de contas e consulta da auditoria (somente leitura) |
 
-Testes das rotas acima: [InterfacePerfisApiTest](src/test/java/com/edualoca/InterfacePerfisApiTest.java) (caixa-preta,
-token do login real), além de [MatrizAutorizacaoApiTest](src/test/java/com/edualoca/MatrizAutorizacaoApiTest.java).
+Referência completa (corpos, respostas, códigos de erro e o teste de cada rota): **[DOCS/api.md](DOCS/api.md)**.
+Especificação OpenAPI 3 com exemplos: [src/main/resources/static/openapi.yaml](src/main/resources/static/openapi.yaml),
+servida em <http://localhost:8080/openapi.yaml> e mantida em sincronia com o código por `DocumentacaoOpenApiTest`
+(importe o arquivo no [Swagger Editor](https://editor.swagger.io) para navegar).
+Testes das rotas acima: [InterfacePerfisApiTest](src/test/java/com/edualoca/InterfacePerfisApiTest.java) e
+[AdministracaoApiTest](src/test/java/com/edualoca/AdministracaoApiTest.java) (caixa-preta, token do login real), além de
+[MatrizAutorizacaoApiTest](src/test/java/com/edualoca/MatrizAutorizacaoApiTest.java).
 
 ## Executando a Suíte Localmente
 
@@ -185,6 +243,35 @@ TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
 ```
 
 Com Docker Desktop ou no CI (`ubuntu-latest`), basta `./mvnw -B verify`.
+
+O teste end-to-end [FluxoCompletoNavegadorIT](src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java) abre a interface
+real em Chromium headless (Playwright 1.64.0) e percorre o fluxo dos três perfis, do cadastro à conclusão, além de
+conferir o layout em 375 px. Na primeira execução, o Playwright baixa o navegador para o cache do usuário. No CI, o
+passo `npx playwright@1.64.0 install --with-deps chromium` faz isso antes do `verify`.
+
+## Teste de carga (JMeter)
+
+Plano e requisitos: [DOCS/performance/rnf.md](DOCS/performance/rnf.md). **Resultado vigente:
+[DOCS/performance/resultado-02.md](DOCS/performance/resultado-02.md)**: até 400 usuários, 0 duplas reservas em 6.308
+janelas disputadas, 0 erros, p95 de criação de 8–12 ms e sem saturação. A rodada é local e manual (não roda no CI) e
+exige Docker e JMeter 5.6.3:
+
+```
+./perf/executar-rodada-02.sh .
+```
+
+O script compila o commit atual (e se recusa a rodar com alterações em `src/`, `pom.xml` ou no plano), recria
+PostgreSQL e aplicação a cada cenário e grava os brutos em `perf/resultados/rodada-02/`, que não são versionados. Ele
+também marca o cenário como inválido se a máquina suspender: mantenha o notebook na tomada e com a tampa aberta.
+
+### Mutação automatizada (PIT)
+
+```
+./mvnw -B -Pmutacao test-compile org.pitest:pitest-maven:mutationCoverage
+```
+
+Muta o pacote `domain` e roda a suíte sem os ITs (cerca de 5 minutos; fora do `verify` e do CI). Relatório em
+`target/pit-reports/index.html`; resultado e análise dos sobreviventes em [DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md).
 
 ## Especificação executável (BDD com Cucumber)
 
@@ -295,12 +382,22 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
   interface não tem script inline. Todo dado da API entra na página por `textContent`, nunca por `innerHTML`.
   `X-Frame-Options: DENY` e `frame-ancestors 'none'` impedem clickjacking. O token fica em `sessionStorage` e é
   revogado no servidor ao sair (`POST /auth/logout`).
-- **Limitações conhecidas (decisão pendente):** os tokens ficam em memória, sem expiração. O logout revoga o token, mas
-  não há rate limit nem bloqueio por tentativas no login (força bruta). Isso vale para esta fase acadêmica sem
-  persistência e deve ser resolvido antes de expor a API (ex.: Spring Security com expiração e throttling no login).
-  A auditoria de cadastro (criação, edição, inativação e manutenção) registra autor `null` (RF-28), porque
-  `CadastroRecursoService` não recebe o usuário. A retirada/devolução não gera evento de auditoria. A edição de
-  recursos (RF-04 a RF-06) existe no domínio, mas não tem rota.
+- **Sessão e força bruta (RNF-05):** o token vence após 30 min sem uso ou 8 h desde o login (`401` "Sessão expirada";
+  a interface volta ao login), configurável por `edualoca.seguranca.token.inatividade-minutos` e
+  `edualoca.seguranca.token.duracao-maxima-horas`. Depois de 5 senhas erradas para o mesmo e-mail em 15 min, o login
+  desse e-mail fica bloqueado por 15 min (`429`), inclusive com a senha certa e igual para e-mail inexistente, para não
+  revelar quais contas existem (`SegurancaLoginTest`, `LoginBloqueioApiTest`).
+- **Limitações conhecidas:** tokens e contadores de tentativa ficam em memória (perdidos ao reiniciar, como o resto do
+  seed; ver "Escopo da persistência"). O bloqueio é por e-mail, não por IP: um atacante pode bloquear temporariamente o
+  login de uma conta conhecida.
+  Pela API, toda escrita de cadastro, manutenção, usuário, retirada e devolução grava na auditoria o usuário do token
+  como autor (RF-28); só chamadas diretas ao domínio sem ator (testes antigos) gravam autor `null`. Usuários ficam em
+  memória como o resto do seed: inativação não tem reativação (o e-mail fica bloqueado) e não há troca de senha pela
+  interface. O material é exclusivo no intervalo, na busca e na criação: uma reserva ativa sobreposta tira o material
+  da busca, qualquer que seja a quantidade ([DEF-016](DOCS/defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md),
+  corrigido pela opção A). A notificação
+  externa só é chamada com `edualoca.notificacao.externa.habilitada=true`; a chave vem da variável de ambiente
+  `EDUALOCA_NOTIFICACAO_API_KEY`, nunca de arquivo versionado.
 
 ## Roadmap
 
@@ -314,6 +411,15 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] Adapter HTTP de notificação externa isolado via WireMock (RF-31/32/33, RNF-16)
 - [x] BDD executável com Cucumber-JVM sobre a API (MockMvc + token por perfil)
 - [x] Testes de integração com persistência real (Testcontainers) e concorrência entre instâncias
-- [x] Teste de carga (JMeter, rodada 01 em [DOCS/performance/resultado-01.md](DOCS/performance/resultado-01.md))
+- [x] Teste de carga (JMeter): resultado vigente na **rodada 02** ([DOCS/performance/resultado-02.md](DOCS/performance/resultado-02.md)); rodada 01 como histórico ([resultado-01.md](DOCS/performance/resultado-01.md))
 - [x] Interface web responsiva para os três perfis (HTML, CSS e JS puros em `src/main/resources/static`)
-- [x] RTM (Requirements Traceability Matrix) — cobertura inicial, ver [DOCS/RTM.md](DOCS/RTM.md)
+- [x] RTM (Requirements Traceability Matrix), 32/32 requisitos críticos, ver [DOCS/RTM.md](DOCS/RTM.md)
+- [x] Notificação ligada aos fluxos de reserva (simulada por padrão; adaptador HTTP opcional)
+- [x] Ciclo completo de estados: concluir e não comparecimento (P-05/P-07/P-08)
+- [x] Teste end-to-end em navegador real (Playwright)
+- [x] Documentação da API ([DOCS/api.md](DOCS/api.md)) e escopo da persistência ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md))
+- [x] OpenAPI 3 das 39 operações, com teste de sincronia (RF-39)
+- [x] Gestão de usuários, consulta de auditoria, lista de manutenções e confirmação explícita (RF-23)
+- [x] Não comparecimento automático no fim do horário (P-08) e devoluções em atraso (RF-26)
+- [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md))
+- [x] Mutação automatizada com PIT no domínio: 90,6% dos mutantes mortos ([DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md))

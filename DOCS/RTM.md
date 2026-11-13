@@ -1,8 +1,12 @@
 # RTM — Matriz de Rastreabilidade de Requisitos
 
-> **Status (2026-11-12):** os 32 requisitos críticos de [REQUISITOS.md](REQUISITOS/REQUISITOS.md) têm linha nesta
-> matriz. A seção "Correções do relatório de qualidade" registra os 12 que faltavam; a evidência de CI dessa seção é
-> a do PR das correções.
+> **Status (2026-11-13):** os 32 requisitos críticos de [REQUISITOS.md](REQUISITOS/REQUISITOS.md) têm linha nesta
+> matriz, com teste e execução. A seção "Correções do relatório de qualidade" registra os 12 que faltavam. **Evidência
+> vigente para todas as linhas:** CI da `main` depois do merge do PR #17 (run
+> [43348024151](https://github.com/DaniloDamasio/EduAloca/actions/runs/43348024151), commit `6e97d9d`: 573 unitários e
+> 24 de integração, 0 falhas, 0 pulados), com os relatórios versionados em
+> [testes/evidencias-ci/](testes/evidencias-ci/). As notas de "pendente", "local" ou "não commitado" nas seções
+> abaixo registram como estava cada linha quando foi escrita. A execução de hoje está no quadro de cada seção.
 
 | Requisito | Risco | Teste | Evidência / Execução |
 |---|---|---|---|
@@ -140,8 +144,8 @@ Execução: `./mvnw -B verify` (Surefire), a cada PR no CI.
 
 ## Funções do Administrador, transições automáticas e documentação da API (2026-11-12)
 
-**Evidência pendente:** as linhas abaixo estão na árvore de trabalho e os testes compilam (verificado pelo compilador do
-IDE), mas **ainda não foram executados**. A execução do `./mvnw -B verify` ficou para depois da rodada 02 de carga, para não
+**Situação atual:** linhas mergeadas no PR #16 e verdes no CI da `main` (ver o status no topo). Histórico da época:
+as linhas abaixo estavam na árvore de trabalho e os testes compilavam, mas **ainda não tinham sido executados**. A execução do `./mvnw -B verify` ficou para depois da rodada 02 de carga, para não
 disputar CPU com a medição. Até lá, a coluna de evidência não conta para a meta de 100 % dos críticos.
 
 **Execução local conjunta (12/11/2026, ~19:24, depois da rodada 02):** `./mvnw -B verify` sobre a árvore de trabalho com
@@ -152,20 +156,21 @@ estas alterações e as da seção seguinte. Unitários: 517 casos, 513 verdes e
 
 | Requisito | Risco | Teste | Evidência / Execução |
 |---|---|---|---|
-| P-08 automático (complementa RF-18/RF-27) — `APROVADA` que chega ao fim do horário vira `NAO_COMPARECEU` | Reserva sem uso bloqueia o recurso para sempre, ou a transição automática duplica histórico e auditoria | `NaoComparecimentoAutomaticoTest`: borda inclusiva no fim (-1/0/+1 min), histórico e auditoria com autor `sistema`, só `APROVADA` vencida, idempotente, manual antes do automático | Pendente (não executado) |
-| RF-23 — Manutenção sobre reserva `APROVADA`/`EM_USO` exige confirmação explícita | Manutenção registrada por cima de reserva aprovada sem ninguém decidir, ou reserva em uso interrompida | `AdministracaoApiTest.Manutencoes`: sem confirmação → 409 e reserva intacta; com `confirmarColisao` → reserva cancelada com motivo e evento `CANCELAMENTO_POR_MANUTENCAO`, sala bloqueada; `EM_USO` no período → 409 sem cancelar nada; motivo vazio → 400 sem cancelar. BDD-R3-06 segue cobrindo o caminho sem confirmação | Pendente (não executado) |
-| RF-21 — Consulta das manutenções cadastradas | Administrador sem visão dos bloqueios vigentes | `AdministracaoApiTest.Manutencoes.listagem` (recurso, período e motivo; 403 para Solicitante e Responsável) | Pendente (não executado) |
-| RF-26 — Sinalizar material retirado e não devolvido após o fim da reserva | Material some sem que o Responsável perceba | `AdministracaoApiTest.Pendencias`: antes da sinalização não aparece; depois aparece para o Responsável do local e para o Administrador, não para o de outro local; 403 para Solicitante; some após a devolução | Pendente (não executado) |
-| RF-28 / RF-29 — Auditoria consultável e somente leitura | Auditoria existe mas ninguém consegue ver; ou pode ser alterada | `AdministracaoApiTest.Auditoria`: ordem do mais recente, filtros por entidade e ação, limite 1..500, 403 para Solicitante e Responsável, `POST /auditoria` → 405 | Pendente (não executado) |
-| Escopo do Administrador (enunciado: "gerencia ... usuários") e RF-28 para usuário | Contas só por seed; conta comprometida sem como bloquear | `AdministracaoApiTest.Usuarios`: Responsável cadastrado faz login e decide só o próprio local; senha com PBKDF2; validação (e-mail, senha, perfil, local); duplicidade 409; inativação revoga token, bloqueia login e recadastro; Administrador não se inativa; 403 para outros perfis antes do corpo | Pendente (não executado) |
-| RF-39 — 100 % dos endpoints públicos documentados (OpenAPI) | Documentação desatualizada em relação ao código | `DocumentacaoOpenApiTest`: rotas do Spring MVC = operações do `static/openapi.yaml` nos dois sentidos; resumo e respostas em cada operação; arquivo servido em `/openapi.yaml`. Conferência estática: 39 rotas no código e 39 operações no YAML, 0 referências quebradas | Pendente (não executado) |
-| RF-37 — Interface de 360 a 1920 px sem quebra | Layout com rolagem horizontal nos extremos | `FluxoCompletoNavegadorIT.extremosDeViewport_todasAsAbasDosTresPerfis` (360 e 1920 px, todas as abas dos três perfis) | Pendente (não executado) |
-| RNF-15 — Camadas | Tarefa periódica acoplada à API ou à persistência | `ArquiteturaCamadasTest`: nova regra para `agendamento` | Pendente (não executado) |
+| P-08 automático (complementa RF-18/RF-27) — `APROVADA` que chega ao fim do horário vira `NAO_COMPARECEU` | Reserva sem uso bloqueia o recurso para sempre, ou a transição automática duplica histórico e auditoria | `NaoComparecimentoAutomaticoTest`: borda inclusiva no fim (-1/0/+1 min), histórico e auditoria com autor `sistema`, só `APROVADA` vencida, idempotente, manual antes do automático | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-23 — Manutenção sobre reserva `APROVADA`/`EM_USO` exige confirmação explícita | Manutenção registrada por cima de reserva aprovada sem ninguém decidir, ou reserva em uso interrompida | `AdministracaoApiTest.Manutencoes`: sem confirmação → 409 e reserva intacta; com `confirmarColisao` → reserva cancelada com motivo e evento `CANCELAMENTO_POR_MANUTENCAO`, sala bloqueada; `EM_USO` no período → 409 sem cancelar nada; motivo vazio → 400 sem cancelar. BDD-R3-06 segue cobrindo o caminho sem confirmação | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-21 — Consulta das manutenções cadastradas | Administrador sem visão dos bloqueios vigentes | `AdministracaoApiTest.Manutencoes.listagem` (recurso, período e motivo; 403 para Solicitante e Responsável) | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-26 — Sinalizar material retirado e não devolvido após o fim da reserva | Material some sem que o Responsável perceba | `AdministracaoApiTest.Pendencias`: antes da sinalização não aparece; depois aparece para o Responsável do local e para o Administrador, não para o de outro local; 403 para Solicitante; some após a devolução | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-28 / RF-29 — Auditoria consultável e somente leitura | Auditoria existe mas ninguém consegue ver; ou pode ser alterada | `AdministracaoApiTest.Auditoria`: ordem do mais recente, filtros por entidade e ação, limite 1..500, 403 para Solicitante e Responsável, `POST /auditoria` → 405 | CI verde (PR #16; `main` `6e97d9d`) |
+| Escopo do Administrador (enunciado: "gerencia ... usuários") e RF-28 para usuário | Contas só por seed; conta comprometida sem como bloquear | `AdministracaoApiTest.Usuarios`: Responsável cadastrado faz login e decide só o próprio local; senha com PBKDF2; validação (e-mail, senha, perfil, local); duplicidade 409; inativação revoga token, bloqueia login e recadastro; Administrador não se inativa; 403 para outros perfis antes do corpo | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-39 — 100 % dos endpoints públicos documentados (OpenAPI) | Documentação desatualizada em relação ao código | `DocumentacaoOpenApiTest`: rotas do Spring MVC = operações do `static/openapi.yaml` nos dois sentidos; resumo e respostas em cada operação; arquivo servido em `/openapi.yaml`. Hoje: 40 rotas no código e 40 operações no YAML | CI verde (PR #16; `main` `6e97d9d`) |
+| RF-37 — Interface de 360 a 1920 px sem quebra | Layout com rolagem horizontal nos extremos | `FluxoCompletoNavegadorIT.extremosDeViewport_todasAsAbasDosTresPerfis` (360 e 1920 px, todas as abas dos três perfis) | CI verde (PR #16; `main` `6e97d9d`) |
+| RNF-15 — Camadas | Tarefa periódica acoplada à API ou à persistência | `ArquiteturaCamadasTest`: nova regra para `agendamento` | CI verde (PR #16; `main` `6e97d9d`) |
 
 ## Entrega final: notificação nos fluxos, ciclo completo de estados, edição de cadastro, E2E e carga (2026-11-12)
 
-Branch `entrega-final-pendencias`. Os commits citados são locais (sem push, por decisão do autor). Itens marcados
-"não commitado" estão só na árvore de trabalho. **Evidência:** verde no `./mvnw -B verify` local conjunto de 12/11
+Branch `entrega-final-pendencias`, mergeada no PR #16. Todos os itens, inclusive os marcados "não commitado" na época,
+estão na `main` e verdes no CI (ver o status no topo). Histórico da época: os commits eram locais e alguns itens
+estavam só na árvore de trabalho. **Evidência:** verde no `./mvnw -B verify` local conjunto de 12/11
 (~19:24; ver nota da seção anterior). CI ainda não executado, então pelo critério de
 [mutacao-manual.md §4](testes/mutacao-manual.md) estas linhas contam como evidência **local** até o CI rodar.
 
@@ -175,8 +180,8 @@ Branch `entrega-final-pendencias`. Os commits citados são locais (sem push, por
 | RF-32 — Reserva restrita criada notifica o Responsável competente | Responsável não fica sabendo da pendência | `NotificacaoNosFluxosTest` :: `criacaoRestrita_notificaResponsavelCompetente` | red `bd42a1e` · green `257bc02` |
 | RF-33 — Falha do provedor externo não desfaz a transição | Provedor fora do ar derruba a aprovação | `NotificacaoNosFluxosTest` :: `falhaDoProvedor_naoReverteTransicao`; `src/test/java/com/edualoca/NotificacaoExternaIntegradaApiTest.java` (aplicação montada pelo Spring + WireMock: POST com a chave; 500 não desfaz) | green `257bc02`; refactor `e111e5f` (bean em `IntegracaoConfig`) |
 | P-07 / P-05 / P-08 — `EM_USO → CONCLUIDA` e `APROVADA → NAO_COMPARECEU` (só a partir de início + 15 min), manuais, por Responsável competente ou Administrador | Ciclo de estados do enunciado incompleto; falta registrada antes da tolerância; perfil indevido encerra reserva | `src/test/java/com/edualoca/ConclusaoNaoComparecimentoTest.java` (borda 14/15/16 min, 403, 409); `src/test/java/com/edualoca/ConclusaoNaoComparecimentoApiTest.java` (rotas, ProblemDetail, relógio controlado) | red `2c37613` · green `2f3ba18`; mutantes K1–K7 mortos |
-| BDD-R4-01 — "iniciar uso", "concluir" e "registrar não comparecimento" executáveis | Cenários do enunciado parados em `@bloqueado` | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Transição permitida muda o estado e gera auditoria* (3 linhas liberadas); `AprovacaoBloqueioSteps` (EM_USO pela rota real, auditoria só da ação do cenário) | **não commitado**; 0 casos pulados no verify conjunto |
-| Máquina de estados — transições permitidas e proibidas com reservas reais | `MaquinaEstadosReservaTest` usava UUID inexistente e passava com qualquer código ([status-requisitos §4](status-requisitos.md)) | `src/test/java/com/edualoca/MaquinaEstadosReservaTest.java` :: `estT2`, `estT3`, `estT7`, `estT8`, `estT10`–`estT13` | **não commitado**; verde no verify conjunto |
+| BDD-R4-01 — "iniciar uso", "concluir" e "registrar não comparecimento" executáveis | Cenários do enunciado parados em `@bloqueado` | `src/test/resources/features/aprovacao-bloqueio.feature` :: *Transição permitida muda o estado e gera auditoria* (3 linhas liberadas); `AprovacaoBloqueioSteps` (EM_USO pela rota real, auditoria só da ação do cenário) | `6cb5676` (PR #16); 0 casos pulados |
+| Máquina de estados — transições permitidas e proibidas com reservas reais | `MaquinaEstadosReservaTest` usava UUID inexistente e passava com qualquer código ([status-requisitos §4](status-requisitos.md)) | `src/test/java/com/edualoca/MaquinaEstadosReservaTest.java` :: `estT2`, `estT3`, `estT7`, `estT8`, `estT10`–`estT13` | `6cb5676` (PR #16); verde no CI |
 | RF-04 / RF-05 / RF-06 — Edição pela API e pela tela (antes só no domínio) | CRUD sem "U" na aplicação | `src/test/java/com/edualoca/EdicaoCadastroApiTest.java`; `FluxoCompletoNavegadorIT` (edição da capacidade pela tela) | `17a2f8f`; mutação da checagem de Administrador detectada |
 | Enunciado: testes end-to-end | Interface sem teste automatizado | `src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java` :: `fluxoCompletoDosTresPerfis`, `celular_semRolagemHorizontal_eErroCompreensivel` (Playwright, Chromium headless) | `dc070ab`; passo de instalação do Chromium no CI |
 | RF-39 / enunciado #14 — Documentação das rotas | Rotas sem contrato documentado | [api.md](api.md) (todas as rotas, perfis, corpos, códigos e o teste de cada uma); complementado pelo `openapi.yaml` da seção anterior | `1397f13` |
@@ -201,9 +206,9 @@ mutantes mortos (90,6%), em [testes/mutacao-pit.md](testes/mutacao-pit.md). Os t
 
 | Requisito | Risco | Teste | Evidência / Execução |
 |---|---|---|---|
-| RF-04 a RF-06 com PostgreSQL — cadastro, edição e inativação persistem | Reinício apaga o que o Administrador cadastrou | `CatalogoRepositorioJdbcIT` (upsert, competências na ordem, identificador repetido → 409, banco vence o seed, seed sem duplicar) | Verde local (`verify` de 13/11: 573 unitários e 23 ITs) |
-| RF-12 a RF-14 e RF-27 após reinício — reservas e histórico voltam com estado, justificativa e recursos | Reserva some, ou volta apontando para recurso que não é o do catálogo (quebrando a sobreposição) | `PersistenciaReinicioIT` (aplicação inteira, duas subidas no mesmo banco, memória zerada entre elas; sobreposição recusada depois do reinício) | Verde local; mutantes M1 (sem recarga) e M2 (edição não gravada) mortos |
-| RF-03 / RF-14 após reinício — o Solicitante continua dono das próprias reservas ([DEF-017](defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md)) | Id da conta sorteado a cada subida: a reserva recarregada fica sem dono | `PersistenciaReinicioIT.solicitanteDoSeedContinuaDonoDepoisDoReinicio` (login real nas duas subidas, lista e cancela) | Red `010298b`; green local (`verify`: 573 unitários e 24 ITs) |
+| RF-04 a RF-06 com PostgreSQL — cadastro, edição e inativação persistem | Reinício apaga o que o Administrador cadastrou | `CatalogoRepositorioJdbcIT` (upsert, competências na ordem, identificador repetido → 409, banco vence o seed, seed sem duplicar) | Verde local (`verify` de 13/11: 573 unitários e 23 ITs); CI verde no PR #17 e na `main` `6e97d9d` |
+| RF-12 a RF-14 e RF-27 após reinício — reservas e histórico voltam com estado, justificativa e recursos | Reserva some, ou volta apontando para recurso que não é o do catálogo (quebrando a sobreposição) | `PersistenciaReinicioIT` (aplicação inteira, duas subidas no mesmo banco, memória zerada entre elas; sobreposição recusada depois do reinício) | Verde local e no CI (PR #17, `main` `6e97d9d`); mutantes M1 (sem recarga) e M2 (edição não gravada) mortos |
+| RF-03 / RF-14 após reinício — o Solicitante continua dono das próprias reservas ([DEF-017](defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md)) | Id da conta sorteado a cada subida: a reserva recarregada fica sem dono | `PersistenciaReinicioIT.solicitanteDoSeedContinuaDonoDepoisDoReinicio` (login real nas duas subidas, lista e cancela) | Red `010298b`; green local e no CI (PR #17, `main` `6e97d9d`) |
 
 ## Concorrência de reservas (PostgreSQL real via Testcontainers)
 
@@ -214,7 +219,7 @@ mutantes mortos (90,6%), em [testes/mutacao-pit.md](testes/mutacao-pit.md). Os t
 
 ## Desempenho sob carga (JMeter)
 
-Plano: [performance/rnf.md](performance/rnf.md) (requisitos propostos, modelo de carga e regras de execução),
+Plano: [performance/rnf.md](performance/rnf.md) (metas complementares, modelo de carga e regras de execução),
 `perf/reservas.jmx` e o script versionado `perf/executar-rodada-02.sh`, **somente local e manual** (não roda no CI).
 **Resultado vigente: [performance/resultado-02.md](performance/resultado-02.md)** (12/11/2026, commit `38bbc04`, jar
 `d66c57130a04e87f`). A [rodada 01](performance/resultado-01.md) fica como histórico. Os números valem só para a máquina

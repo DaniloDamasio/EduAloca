@@ -1,12 +1,12 @@
 # Jornadas de Usuário — EduAloca
 
 > Jornadas derivadas dos "Cenários típicos de uso" de cada persona em
-> [PERSONAS/](PERSONAS/) e dos requisitos em [REQUISITOS.md](REQUISITOS.md). Cada etapa
+> [PERSONAS/](../PERSONAS/) e dos requisitos em [REQUISITOS.md](REQUISITOS.md). Cada etapa
 > referencia o(s) RF envolvido(s) para rastreabilidade.
 
 ## J1 — Solicitante reserva uma sala sem restrição (caminho feliz)
 
-**Persona:** [Solicitante](PERSONAS/solicitante.md)
+**Persona:** [Solicitante](../PERSONAS/solicitante.md)
 **Cenário de origem:** "Reservar uma sala de informática para uma aula na próxima semana."
 
 1. Solicitante faz login. (RF-01)
@@ -27,7 +27,7 @@ segundos.
 
 ## J2 — Solicitante tenta reservar recurso restrito (fluxo de aprovação)
 
-**Persona:** [Solicitante](PERSONAS/solicitante.md) + [Responsável](PERSONAS/responsavel.md)
+**Persona:** [Solicitante](../PERSONAS/solicitante.md) + [Responsável](../PERSONAS/responsavel.md)
 **Cenário de origem:** "Reservar um projetor (material) para uma apresentação, verificando
 se ele exige aprovação por ser um recurso restrito."
 
@@ -48,7 +48,7 @@ obrigatória (RF-20); reserva vai para `REJEITADA`; Solicitante é notificado co
 
 ## J3 — Conflito de horário detectado (caminho de erro)
 
-**Persona:** [Solicitante](PERSONAS/solicitante.md)
+**Persona:** [Solicitante](../PERSONAS/solicitante.md)
 **Cenário de origem:** "Tentar reservar um horário que já está ocupado e receber uma
 mensagem explicando o conflito."
 
@@ -64,7 +64,7 @@ mensagem explicando o conflito."
 
 ## J4 — Duas solicitações simultâneas disputam o mesmo recurso
 
-**Persona:** [Solicitante](PERSONAS/solicitante.md) (dois usuários distintos)
+**Persona:** [Solicitante](../PERSONAS/solicitante.md) (dois usuários distintos)
 **Cenário de origem:** Regra crítica de concorrência + dor "Perder a reserva para outro
 usuário por concorrência simultânea sem entender o motivo."
 
@@ -81,7 +81,7 @@ usuário por concorrência simultânea sem entender o motivo."
 
 ## J5 — Administrador cadastra manutenção em recurso já parcialmente reservado
 
-**Persona:** [Administrador](PERSONAS/administrador.md)
+**Persona:** [Administrador](../PERSONAS/administrador.md)
 **Cenário de origem:** "Colocar um laboratório em manutenção por uma semana, bloqueando
 automaticamente novas reservas nesse período."
 
@@ -98,7 +98,7 @@ automaticamente novas reservas nesse período."
 
 ## J6 — Responsável controla retirada e devolução de material
 
-**Persona:** [Responsável](PERSONAS/responsavel.md)
+**Persona:** [Responsável](../PERSONAS/responsavel.md)
 **Cenário de origem:** "Registrar a retirada de um equipamento por um professor e,
 posteriormente, confirmar sua devolução."
 
@@ -115,7 +115,7 @@ posteriormente, confirmar sua devolução."
 
 ## J7 — Administrador investiga histórico de uma reserva cancelada
 
-**Persona:** [Administrador](PERSONAS/administrador.md)
+**Persona:** [Administrador](../PERSONAS/administrador.md)
 **Cenário de origem:** "Investigar, via histórico auditável, por que uma reserva foi
 cancelada ou alterada."
 
@@ -129,7 +129,7 @@ cancelada ou alterada."
 
 ## J8 — Administrador gera relatório mensal de utilização
 
-**Persona:** [Administrador](PERSONAS/administrador.md)
+**Persona:** [Administrador](../PERSONAS/administrador.md)
 **Cenário de origem:** "Gerar um relatório mensal de utilização de salas para apresentar à
 direção da escola."
 

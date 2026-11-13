@@ -535,11 +535,12 @@ que foi **medido** do que está **só na árvore de trabalho**.
 
 Feito sem rodar build, aplicação, Docker ou navegador, para não interferir na rodada 02. Os arquivos Java compilam pelo
 compilador do IDE (0 erros); o JavaScript passa em `node --check`; o `openapi.yaml` foi lido por um parser YAML e tem
-39 operações para 39 rotas, sem referências quebradas. **Nada disso substitui a execução da suíte.**
+39 operações para 39 rotas, sem referências quebradas (na entrega final são 40). **Nada disso
+substitui a execução da suíte.**
 
 | Entrega | Requisito | Teste escrito |
 |---|---|---|
-| Não comparecimento automático no fim do horário (tarefa a cada 60 s, autor `sistema`; desligada na suíte) | P-08 | `NaoComparecimentoAutomaticoTest` |
+| Não comparecimento automático no fim do horário (tarefa a cada 30 s, autor `sistema`; desligada na suíte) | P-08 | `NaoComparecimentoAutomaticoTest` |
 | Confirmação explícita de manutenção sobre reserva aprovada e lista de manutenções | RF-23, RF-21 | `AdministracaoApiTest` |
 | Devoluções em atraso (sinalização periódica e `GET /retiradas/pendentes`) | RF-26 | `AdministracaoApiTest` |
 | Consulta de auditoria somente leitura | RF-28, RF-29 | `AdministracaoApiTest` |

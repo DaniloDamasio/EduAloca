@@ -10,6 +10,9 @@
 > **Atualização 12/11/2026:** a seção 6 passou a registrar a execução das pendências (trabalho individual). As seções 2 a 5
 > continuam descrevendo a auditoria de 10/11 e não foram reescritas; a situação atual de cada requisito está na seção 6,
 > na [RTM.md](RTM.md) e no [relatório de qualidade](relatorio-qualidade.md).
+>
+> **Atualização 13/11/2026:** a tabela da seção 6 mostra a situação final na `main`. As notas datadas depois dela são o
+> histórico.
 
 ## 1. Método e critério
 
@@ -114,21 +117,26 @@ colaboradores do repositório no GitHub. Essa divisão não aconteceu: quem apar
 Sem outro integrante, a revisão por pares foi substituída por verificações automáticas que bloqueiam o merge (README,
 seção "Autoria e revisão").
 
-Situação em 12/11/2026. "Na árvore de trabalho" = alteração feita no código mas ainda **não verificada pela suíte**
-(a execução do `./mvnw -B verify` ficou para depois da rodada 02 de carga, para não interferir na medição).
+**Situação final (13/11/2026, `main` em `6e97d9d`, merge do PR #17).** Tudo abaixo está na `main` e verde no CI
+(run [43348024151](https://github.com/DaniloDamasio/EduAloca/actions/runs/43348024151): 573 unitários e 24 de
+integração, 0 falhas, 0 pulados; linhas 97,0 %, ramos 89,4 %). Os relatórios desse run estão versionados em
+[testes/evidencias-ci/](testes/evidencias-ci/). Os parágrafos depois da tabela são o histórico das execuções, com o
+estado de cada momento.
 
 | Pendência | Situação | Onde |
 |---|---|---|
-| P1 README de execução e Docker/Testcontainers | Feito (sem `docker compose`; o modo padrão em memória não precisa de banco) | README, "Executando a Aplicação" e "Executando a Suíte" |
-| P2 Modo PostgreSQL | Decidido: memória é o modo de demonstração; escopo do PostgreSQL registrado | [ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md) |
-| P3 Revisão por pares e gate | Revisão substituída por CI obrigatório, gate JaCoCo, SonarCloud e E2E (trabalho individual). A etapa Sonar continua condicional a `SONAR_TOKEN` | README, "Autoria e revisão"; `.github/workflows/ci.yml` |
-| P4 Perfis, senha e autorização | Feito: perfis reais no login (DEF-003), PBKDF2 com sal (DEF-013), logout revoga token, autorização em cadastro, retirada e relatório. Expiração de token continua pendente | [defeitos/](defeitos/) |
-| P5 Dupla reserva | Feito para sala e professor (ITs em PostgreSQL, 1 e 2 instâncias). Material × material na árvore de trabalho (`SobreposicaoMaterialTest`), que expôs a divergência entre busca e criação ([DEF-016](defeitos/DEF-016-busca-e-criacao-divergem-na-quantidade-de-material.md), aberto) | [RTM.md](RTM.md) |
-| P6 Auditoria | Feito: evento fabricado removido (DEF-011), `REJEICAO_SOBREPOSICAO`. Na árvore de trabalho: consulta `GET /auditoria`, autor do token em cadastro de recurso, manutenção e usuário, e auditoria de retirada e devolução | DEF-011; `AdministracaoApiTest` |
-| P7 Estados | Feito: iniciar uso, concluir, não comparecimento manual (início + 15 min). Não comparecimento automático no fim do horário na árvore de trabalho | `ConclusaoNaoComparecimentoTest`; `NaoComparecimentoAutomaticoTest` |
-| P8 Rotas | Feito: CRUD de recursos, buscas, alteração, retirada/devolução, relatório, notificação ligada às transições. Usuários, manutenções, pendências de devolução e auditoria na árvore de trabalho | [api.md](api.md); `static/openapi.yaml` |
-| P9 Interface | Feito, com E2E em Chromium (375 px). Telas novas (usuários, auditoria, manutenções, catálogo, busca do Responsável) e E2E em 360/1920 px na árvore de trabalho | `src/main/resources/static`; `FluxoCompletoNavegadorIT` |
-| P10 OpenAPI e RTM | RTM com 32/32 críticos. `openapi.yaml` com as 39 operações e teste de sincronia na árvore de trabalho | [RTM.md](RTM.md); `DocumentacaoOpenApiTest` |
+| P1 README de execução e Docker/Testcontainers | Feito: pré-requisitos, modo em memória e com PostgreSQL, suíte com e sem Docker ou navegador | README, "Executando a Aplicação" e "Executando a Suíte Localmente" |
+| P2 Modo PostgreSQL | Feito no escopo do ADR-010: reservas, histórico e catálogo no banco, recarregados na subida. Manutenções, usuários, auditoria, retiradas e sessões ficam em memória | [ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md); `PersistenciaReinicioIT` |
+| P3 Revisão por pares e gate | Revisão substituída por CI obrigatório, gate JaCoCo, SonarCloud, E2E e mutação (trabalho individual) | README, "Autoria e revisão"; `.github/workflows/ci.yml` |
+| P4 Perfis, senha e autorização | Feito: perfis reais no login (DEF-003), PBKDF2 com sal (DEF-013), logout revoga token, token com expiração (30 min sem uso, 8 h no total), bloqueio após 5 tentativas (429) | [defeitos/](defeitos/); `SegurancaLoginTest`, `LoginBloqueioApiTest` |
+| P5 Dupla reserva | Feito para sala, professor e material (ITs com PostgreSQL em 1 e 2 instâncias; `SobreposicaoMaterialTest`). DEF-016 corrigido (opção A) | [RTM.md](RTM.md) |
+| P6 Auditoria | Feito: eventos reais (DEF-011), `REJEICAO_SOBREPOSICAO`, consulta `GET /auditoria`, autor do token em cadastro, manutenção, usuário, retirada e devolução | `AdministracaoApiTest` |
+| P7 Estados | Feito: iniciar uso, concluir, não comparecimento manual (início + 15 min) e automático no fim do horário (tarefa a cada 30 s) | `ConclusaoNaoComparecimentoTest`; `NaoComparecimentoAutomaticoTest` |
+| P8 Rotas | Feito: 40 operações, incluindo usuários, manutenções, pendências de devolução e auditoria | [api.md](api.md); `static/openapi.yaml` |
+| P9 Interface | Feito: telas dos três perfis, E2E em Chromium de 360 a 1920 px | `src/main/resources/static`; `FluxoCompletoNavegadorIT` |
+| P10 OpenAPI e RTM | Feito: RTM com 32/32 críticos; `openapi.yaml` com as 40 operações, em sincronia com o código | [RTM.md](RTM.md); `DocumentacaoOpenApiTest` |
+
+### Histórico das execuções
 
 **Execução da suíte (12/11/2026, ~19:24, depois da rodada 02 de carga):** `./mvnw -B verify` sobre a árvore de trabalho
 com todas as alterações acima. Unitários: 517 casos, 513 verdes e **4 erros em `SobreposicaoMaterialTest.mesmoMaterial`**

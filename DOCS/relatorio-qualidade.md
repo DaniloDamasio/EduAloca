@@ -6,6 +6,54 @@ Nenhum número foi estimado. O que não pôde ser medido aparece como **não med
 
 ---
 
+## Resumo executivo: estado final (2026-11-13)
+
+**Como ler este relatório:** as seções 1 a 7 são a avaliação do commit `a670c68` (11/11) e ficam como registro
+histórico, com os números da época (por exemplo, RTM com 20 de 32 críticos e 2 issues BLOCKER). O estado atual está nas
+seções 8, 9 e 10. Este resumo consolida o que vale hoje.
+
+**Recomendação: aceite.** As quatro metas mensuráveis estão atendidas com evidência, os quatro limitadores de nota
+estão afastados por teste automatizado, e os riscos que restam estão documentados com a decisão e o motivo.
+
+| Meta | Alvo | Medido | Onde conferir |
+|---|---|---|---|
+| Cobertura de linhas | ≥ 80% | **97,07%** (1658/1708) | `verify` local de 13/11; §10.6 |
+| Cobertura de ramos | ≥ 70% | **89,42%** (634/709) | idem |
+| Requisitos críticos na RTM | 100% | **32 de 32**, com teste e execução | [RTM.md](RTM.md); §8.1 |
+| Bugs e vulnerabilidades críticas | 0 | **0** no SonarCloud (gate OK, 0 issues, 0 hotspots; 93,0% de cobertura no código novo do PR #17); 17 defeitos registrados, **17 corrigidos** | §10.1; [defeitos/](defeitos/) |
+
+| Limitador de nota | Situação | Evidência |
+|---|---|---|
+| Aplicação que não executa | Afastado | Jar sobe em memória e com PostgreSQL; E2E sobe a aplicação inteira no navegador; README com instruções |
+| Pipeline ausente | Afastado | GitHub Actions em todo PR (build, testes, gate JaCoCo, SonarCloud); `main` protegida |
+| Falha de autorização | Afastado | `MatrizAutorizacaoApiTest` célula a célula com token do login real; sessão com expiração e bloqueio por tentativas (§10.4) |
+| Possibilidade de dupla reserva | Afastado | Constraint de exclusão no PostgreSQL; 20 pedidos simultâneos em 1 e 2 JVMs → 1 aceito; carga: 6.308 janelas disputadas, 0 duplas (§9.1, A-23) |
+
+**Testes (`./mvnw -B verify`, 13/11):** 573 unitários e 24 de integração, 0 falhas, 0 pulados. A suíte inclui
+unitários e parametrizados (JUnit 5), API caixa-preta, BDD (Cucumber), PostgreSQL real (Testcontainers), concorrência
+entre instâncias, reinício da aplicação, WireMock e E2E em Chromium (Playwright) de 360 a 1920 px. O CI do PR #17 está
+verde. Para mostrar que a cobertura não é inflada: mutação automatizada com PIT no domínio, **577 de 637 mutantes
+mortos (90,6%)**, mais a mutação manual das regras críticas (§10.5, [testes/mutacao-pit.md](testes/mutacao-pit.md)).
+
+**Defeitos:** 17 registrados (9 de severidade Alta, 5 Média, 3 Baixa) e 17 corrigidos, cada um com teste que falhava
+antes da correção ([defeitos/](defeitos/)).
+
+**Desempenho (rodada 02, JMeter):** até 400 usuários sem saturar, p95 de 8 a 12 ms na criação sob disputa e de 1 a 3 ms
+na busca, 0 erros e 0 respostas 5xx ([performance/resultado-02.md](performance/resultado-02.md)).
+
+**Limites que continuam (decididos e documentados):**
+- A carga mediu o commit `38bbc04`, anterior a segurança do login, DEF-016, PIT e persistência do catálogo. O caminho
+  medido (busca e criação de reserva) não mudou de forma relevante, mas isso não foi medido de novo.
+- Com PostgreSQL, catálogo e reservas sobrevivem ao reinício; manutenções, usuários criados pelo Administrador,
+  auditoria, retiradas e sessões ficam em memória ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md)).
+- Trabalho individual: a revisão por pares foi substituída por CI obrigatório, mutação e este relatório (README,
+  "Autoria e revisão").
+- O PIT foi medido antes da persistência do catálogo e mutou só o domínio.
+- Uma intermitência do IT de duas JVMs foi observada uma vez e não foi explicada; o diagnóstico foi melhorado (A-33).
+- O SonarCloud da `main` depois do merge do PR #17 ainda não foi conferido.
+
+---
+
 ## 1. Identificação
 
 | Item | Valor |

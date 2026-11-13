@@ -193,6 +193,10 @@ Branch `entrega-final-pendencias`. Os commits citados são locais (sem push, por
 | RF-21 / RF-23 / RF-28 pela interface | Telas do Administrador sem verificação de ponta a ponta | `FluxoCompletoNavegadorIT.telasDoAdministradorEDoResponsavel` | Verde local em ~19:46 |
 | RF-34 a RF-36 no domínio, pelo método da rota | Testes do relatório antigo (sem rota) davam falsa evidência | `RelatoriosTest` (7 casos sobre `gerarUtilizacaoPorPeriodo`) | Verde local em ~19:46 |
 
+**Eficácia dos testes (12/11/2026, noite):** mutação automatizada com PIT sobre `com.edualoca.domain`, 577 de 637
+mutantes mortos (90,6%), em [testes/mutacao-pit.md](testes/mutacao-pit.md). Os testes que esta matriz cita para RNF-05
+(`rnf05T1`), RNF-06 (`rnf06T1`), RNF-09 (`rnf09T1`) e RF-17 (`rc03T4`) foram reescritos para conferir o efeito real.
+
 ## Concorrência de reservas (PostgreSQL real via Testcontainers)
 
 | Requisito | Risco | Teste | Evidência / Execução |

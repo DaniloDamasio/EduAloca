@@ -264,6 +264,15 @@ O script compila o commit atual (e se recusa a rodar com alterações em `src/`,
 PostgreSQL e aplicação a cada cenário e grava os brutos em `perf/resultados/rodada-02/`, que não são versionados. Ele
 também marca o cenário como inválido se a máquina suspender: mantenha o notebook na tomada e com a tampa aberta.
 
+### Mutação automatizada (PIT)
+
+```
+./mvnw -B -Pmutacao test-compile org.pitest:pitest-maven:mutationCoverage
+```
+
+Muta o pacote `domain` e roda a suíte sem os ITs (cerca de 5 minutos; fora do `verify` e do CI). Relatório em
+`target/pit-reports/index.html`; resultado e análise dos sobreviventes em [DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md).
+
 ## Especificação executável (BDD com Cucumber)
 
 Os cenários de API de [DOCS/testes/bdd-aprovacao-bloqueio.md](DOCS/testes/bdd-aprovacao-bloqueio.md)
@@ -413,3 +422,4 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] Gestão de usuários, consulta de auditoria, lista de manutenções e confirmação explícita (RF-23)
 - [x] Não comparecimento automático no fim do horário (P-08) e devoluções em atraso (RF-26)
 - [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md))
+- [x] Mutação automatizada com PIT no domínio: 90,6% dos mutantes mortos ([DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md))

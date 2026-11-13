@@ -165,3 +165,7 @@ Na seção 4: `RelatoriosTest` :: `rf34T1`, `rf35T1` **resolvidos** (testes de v
 **Segurança do login (12/11/2026, ~20:15):** token com expiração (30 min sem uso, 8 h no total) e bloqueio de 15 min
 após 5 senhas erradas para o mesmo e-mail (429). `verify` verde: 536 unitários e 19 ITs; linhas 96,05 %, ramos 85,59 %.
 P4 ("expiração de token continua pendente") passa a **feito**.
+
+**Testes fracos e PIT (12/11/2026, noite):** `rnf05T1`, `rnf06T1`, `rnf09T1` e `rc03T4` (seção 4) **resolvidos**,
+reescritos para falhar quando a regra quebra. Mutação automatizada com PIT no domínio: 577/637 mutantes mortos
+(**90,6%**), ver [testes/mutacao-pit.md](testes/mutacao-pit.md).

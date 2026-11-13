@@ -602,6 +602,39 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
   uma conta conhecida). Os relógios da sessão e do bloqueio são o do sistema, independentes do `Clock` de negócio que os
   testes avançam. A persistência das demais entidades continua fora de escopo (README, "Escopo da persistência").
 
+### 10.5 Atualização: testes fracos e mutação automatizada (2026-11-12, noite)
+
+**A-31. Os 4 testes que a auditoria apontou como fracos foram reescritos.**
+- *Evidência:* `rnf05T1` confere o que fica guardado (PBKDF2 com sal, mesma senha gera hashes diferentes);
+  `rnf06T1` passa ao `TratadorDeErros` uma exceção com SQL, nome de classe e stack trace e exige 500 genérico sem nenhum
+  desses textos; `rnf09T1` percorre criação, aprovação, cancelamento e rejeição por sobreposição e procura órfãos no
+  histórico, na auditoria e no catálogo; `rc03T4` injeta falha na gravação (constraint e erro inesperado) e exige que
+  nada fique gravado e que o lock seja liberado. Um mutante manual que não libera o lock faz o `rc03T4` falhar por
+  timeout.
+- *Limite:* `rnf09T1` verifica o modo em memória; no PostgreSQL a integridade do histórico vem da FK e do trigger,
+  cobertos por `HistoricoReservaTransacaoIT`.
+
+**A-32. Mutação automatizada (PIT) no domínio: escore de 84,6% para 90,6%.**
+- *Evidência:* [testes/mutacao-pit.md](testes/mutacao-pit.md). PIT 1.19.1, perfil `-Pmutacao`, 637 mutantes em
+  `com.edualoca.domain`, suíte sem os ITs. Rodada 1: 540 mortos (84,6%, força 86,5%). Rodada 4: **577 mortos (90,6%,
+  força 91,4%)**, cobertura de linha das classes mutadas 98%. Os sobreviventes viraram 23 casos em
+  `LacunasMutacaoPitTest`, a remoção de uma sobrecarga morta da auditoria e o catálogo usando `listarSalasAtivas`.
+  Os 60 restantes estão classificados um a um no documento (37 são remoção de `seedSeNecessario()`).
+- *Interpretação:* a cobertura alta (96%) é acompanhada de testes que detectam mudança de comportamento em 9 de cada 10
+  mutantes do domínio, o que responde ao aviso do enunciado sobre testes triviais.
+- *Limite:* só o domínio foi mutado; os ITs ficaram fora; a equivalência dos sobreviventes é análise do autor. O teste
+  `filtroDeCapacidade` entrou depois da rodada 4.
+
+**A-33. Intermitência observada em `ConcorrenciaReservaMultiInstanciaIT` (não explicada).**
+- *Evidência:* num `verify` completo de 12/11 (~21:00), o cenário `agendaDoProfessorDisputadaEntreDuasInstancias` falhou
+  ao subir a segunda JVM ("Instancia externa terminou (codigo 1)"). Isolado, passou 3 de 3; o `verify` completo seguinte
+  passou (573 unitários e 19 ITs, linhas 97,12%, ramos 89,99%). O log da instância que falhou se perdeu, porque todas
+  gravavam no mesmo arquivo.
+- *Interpretação:* falha de infraestrutura do teste, não de regra: o cenário não chegou a disputar reservas. Hipótese não
+  confirmada: corrida em `InstanciaExterna.portaLivre()` (a porta é liberada antes de a JVM filha ocupá-la).
+- *Ação:* cada instância passou a ter log próprio (`target/instancia-externa-<timestamp>.log`) e a mensagem de erro traz
+  as últimas 25 linhas do log, para que uma nova ocorrência mostre a causa. A corrida de porta não foi corrigida.
+
 ## Apêndice A: comandos usados
 
 ```bash

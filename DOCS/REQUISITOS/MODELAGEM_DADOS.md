@@ -1,7 +1,7 @@
 # Modelagem de Dados — EduAloca
 
 > Modelo conceitual/lógico derivado dos requisitos em [REQUISITOS.md](REQUISITOS.md) e das
-> entidades citadas no [enunciado.md](enunciado.md). Tipos são indicativos (a ser refinado
+> entidades citadas no [enunciado.md](../enunciado.md). Tipos são indicativos (a ser refinado
 > na implementação em Java 21/Spring Boot/JPA), suficientes para validar relacionamentos e
 > regras críticas de concorrência/auditoria.
 >

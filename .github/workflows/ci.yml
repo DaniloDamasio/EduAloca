@@ -53,7 +53,7 @@ jobs:
           path: |
             target/surefire-reports/
             target/failsafe-reports/
-          retention-days: 7
+          retention-days: 90
           if-no-files-found: ignore
 
       - name: Publicar relatório de cobertura JaCoCo
@@ -64,5 +64,5 @@ jobs:
           path: |
             target/site/jacoco/
             target/jacoco.exec
-          retention-days: 7
+          retention-days: 90
           if-no-files-found: ignore

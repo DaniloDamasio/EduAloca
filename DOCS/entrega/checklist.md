@@ -81,3 +81,15 @@ apontada; **Não** = desatualizado ou ausente.
 **Pendências menores** (não bloqueiam): a RTM cita o CI do `6e97d9d` em vez do commit final; o comando sem E2E repete os
 unitários no Failsafe; falta um documento próprio de relatório de testes; `resultado-02.md` se contradiz sobre os
 brutos versionados; DEF-002 a DEF-010 não trazem o hash da correção; o api.md não informa os valores de `tipo`.
+
+## 4. Situação dos bloqueadores na `v1.0.0-rc1`
+
+As seções 1 a 3 são o retrato da avaliação do `c4098f2` e não foram reescritas.
+
+| # | Bloqueador | Situação | Como |
+|---|---|---|---|
+| 1 | Revisão por pares | Limite declarado | Sem correção técnica possível num trabalho individual. A justificativa está no README ("Autoria e revisão") e no [CHANGELOG](../../CHANGELOG.md) |
+| 2 | Enunciado não versionado | Corrigido | `DOCS/enunciado.md` saiu do `.gitignore` e entrou no repositório. Os links relativos de `DOCS/REQUISITOS/*.md` foram corrigidos |
+| 3 | Brutos da carga inacessíveis | Pendente de ação manual | Os SHA-256 dos dois arquivos da release em rascunho conferem com o `resultado-02.md`. Falta publicar a release `carga-rodada-02` |
+| 4 | Cobertura do `-DskipITs` errada no README | Corrigido | Números medidos (85,04% e 83,64%). O comando sem E2E passou a ser `-Dit.test='*IT,!FluxoCompletoNavegadorIT'` (19 ITs, sem repetir os unitários) |
+| 5 | Carga não mediu a versão entregue | Limite declarado | Declarado no CHANGELOG, no relatório de qualidade e no índice de evidências |

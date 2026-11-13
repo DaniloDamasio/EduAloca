@@ -1,6 +1,6 @@
 # Requisitos — EduAloca
 
-> Derivado de [enunciado.md](enunciado.md) (fonte de verdade, imutável) e das personas em
+> Derivado de [enunciado.md](../enunciado.md) (fonte de verdade, imutável) e das personas em
 > [PERSONAS/](../PERSONAS/). Os 14 requisitos funcionais obrigatórios do enunciado foram
 > decompostos em requisitos atômicos e mensuráveis (RF-xx). Cada linha traz a **Origem**
 > (requisito do enunciado + persona que motiva a necessidade), para que a RTM.md possa

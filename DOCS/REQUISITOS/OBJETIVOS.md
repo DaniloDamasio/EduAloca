@@ -1,6 +1,6 @@
 # Objetivos do Projeto — EduAloca
 
-> Este documento deriva do objetivo declarado em [enunciado.md](enunciado.md) (fonte de
+> Este documento deriva do objetivo declarado em [enunciado.md](../enunciado.md) (fonte de
 > verdade). Em caso de conflito, o enunciado prevalece.
 
 ## Objetivo geral

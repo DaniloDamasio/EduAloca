@@ -12,6 +12,10 @@ Nenhum número foi estimado. O que não pôde ser medido aparece como **não med
 histórico, com os números da época (por exemplo, RTM com 20 de 32 críticos e 2 issues BLOCKER). O estado atual está nas
 seções 8, 9 e 10. Este resumo consolida o que vale hoje.
 
+**Versão `v1.0.0-rc1`:** os números abaixo foram medidos no CI do PR #18 (head `aa5e48d`). Até a tag, só documentação
+mudou depois dele; nenhum arquivo de `src/` ou do `pom.xml`. O CI da `main` no commit da tag, o relatório JaCoCo e o
+Quality Gate dessa versão estão no [índice de evidências](https://github.com/DaniloDamasio/EduAloca/blob/main/DOCS/evidencias/README.md).
+
 **Recomendação: aceite.** As quatro metas mensuráveis estão atendidas com evidência, os quatro limitadores de nota
 estão afastados por teste automatizado, e os riscos que restam estão documentados com a decisão e o motivo.
 

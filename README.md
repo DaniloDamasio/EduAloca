@@ -285,12 +285,16 @@ Sem Docker e sem navegador, rode só os unitários com o gate de cobertura:
 ./mvnw -B verify -DskipITs
 ```
 
-O Failsafe é pulado e o JaCoCo mede só os unitários. Na execução de 13/11/2026 foram 573 testes, com 96,9% de linhas e
-89,4% de ramos, então o gate também passa sem os ITs. Para pular só o E2E e manter os ITs com PostgreSQL:
+O Failsafe é pulado e o JaCoCo mede só os unitários. Na execução de 13/11/2026 foram 573 testes, com 85,04% de linhas
+(1461/1718) e 83,64% de ramos (593/709), então o gate também passa sem os ITs. Para pular só o E2E e manter os ITs com
+PostgreSQL:
 
 ```
-./mvnw -B verify -Dit.test='!FluxoCompletoNavegadorIT'
+./mvnw -B verify -Dit.test='*IT,!FluxoCompletoNavegadorIT'
 ```
+
+O `*IT` precisa vir junto: um filtro só com a negação substitui o padrão do Failsafe, que passa a rodar também as classes
+unitárias. Na execução de 13/11/2026 foram 19 testes de integração em 6 classes, com 96,97% de linhas e 89,42% de ramos.
 
 A evidência da suíte completa de cada commit da `main` é o CI. Os relatórios do commit entregue estão versionados em
 [DOCS/testes/evidencias-ci/](DOCS/testes/evidencias-ci/).

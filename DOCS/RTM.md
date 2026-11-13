@@ -2,7 +2,8 @@
 
 > **Status (2026-11-13):** os 32 requisitos críticos de [REQUISITOS.md](REQUISITOS/REQUISITOS.md) têm linha nesta
 > matriz, com teste e execução. A seção "Correções do relatório de qualidade" registra os 12 que faltavam. **Evidência
-> vigente para todas as linhas:** CI da `main` depois do merge do PR #17 (run
+> vigente para todas as linhas:** CI da `main` no commit da tag `v1.0.0-rc1`, com os links no
+> [índice de evidências](https://github.com/DaniloDamasio/EduAloca/blob/main/DOCS/evidencias/README.md). Antes da tag, a referência era o CI do PR #17 (run
 > [43348024151](https://github.com/DaniloDamasio/EduAloca/actions/runs/43348024151), commit `6e97d9d`: 573 unitários e
 > 24 de integração, 0 falhas, 0 pulados), com os relatórios versionados em
 > [testes/evidencias-ci/](testes/evidencias-ci/). As notas de "pendente", "local" ou "não commitado" nas seções

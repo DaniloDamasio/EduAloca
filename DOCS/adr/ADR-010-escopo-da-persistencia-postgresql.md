@@ -91,3 +91,20 @@ sobe de novo no mesmo banco. Dois mutantes manuais (sem a recarga de reservas; s
 de login. Com duas instâncias, uma instância só vê o catálogo gravado pela outra quando reinicia: o cache não é
 invalidado entre instâncias. A dupla reserva entre instâncias continua garantida pela constraint do banco.
 
+## Decisão final desta entrega (2026-11-13)
+
+A persistência para aqui: catálogo e reservas (com histórico) no PostgreSQL, mais ids fixos para todas as contas do seed
+([DEF-017](../defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md)). **Não** serão levados ao banco nesta
+entrega: manutenções, usuários criados pelo Administrador, auditoria, retiradas, notificações, sessões e tentativas de
+login. Motivos:
+
+- o enunciado exige ambiente real para a persistência crítica (reservas, dupla reserva, histórico), e isso já está
+  testado em PostgreSQL com Testcontainers e medido sob carga;
+- a auditoria no banco mudaria o caminho medido pela carga (um `INSERT` a cada recusa por sobreposição) e obrigaria a
+  refazer a rodada;
+- sessões e tentativas de login ficam em memória de propósito: pedir login de novo depois de um reinício é o
+  comportamento esperado, e guardar tokens no banco cria um alvo a mais.
+
+Risco aceito: num reinício com PostgreSQL, uma manutenção cadastrada antes do reinício deixa de bloquear o recurso. No
+modo de demonstração (em memória) o comportamento é o mesmo de antes.
+

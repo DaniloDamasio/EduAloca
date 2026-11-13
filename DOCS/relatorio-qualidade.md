@@ -653,6 +653,15 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
   o cache de uma não é atualizado pelas gravações da outra até reiniciar; se a gravação no banco falhar depois da mudança
   no cache, o cache fica à frente do banco até o reinício; a carga (rodada 02) é anterior a esta mudança.
 
+**A-35. DEF-017: o Solicitante do seed perdia a posse das reservas depois de um reinício (corrigido antes do merge).**
+- *Evidência:* red `010298b` (`PersistenciaReinicioIT.solicitanteDoSeedContinuaDonoDepoisDoReinicio`: id da conta mudava
+  entre as subidas); green com ids fixos para as contas de Solicitante do seed. `verify`: 573 unitários e 24 ITs, 0
+  falhas; linhas 97,07%, ramos 89,42%. [DEF-017](defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md).
+- *Interpretação:* a recarga de reservas expôs um defeito latente; o teste novo usa o login real, que o primeiro teste
+  de reinício não usava.
+- *Limite:* a persistência para neste ponto (ADR-010, "Decisão final"); manutenções, usuários criados pelo
+  Administrador e auditoria continuam em memória.
+
 ## Apêndice A: comandos usados
 
 ```bash

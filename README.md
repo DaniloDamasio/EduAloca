@@ -153,7 +153,8 @@ pelo banco, então o domínio e as regras de concorrência não mudaram.
 
 Continuam **só em memória**, e voltam ao seed num reinício: manutenções, usuários e senhas, auditoria, retiradas,
 notificações, tokens e tentativas de login ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md), seção
-"Atualização"). Com duas instâncias, cada uma só enxerga o catálogo gravado pela outra depois de reiniciar.
+"Atualização" e "Decisão final"). Com duas instâncias, cada uma só enxerga o catálogo gravado pela outra depois de
+reiniciar. Num reinício com PostgreSQL, uma manutenção cadastrada antes deixa de bloquear o recurso (risco aceito no ADR-010).
 
 Para rodar com PostgreSQL (o modo padrão, sem essas propriedades, é em memória):
 

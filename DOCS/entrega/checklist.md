@@ -66,19 +66,15 @@ apontada; **Não** = desatualizado ou ausente.
 
 ## 3. Bloqueadores, em ordem
 
-1. **A proteção da `main` exige 1 aprovação, com `enforce_admins`.** A API do GitHub retorna
-   `required_approving_review_count: 1`. Como só há um colaborador e o autor de um PR não pode aprová-lo, nenhum PR novo
-   entra na `main`. Isso trava a correção de todos os itens abaixo. O README diz que a proteção exige só o check
-   "Build e Testes". O PR #18 entrou sem revisão, então a regra foi ligada depois dele ou precisa ser conferida.
-2. **Não há revisão por pares (entregável 1).** São 0 revisões em 18 PRs. A substituição está justificada no README e no
+1. **Não há revisão por pares (entregável 1).** São 0 revisões em 18 PRs. A substituição está justificada no README e no
    relatório, mas o critério literal do enunciado não foi cumprido. Cabe ao professor aceitar ou não a justificativa.
-3. **O enunciado não está versionado.** O README e mais 10 documentos o citam como "fonte única de verdade", e quem
+2. **O enunciado não está versionado.** O README e mais 10 documentos o citam como "fonte única de verdade", e quem
    clona não consegue abrir. Sem ele, o avaliador não confere escopo nem metas a partir do repositório.
-4. **Os dados brutos da carga estão inacessíveis.** A release `carga-rodada-02` está em rascunho (404 anônimo), e é ela
+3. **Os dados brutos da carga estão inacessíveis.** A release `carga-rodada-02` está em rascunho (404 anônimo), e é ela
    que `resultado-02.md` cita, com SHA-256, como prova dos números.
-5. **A cobertura documentada para `-DskipITs` está errada no README.** Diz 96,9% / 89,4%; o medido é 85,0% / 83,6%. É um
+4. **A cobertura documentada para `-DskipITs` está errada no README.** Diz 96,9% / 89,4%; o medido é 85,0% / 83,6%. É um
    número de evidência incorreto num relatório que afirma "nenhum número foi estimado".
-6. **A carga não mediu a versão entregue.** Foi medido o `38bbc04`, com 36 arquivos de `src/main` mudados depois,
+5. **A carga não mediu a versão entregue.** Foi medido o `38bbc04`, com 36 arquivos de `src/main` mudados depois,
    inclusive o caminho de escrita no PostgreSQL. O limite está declarado, então não invalida a entrega, mas é o ponto
    mais fraco da evidência de desempenho.
 

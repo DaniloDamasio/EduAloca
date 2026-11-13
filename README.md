@@ -78,26 +78,31 @@ obrigatórios e regras críticas, está em [DOCS/enunciado.md](DOCS/enunciado.md
 
 ```
 EduAloca/
-├── README.md
-├── pom.xml
-├── src/
-│   ├── main/
-│   │   ├── java/com/edualoca/
-│   │   └── resources/
-│   └── test/
-│       └── java/com/edualoca/
+├── README.md · pom.xml · mvnw          build Maven (perfil -Pmutacao para o PIT)
+├── .github/workflows/ci.yml            CI: build, testes, gate JaCoCo e SonarCloud em todo PR
+├── src/main/java/com/edualoca/
+│   ├── api/                            controllers REST, segurança (token, perfis), ProblemDetail
+│   ├── domain/                         regras de negócio e máquina de estados (sem framework web nem JDBC)
+│   ├── persistencia/                   PostgreSQL: reservas, histórico e catálogo (JDBC)
+│   ├── integracao/                     adaptador HTTP da notificação externa
+│   ├── agendamento/                    tarefa periódica: não comparecimento e devoluções em atraso
+│   └── perf/                           seed de usuários para o teste de carga (perfil perf)
+├── src/main/resources/
+│   ├── static/                         interface web (HTML, CSS, JS) e openapi.yaml
+│   └── db/postgres/schema.sql          esquema idempotente
+├── src/test/                           unitários, API, BDD (Cucumber), ITs (Testcontainers) e E2E (Playwright)
+├── perf/                               plano JMeter, script da rodada 02 e resumos dos resultados
 └── DOCS/
-    ├── enunciado.md
-    ├── PERSONAS/
-    │   ├── solicitante.md
-    │   ├── responsavel.md
-    │   └── administrador.md
-    └── REQUISITOS/
-        ├── OBJETIVOS.md
-        ├── REQUISITOS.md
-        ├── JORNADAS.md
-        ├── MODELAGEM_DADOS.md
-        └── MODELAGEM_DADOS.dbml
+    ├── enunciado.md · REQUISITOS/ · PERSONAS/       escopo, requisitos, jornadas e modelagem
+    ├── arquitetura.md · adr/ · REVISAO_ATAM.md      arquitetura (C4, sequências), decisões e avaliação
+    ├── api.md                                        referência da API
+    ├── RTM.md · status-requisitos.md                rastreabilidade e situação dos requisitos
+    ├── testes/                                       plano TDD, evidências, BDD, mutação manual e PIT
+    ├── defeitos/                                     DEF-001 a DEF-017
+    ├── performance/                                  plano (rnf.md) e resultados das rodadas de carga
+    ├── seguranca/                                    matriz de autorização
+    ├── relatorio-qualidade.md                        relatório final de qualidade
+    └── apresentacao.md · apresentacao/slides.html    roteiro e slides da apresentação
 ```
 
 ## Stack
@@ -132,8 +137,8 @@ java -jar target/edualoca-0.0.1-SNAPSHOT.jar
 
 Abra <http://localhost:8080/>. A interface (HTML, CSS e JavaScript puros, sem dependências) é servida pela própria
 aplicação a partir de [src/main/resources/static](src/main/resources/static), adapta-se a celular e desktop e consome
-só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. Os dados voltam ao seed a cada reinício; o que é ou não
-persistido no PostgreSQL está no [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md).
+só a API pública documentada em **[DOCS/api.md](DOCS/api.md)**. No modo padrão (em memória) os dados voltam ao seed a cada reinício; com
+PostgreSQL, catálogo e reservas são mantidos (ver "Escopo da persistência" e o [ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)).
 
 ### Escopo da persistência (PostgreSQL)
 
@@ -145,20 +150,29 @@ histórico é gravado na mesma transação da mudança de estado e um trigger re
 contra PostgreSQL real com Testcontainers (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
 `ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`) e foi medido sob carga ([resultado-02](DOCS/performance/resultado-02.md)).
 
-O restante (salas, professores, materiais, manutenções, usuários, auditoria, retiradas e notificações) fica **em
-memória**, e as leituras de reserva usam um cache em memória preenchido depois do commit. Consequência: ao reiniciar a
-aplicação, o catálogo volta ao seed e o que foi cadastrado pela interface se perde, mesmo com o PostgreSQL ligado.
-Foi uma decisão de escopo para a entrega ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md)): levar
-todas as entidades ao banco exige repositórios para cada uma e trocar a comparação de recursos por referência de objeto
-pela comparação por id em todo o domínio, mexendo justamente nas partes já verificadas por concorrência e carga.
+O **catálogo** (salas, professores com competências e materiais) também é gravado no banco a cada cadastro, edição e
+inativação. Na subida, a aplicação recarrega do PostgreSQL o catálogo e as reservas, e o histórico continua sendo lido do
+banco. Assim, **com o PostgreSQL ligado, um reinício não perde o que foi cadastrado nem as reservas**
+(`PersistenciaReinicioIT`, `CatalogoRepositorioJdbcIT`). As leituras continuam saindo de um cache em memória preenchido
+pelo banco, então o domínio e as regras de concorrência não mudaram.
 
-Para rodar com PostgreSQL (opcional; o modo padrão em memória é o de demonstração):
+Continuam **só em memória**, e voltam ao seed num reinício: manutenções, usuários e senhas, auditoria, retiradas,
+notificações, tokens e tentativas de login ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md), seção
+"Atualização" e "Decisão final"). Com duas instâncias, cada uma só enxerga o catálogo gravado pela outra depois de
+reiniciar. Num reinício com PostgreSQL, uma manutenção cadastrada antes deixa de bloquear o recurso (risco aceito no ADR-010).
+
+Para rodar com PostgreSQL (o modo padrão, sem essas propriedades, é em memória):
 
 ```
+docker run -d --name edualoca-pg -e POSTGRES_DB=edualoca -e POSTGRES_USER=edualoca \
+  -e POSTGRES_PASSWORD=<senha> -p 127.0.0.1:5432:5432 postgres:16-alpine
 java -jar target/edualoca-0.0.1-SNAPSHOT.jar \
   --edualoca.persistencia.url=jdbc:postgresql://localhost:5432/edualoca \
-  --edualoca.persistencia.usuario=<usuario> --edualoca.persistencia.senha=<senha>
+  --edualoca.persistencia.usuario=edualoca --edualoca.persistencia.senha=<senha>
 ```
+
+O esquema é criado na subida (`db/postgres/schema.sql`, idempotente). Reiniciar o `java -jar` mantém o catálogo e as
+reservas.
 
 ### Contas de demonstração
 
@@ -232,7 +246,9 @@ Isso roda toda a suíte (unitária e de integração) e o gate de cobertura do J
 sobem um servidor WireMock em porta dinâmica — não dependem de rede externa nem de
 nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
 
-Os 4 testes de integração com PostgreSQL (`*IT`, Testcontainers) precisam de um Docker acessível. Com **Colima** no
+As 6 classes de teste de integração com PostgreSQL (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
+`ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`, `CatalogoRepositorioJdbcIT` e `PersistenciaReinicioIT`, com
+Testcontainers) precisam de um Docker acessível. O E2E (`FluxoCompletoNavegadorIT`) roda no modo em memória. Com **Colima** no
 macOS, o Testcontainers não encontra o socket sozinho e os ITs falham com "Could not find a valid Docker
 environment". Nesse caso:
 
@@ -421,5 +437,6 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] OpenAPI 3 das 39 operações, com teste de sincronia (RF-39)
 - [x] Gestão de usuários, consulta de auditoria, lista de manutenções e confirmação explícita (RF-23)
 - [x] Não comparecimento automático no fim do horário (P-08) e devoluções em atraso (RF-26)
-- [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md))
+- [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md)) e slides ([DOCS/apresentacao/slides.html](DOCS/apresentacao/slides.html); o PDF é gerado a partir dele)
 - [x] Mutação automatizada com PIT no domínio: 90,6% dos mutantes mortos ([DOCS/testes/mutacao-pit.md](DOCS/testes/mutacao-pit.md))
+- [x] Catálogo e reservas sobrevivem ao reinício com PostgreSQL ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md), DEF-017)

@@ -4,6 +4,11 @@ Roteiro para a apresentação final (cerca de 15 minutos: 8 de slides e 7 de dem
 evidência no repositório, para que qualquer número citado possa ser conferido na hora. Trabalho individual de Danilo
 Damasio.
 
+**Slides:** [apresentacao/slides.html](apresentacao/slides.html), 15 slides 16:9. Abrir no navegador; setas ← → navegam.
+Para gerar o PDF (não versionado), imprimir a página (tecla `P`, "Salvar como PDF", sem margens) ou, por linha de comando,
+`chrome --headless --no-pdf-header-footer --print-to-pdf=slides.pdf DOCS/apresentacao/slides.html`. Os números citados
+nos slides são os do relatório de qualidade, seção 10.
+
 ## Preparação (antes de entrar na sala)
 
 1. Conferir o último run de CI verde na `main` e abrir a aba do SonarCloud do projeto.
@@ -28,7 +33,7 @@ Damasio.
 | 8 | Defeitos | Registrados, priorizados e corrigidos, cada um com teste que falhava antes da correção | [defeitos/](defeitos/) |
 | 9 | Desempenho | Plano (50 usuários, disputa por janela) e resultado: p95, vazão, 0 duplas reservas | [performance/rnf.md](performance/rnf.md) e o resultado da rodada mais recente |
 | 10 | Processo | CI obrigatório na `main`, gate de cobertura, SonarCloud, E2E; revisão por pares substituída por verificações automáticas (trabalho individual) | README, "Autoria e revisão"; `.github/workflows/ci.yml` |
-| 11 | Limites conhecidos | Dados em memória (ADR-010), tokens sem expiração e sem limite de tentativas no login, material exclusivo no horário (DEF-016, opção A) e alteração de reserva só de horário | [relatorio-qualidade.md](relatorio-qualidade.md) §9.3 |
+| 11 | Limites conhecidos | Com PostgreSQL, catálogo e reservas sobrevivem ao reinício; manutenções, usuários e auditoria ainda em memória (ADR-010), tokens sem expiração e sem limite de tentativas no login, material exclusivo no horário (DEF-016, opção A) e alteração de reserva só de horário | [relatorio-qualidade.md](relatorio-qualidade.md) §9.3 |
 
 ## Demonstração (7 minutos)
 

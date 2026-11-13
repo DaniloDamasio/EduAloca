@@ -6,6 +6,55 @@ Nenhum número foi estimado. O que não pôde ser medido aparece como **não med
 
 ---
 
+## Resumo executivo: estado final (2026-11-13)
+
+**Como ler este relatório:** as seções 1 a 7 são a avaliação do commit `a670c68` (11/11) e ficam como registro
+histórico, com os números da época (por exemplo, RTM com 20 de 32 críticos e 2 issues BLOCKER). O estado atual está nas
+seções 8, 9 e 10. Este resumo consolida o que vale hoje.
+
+**Recomendação: aceite.** As quatro metas mensuráveis estão atendidas com evidência, os quatro limitadores de nota
+estão afastados por teste automatizado, e os riscos que restam estão documentados com a decisão e o motivo.
+
+| Meta | Alvo | Medido | Onde conferir |
+|---|---|---|---|
+| Cobertura de linhas | ≥ 80% | **97,07%** (1658/1708) | `verify` local de 13/11; §10.6 |
+| Cobertura de ramos | ≥ 70% | **89,42%** (634/709) | idem |
+| Requisitos críticos na RTM | 100% | **32 de 32**, com teste e execução | [RTM.md](RTM.md); §8.1 |
+| Bugs e vulnerabilidades críticas | 0 | **0** no SonarCloud (gate OK, 0 issues, 0 hotspots; 93,0% de cobertura no código novo do PR #17); 17 defeitos registrados, **17 corrigidos** | §10.1; [defeitos/](defeitos/) |
+
+| Limitador de nota | Situação | Evidência |
+|---|---|---|
+| Aplicação que não executa | Afastado | Jar sobe em memória e com PostgreSQL; E2E sobe a aplicação inteira no navegador; README com instruções |
+| Pipeline ausente | Afastado | GitHub Actions em todo PR (build, testes, gate JaCoCo, SonarCloud); `main` protegida |
+| Falha de autorização | Afastado | `MatrizAutorizacaoApiTest` célula a célula com token do login real; sessão com expiração e bloqueio por tentativas (§10.4) |
+| Possibilidade de dupla reserva | Afastado | Constraint de exclusão no PostgreSQL; 20 pedidos simultâneos em 1 e 2 JVMs → 1 aceito; carga: 6.308 janelas disputadas, 0 duplas (§9.1, A-23) |
+
+**Testes (`./mvnw -B verify`, 13/11):** 573 unitários e 24 de integração, 0 falhas, 0 pulados. A suíte inclui
+unitários e parametrizados (JUnit 5), API caixa-preta, BDD (Cucumber), PostgreSQL real (Testcontainers), concorrência
+entre instâncias, reinício da aplicação, WireMock e E2E em Chromium (Playwright) de 360 a 1920 px. O CI do PR #17 está
+verde. Para mostrar que a cobertura não é inflada: mutação automatizada com PIT no domínio, **577 de 637 mutantes
+mortos (90,6%)**, mais a mutação manual das regras críticas (§10.5, [testes/mutacao-pit.md](testes/mutacao-pit.md)).
+
+**Defeitos:** 17 registrados (9 de severidade Alta, 5 Média, 3 Baixa) e 17 corrigidos, cada um com teste que falhava
+antes da correção ([defeitos/](defeitos/)).
+
+**Desempenho (rodada 02, JMeter):** até 400 usuários sem saturar, p95 de 8 a 12 ms na criação sob disputa e de 1 a 3 ms
+na busca, 0 erros e 0 respostas 5xx ([performance/resultado-02.md](performance/resultado-02.md)).
+
+**Limites que continuam (decididos e documentados):**
+- A carga mediu o commit `38bbc04`, anterior a segurança do login, DEF-016, PIT e persistência do catálogo. O caminho
+  medido (busca e criação de reserva) não mudou de forma relevante, mas isso não foi medido de novo.
+- Com PostgreSQL, catálogo e reservas sobrevivem ao reinício; manutenções, usuários criados pelo Administrador,
+  auditoria, retiradas e sessões ficam em memória ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md)).
+- Trabalho individual: a revisão por pares foi substituída por CI obrigatório, mutação e este relatório (README,
+  "Autoria e revisão").
+- O PIT foi medido antes da persistência do catálogo e mutou só o domínio.
+- Uma intermitência do IT de duas JVMs foi observada uma vez e não foi explicada; o diagnóstico foi melhorado (A-33).
+- Evidência do SonarCloud: análise do PR #17 (gate OK, 0 issues, 0 hotspots), com o mesmo código que entra na `main`;
+  a `main` é analisada de novo pelo CI a cada merge.
+
+---
+
 ## 1. Identificação
 
 | Item | Valor |
@@ -634,6 +683,33 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
   confirmada: corrida em `InstanciaExterna.portaLivre()` (a porta é liberada antes de a JVM filha ocupá-la).
 - *Ação:* cada instância passou a ter log próprio (`target/instancia-externa-<timestamp>.log`) e a mensagem de erro traz
   as últimas 25 linhas do log, para que uma nova ocorrência mostre a causa. A corrida de porta não foi corrigida.
+
+### 10.6 Atualização: persistência do catálogo e recarga das reservas (2026-11-13, branch `persistencia-catalogo`)
+
+**A-34. Com PostgreSQL, catálogo e reservas sobrevivem ao reinício.**
+- *Evidência:* tabelas `sala`, `professor`, `professor_competencia` e `material`; gravação a cada cadastro, edição e
+  inativação; recarga do catálogo e das reservas na subida ([ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md),
+  "Atualização"). `PersistenciaReinicioIT` sobe a aplicação inteira duas vezes no mesmo PostgreSQL (Testcontainers), com a
+  memória zerada entre as subidas. Confere edição e inativação, competências na ordem, reserva aprovada e rejeitada (com
+  justificativa) apontando para os mesmos objetos do catálogo, histórico, sobreposição ainda recusada e seed sem duplicar.
+  `CatalogoRepositorioJdbcIT` (3 casos) cobre o repositório. Dois mutantes manuais (sem recarga de reservas; edição de
+  sala não gravada) fazem o teste falhar. Teste manual com o jar e um PostgreSQL em Docker: sala criada pela API continua
+  lá depois de reiniciar. `./mvnw -B verify`: **573 unitários e 23 ITs, 0 falhas**; linhas 1663/1714 = **97,02%**,
+  ramos 634/709 = **89,42%**.
+- *Interpretação:* fecha a limitação mais visível do modo PostgreSQL (o cadastro sumia no reinício), sem mexer no domínio
+  nem na proteção contra dupla reserva, porque o cache em memória continua sendo a fonte das leituras.
+- *Limite:* manutenções, usuários, auditoria, retiradas, notificações e sessões continuam em memória; com duas instâncias,
+  o cache de uma não é atualizado pelas gravações da outra até reiniciar; se a gravação no banco falhar depois da mudança
+  no cache, o cache fica à frente do banco até o reinício; a carga (rodada 02) é anterior a esta mudança.
+
+**A-35. DEF-017: o Solicitante do seed perdia a posse das reservas depois de um reinício (corrigido antes do merge).**
+- *Evidência:* red `010298b` (`PersistenciaReinicioIT.solicitanteDoSeedContinuaDonoDepoisDoReinicio`: id da conta mudava
+  entre as subidas); green com ids fixos para as contas de Solicitante do seed. `verify`: 573 unitários e 24 ITs, 0
+  falhas; linhas 97,07%, ramos 89,42%. [DEF-017](defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md).
+- *Interpretação:* a recarga de reservas expôs um defeito latente; o teste novo usa o login real, que o primeiro teste
+  de reinício não usava.
+- *Limite:* a persistência para neste ponto (ADR-010, "Decisão final"); manutenções, usuários criados pelo
+  Administrador e auditoria continuam em memória.
 
 ## Apêndice A: comandos usados
 

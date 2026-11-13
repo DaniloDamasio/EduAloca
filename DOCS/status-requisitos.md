@@ -169,3 +169,7 @@ P4 ("expiração de token continua pendente") passa a **feito**.
 **Testes fracos e PIT (12/11/2026, noite):** `rnf05T1`, `rnf06T1`, `rnf09T1` e `rc03T4` (seção 4) **resolvidos**,
 reescritos para falhar quando a regra quebra. Mutação automatizada com PIT no domínio: 577/637 mutantes mortos
 (**90,6%**), ver [testes/mutacao-pit.md](testes/mutacao-pit.md).
+
+**Persistência do catálogo (13/11/2026, branch `persistencia-catalogo`):** P2 avança. Com PostgreSQL, catálogo e reservas
+sobrevivem ao reinício (`PersistenciaReinicioIT`). Manutenções, usuários e auditoria continuam em memória (ADR-010,
+"Atualização").

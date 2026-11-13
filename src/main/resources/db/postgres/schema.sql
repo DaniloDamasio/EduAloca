@@ -3,6 +3,41 @@
 -- Igualdade de uuid/varchar dentro de um indice GiST (necessario para a constraint de exclusao).
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
+-- Catalogo (RF-04 a RF-06). Gravado a cada cadastro, edicao ou inativacao e recarregado na subida da aplicacao,
+-- para que salas, professores e materiais (e as reservas que os usam) sobrevivam a um reinicio.
+CREATE TABLE IF NOT EXISTS sala (
+    id          uuid     PRIMARY KEY,
+    nome        text     NOT NULL CHECK (btrim(nome) <> ''),
+    tipo        text     NOT NULL CHECK (btrim(tipo) <> ''),
+    capacidade  integer  NOT NULL CHECK (capacidade > 0),
+    localizacao text     NOT NULL CHECK (btrim(localizacao) <> ''),
+    restrito    boolean  NOT NULL,
+    ativo       boolean  NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS professor (
+    id                         uuid     PRIMARY KEY,
+    nome                       text     NOT NULL CHECK (btrim(nome) <> ''),
+    identificador_institucional text    NOT NULL UNIQUE,
+    ativo                      boolean  NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS professor_competencia (
+    professor_id uuid    NOT NULL REFERENCES professor (id),
+    ordem        integer NOT NULL,
+    nome         text    NOT NULL,
+    PRIMARY KEY (professor_id, ordem)
+);
+
+CREATE TABLE IF NOT EXISTS material (
+    id               uuid     PRIMARY KEY,
+    nome             text     NOT NULL CHECK (btrim(nome) <> ''),
+    tipo             text     NOT NULL CHECK (btrim(tipo) <> ''),
+    quantidade_total integer  NOT NULL CHECK (quantidade_total > 0),
+    restrito         boolean  NOT NULL,
+    ativo            boolean  NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS reserva (
     id                     uuid         PRIMARY KEY,
     solicitante_id         uuid         NOT NULL,

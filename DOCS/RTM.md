@@ -197,6 +197,14 @@ Branch `entrega-final-pendencias`. Os commits citados são locais (sem push, por
 mutantes mortos (90,6%), em [testes/mutacao-pit.md](testes/mutacao-pit.md). Os testes que esta matriz cita para RNF-05
 (`rnf05T1`), RNF-06 (`rnf06T1`), RNF-09 (`rnf09T1`) e RF-17 (`rc03T4`) foram reescritos para conferir o efeito real.
 
+## Persistência do catálogo e recarga na subida (2026-11-13)
+
+| Requisito | Risco | Teste | Evidência / Execução |
+|---|---|---|---|
+| RF-04 a RF-06 com PostgreSQL — cadastro, edição e inativação persistem | Reinício apaga o que o Administrador cadastrou | `CatalogoRepositorioJdbcIT` (upsert, competências na ordem, identificador repetido → 409, banco vence o seed, seed sem duplicar) | Verde local (`verify` de 13/11: 573 unitários e 23 ITs) |
+| RF-12 a RF-14 e RF-27 após reinício — reservas e histórico voltam com estado, justificativa e recursos | Reserva some, ou volta apontando para recurso que não é o do catálogo (quebrando a sobreposição) | `PersistenciaReinicioIT` (aplicação inteira, duas subidas no mesmo banco, memória zerada entre elas; sobreposição recusada depois do reinício) | Verde local; mutantes M1 (sem recarga) e M2 (edição não gravada) mortos |
+| RF-03 / RF-14 após reinício — o Solicitante continua dono das próprias reservas ([DEF-017](defeitos/DEF-017-solicitante-perde-reservas-apos-reinicio.md)) | Id da conta sorteado a cada subida: a reserva recarregada fica sem dono | `PersistenciaReinicioIT.solicitanteDoSeedContinuaDonoDepoisDoReinicio` (login real nas duas subidas, lista e cancela) | Red `010298b`; green local (`verify`: 573 unitários e 24 ITs) |
+
 ## Concorrência de reservas (PostgreSQL real via Testcontainers)
 
 | Requisito | Risco | Teste | Evidência / Execução |

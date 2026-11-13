@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EduAloca: qualidade de software com evidência</title>
+<style>
+  :root { --azul:#003b71; --azul-escuro:#002a52; --azul-claro:#e6eef6; --laranja:#f7941d; --laranja-claro:#fff3e3;
+          --texto:#1f2933; --suave:#52606d; --ok:#1e7b4d; --borda:#d5dde5; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #1b2430; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--texto); }
+  .slide { width: 1280px; height: 720px; margin: 24px auto; background: #fff; position: relative; overflow: hidden;
+           padding: 64px 80px 56px; display: none; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+  .slide.ativo { display: flex; }
+  .slide::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 10px; background: var(--azul); }
+  .slide::after { content: ""; position: absolute; left: 0; top: 10px; width: 220px; height: 6px; background: var(--laranja); }
+  h1 { font-size: 46px; color: var(--azul); margin: 0 0 18px; line-height: 1.1; }
+  h2 { font-size: 36px; color: var(--azul); margin: 0 0 26px; }
+  h3 { font-size: 22px; color: var(--azul); margin: 0 0 10px; }
+  p, li { font-size: 22px; line-height: 1.45; }
+  ul { margin: 0; padding-left: 26px; }
+  li { margin-bottom: 8px; }
+  .suave { color: var(--suave); }
+  .rodape { position: absolute; bottom: 22px; left: 80px; right: 80px; display: flex; justify-content: space-between;
+            font-size: 14px; color: var(--suave); }
+  .grade { display: grid; gap: 22px; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card { border: 1px solid var(--borda); border-top: 5px solid var(--azul); border-radius: 10px; padding: 18px 20px; background: #fff; }
+  .card.laranja { border-top-color: var(--laranja); }
+  .card p, .card li { font-size: 19px; }
+  .num { font-size: 52px; font-weight: 800; color: var(--azul); line-height: 1; }
+  .num small { font-size: 22px; color: var(--suave); font-weight: 600; }
+  .meta { font-size: 16px; color: var(--suave); margin-top: 6px; }
+  .selo { display: inline-block; background: var(--laranja); color: var(--azul-escuro); font-weight: 800; border-radius: 999px;
+          padding: 4px 14px; font-size: 15px; letter-spacing: .03em; text-transform: uppercase; }
+  .ok { color: var(--ok); font-weight: 800; }
+  table { border-collapse: collapse; width: 100%; font-size: 19px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--borda); }
+  th { background: var(--azul-claro); color: var(--azul); }
+  .capa { background: var(--azul); color: #fff; justify-content: center; }
+  .capa::before { background: var(--laranja); } .capa::after { display: none; }
+  .capa h1 { color: #fff; font-size: 64px; }
+  .capa p { color: #dbe7f3; font-size: 26px; }
+  .logo { width: 96px; height: 96px; border-radius: 50%; background: var(--laranja); color: var(--azul-escuro);
+          font-weight: 900; font-size: 52px; display: grid; place-items: center; margin-bottom: 28px; }
+  .fluxo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 20px; }
+  .fluxo span.estado { background: var(--azul-claro); color: var(--azul); border-radius: 8px; padding: 8px 14px; font-weight: 700; }
+  .fluxo span.seta { color: var(--laranja); font-weight: 900; font-size: 26px; }
+  .camadas div { border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; font-size: 19px; }
+  .barra { height: 22px; background: var(--azul-claro); border-radius: 6px; position: relative; overflow: hidden; margin: 6px 0 2px; }
+  .barra i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--laranja); }
+  .barra b { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--azul); }
+  .nav { position: fixed; bottom: 14px; right: 18px; color: #c8d3df; font-size: 13px; }
+  @media print {
+    html, body { background: #fff; }
+    @page { size: 1280px 720px; margin: 0; }
+    .slide { display: flex !important; margin: 0; box-shadow: none; page-break-after: always; break-after: page; }
+    .nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. Capa -->
+<section class="slide capa">
+  <div class="logo">E</div>
+  <h1>EduAloca</h1>
+  <p>Alocação de salas, professores e materiais sem conflito de horário,<br>com evidência de qualidade, segurança, rastreabilidade e desempenho.</p>
+  <p style="margin-top:36px;font-size:20px">Danilo Damasio · Qualidade de Software · 4º semestre · Senac</p>
+</section>
+
+<!-- 2. Problema -->
+<section class="slide">
+  <h2>O problema e os três perfis</h2>
+  <div class="grade g3">
+    <div class="card"><h3>Solicitante</h3><p>Professor ou coordenador: busca disponibilidade, cria, altera e cancela as próprias reservas.</p></div>
+    <div class="card"><h3>Responsável</h3><p>Aprova recursos restritos do seu bloco, inicia e conclui o uso, acompanha retirada e devolução.</p></div>
+    <div class="card"><h3>Administrador</h3><p>Cadastra salas, professores, materiais e usuários; bloqueia para manutenção; consulta a auditoria.</p></div>
+  </div>
+  <h3 style="margin-top:34px">Ciclo da reserva, com auditoria em toda mudança</h3>
+  <div class="fluxo">
+    <span class="estado">SOLICITADA</span><span class="seta">→</span><span class="estado">APROVADA</span><span class="seta">→</span>
+    <span class="estado">EM USO</span><span class="seta">→</span><span class="estado">CONCLUÍDA</span>
+    <span class="suave" style="margin-left:18px">alternativos: rejeitada · cancelada · não compareceu</span>
+  </div>
+  <div class="rodape"><span>Escopo: enunciado e DOCS/REQUISITOS (RF-01 a RF-39)</span><span>2</span></div>
+</section>
+
+<!-- 3. Arquitetura -->
+<section class="slide">
+  <h2>Arquitetura</h2>
+  <div class="grade g2">
+    <div class="camadas">
+      <div style="background:var(--laranja-claro)"><b>Interface</b> HTML, CSS e JS puros, servida pela própria aplicação</div>
+      <div style="background:var(--azul-claro)"><b>API</b> Spring Boot 4.1.1 · token Bearer · ProblemDetail (RFC 9457)</div>
+      <div style="background:var(--azul-claro)"><b>Domínio</b> regras e máquina de estados, sem framework web nem JDBC</div>
+      <div style="background:var(--azul-claro)"><b>Persistência</b> PostgreSQL 16 · constraint de exclusão GiST</div>
+      <div style="background:var(--laranja-claro)"><b>Integração</b> notificação externa por adaptador HTTP</div>
+    </div>
+    <div>
+      <ul>
+        <li>Camadas verificadas por teste: o domínio não importa web, JDBC nem adaptadores (<code>ArquiteturaCamadasTest</code>, RNF-15).</li>
+        <li>Diagramas de contexto, contêineres, componentes e três sequências críticas (C4) em <code>DOCS/arquitetura.md</code>.</li>
+        <li>Decisões registradas: ADR-009 (exclusão GiST) e ADR-010 (escopo da persistência).</li>
+        <li>40 operações documentadas em OpenAPI, com teste que falha se código e documento divergirem.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="rodape"><span>DOCS/arquitetura.md §14–17 · DOCS/adr · static/openapi.yaml</span><span>3</span></div>
+</section>
+
+<!-- 4. Regras criticas -->
+<section class="slide">
+  <h2>Regras críticas e como cada uma é garantida</h2>
+  <table>
+    <tr><th>Regra do enunciado</th><th>Garantia</th><th>Evidência</th></tr>
+    <tr><td>Término posterior ao início</td><td>Validação no domínio + <code>CHECK (fim &gt; inicio)</code></td><td>RegrasCriticasTest</td></tr>
+    <tr><td>Mesmo recurso não se sobrepõe (sala, material, professor)</td><td>Checagem no serviço + constraint de exclusão no banco</td><td>RegrasCriticasTest, SobreposicaoMaterialTest, ReservaRepositorioJdbcIT</td></tr>
+    <tr><td>Duas solicitações simultâneas → uma aceita</td><td>Lock por recurso + constraint GiST entre instâncias</td><td>ConcorrenciaReservaIT, …MultiInstanciaIT</td></tr>
+    <tr><td>Recurso em manutenção não é reservável</td><td>Serviço recusa; busca não oferece</td><td>RegrasCriticasTest, BuscaRecursoEmManutencaoTest</td></tr>
+    <tr><td>Só Responsável aprova restrito</td><td>Perfil + competência pelo bloco</td><td>MatrizAutorizacaoApiTest (token real)</td></tr>
+    <tr><td>Reserva iniciada não é apagada; toda mudança audita</td><td>Sem exclusão física; histórico append-only com trigger</td><td>HistoricoReservaTransacaoIT, BDD</td></tr>
+  </table>
+  <div class="rodape"><span>Rastreabilidade completa em DOCS/RTM.md</span><span>4</span></div>
+</section>
+
+<!-- 5. Dupla reserva -->
+<section class="slide">
+  <h2>Dupla reserva: a regra que limita a nota</h2>
+  <div class="grade g3">
+    <div class="card laranja"><div class="num">1 <small>de 20</small></div><p>aceita quando 20 pedidos simultâneos disputam a mesma sala, numa instância e em <b>duas JVMs</b> no mesmo PostgreSQL</p></div>
+    <div class="card laranja"><div class="num">6.308</div><p>janelas disputadas sob carga de até 400 usuários, <b>todas com exatamente uma reserva aceita</b></p></div>
+    <div class="card laranja"><div class="num">0</div><p>pares sobrepostos no banco, conferidos por SQL ao fim de cada cenário de carga</p></div>
+  </div>
+  <p style="margin-top:30px">Defeito encontrado e corrigido: o lock em memória não protegia entre instâncias (DEF-001). A garantia passou para o banco:
+    <code>EXCLUDE USING gist (tipo_recurso WITH =, recurso_id WITH =, periodo WITH &amp;&amp;) WHERE (ativa)</code>.</p>
+  <div class="rodape"><span>DEF-001 · ADR-009 · DOCS/performance/resultado-02.md</span><span>5</span></div>
+</section>
+
+<!-- 6. Estrategia de testes -->
+<section class="slide">
+  <h2>Estratégia de teste</h2>
+  <div class="grade g4">
+    <div class="card"><div class="num">573</div><div class="meta">unitários, parametrizados (JUnit 5), API caixa-preta (MockMvc) e BDD</div></div>
+    <div class="card"><div class="num">24</div><div class="meta">integração: PostgreSQL com Testcontainers, concorrência, reinício e E2E</div></div>
+    <div class="card"><div class="num">5</div><div class="meta">cenários E2E em Chromium (Playwright) para os 3 perfis, em 360 a 1920 px</div></div>
+    <div class="card"><div class="num">36</div><div class="meta">testes parametrizados (bordas, perfis, estados)</div></div>
+  </div>
+  <ul style="margin-top:28px">
+    <li><b>BDD</b> com Cucumber em português para aprovação, bloqueio e estados; <b>WireMock</b> para a notificação externa (404, 500 com retry, timeout).</li>
+    <li><b>TDD</b>: cada defeito tem commit <i>red</i> (teste falhando) e <i>green</i> (correção), registrados na RTM.</li>
+    <li>Mocks só em unitário isolado; persistência e integração críticas em ambiente real.</li>
+  </ul>
+  <div class="rodape"><span>DOCS/testes/plano-tdd.md · evidencia-tdd.md · bdd-aprovacao-bloqueio.md</span><span>6</span></div>
+</section>
+
+<!-- 7. Metas -->
+<section class="slide">
+  <h2>Metas mensuráveis</h2>
+  <div class="grade g2" style="gap:30px">
+    <div>
+      <h3>Cobertura de linhas <span class="ok">97,07%</span></h3>
+      <div class="barra"><i style="width:97.07%"></i><b style="left:80%"></b></div><div class="meta">meta 80% (traço azul)</div>
+      <h3 style="margin-top:26px">Cobertura de ramos <span class="ok">89,42%</span></h3>
+      <div class="barra"><i style="width:89.42%"></i><b style="left:70%"></b></div><div class="meta">meta 70% (traço azul)</div>
+    </div>
+    <div class="grade" style="gap:18px">
+      <div class="card"><h3>Requisitos críticos na RTM</h3><div class="num">32<small>/32</small></div></div>
+      <div class="card"><h3>Bugs e vulnerabilidades (SonarCloud)</h3><div class="num">0</div><div class="meta">quality gate OK; 0 hotspots; notas A</div></div>
+    </div>
+  </div>
+  <p class="suave" style="margin-top:26px;font-size:18px">Gate do JaCoCo no <code>verify</code> e SonarCloud em todo pull request: o merge na <code>main</code> exige CI verde.</p>
+  <div class="rodape"><span>relatorio-qualidade.md §10 · CI GitHub Actions · SonarCloud</span><span>7</span></div>
+</section>
+
+<!-- 8. Cobertura nao e qualidade -->
+<section class="slide">
+  <h2>Cobertura alta não basta: mutação</h2>
+  <div class="grade g2">
+    <div class="card laranja">
+      <h3>Mutação automatizada (PIT) no domínio</h3>
+      <p><span class="num" style="font-size:44px">84,6%</span> <span class="suave">→</span> <span class="num" style="font-size:44px">90,6%</span></p>
+      <p>577 de 637 mutantes mortos (força dos testes 91,4%). Os sobreviventes viraram testes novos ou foram justificados um a um.</p>
+    </div>
+    <div class="card">
+      <h3>O que a mutação revelou</h3>
+      <ul>
+        <li>Auditoria que fabricava evento quando não havia registro (DEF-011).</li>
+        <li>4 testes que passavam com qualquer código, reescritos para conferir o efeito.</li>
+        <li>Lacunas reais: filtros da busca, bordas do cadastro, lock liberado após falha.</li>
+        <li>Código morto removido.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="rodape"><span>DOCS/testes/mutacao-pit.md · mutacao-manual.md</span><span>8</span></div>
+</section>
+
+<!-- 9. Defeitos -->
+<section class="slide">
+  <h2>Defeitos: 17 registrados, 17 corrigidos</h2>
+  <table>
+    <tr><th>Defeito</th><th>Severidade</th><th>Como foi encontrado</th></tr>
+    <tr><td>DEF-001 dupla reserva entre instâncias</td><td>Alta</td><td>IT com duas JVMs no mesmo banco</td></tr>
+    <tr><td>DEF-003 login sempre emitia Solicitante</td><td>Alta</td><td>Matriz de autorização com token real</td></tr>
+    <tr><td>DEF-011 auditoria inventava evento</td><td>Alta</td><td>Mutação manual</td></tr>
+    <tr><td>DEF-013 senha guardada em texto plano</td><td>Alta</td><td>Relatório de qualidade → PBKDF2 com sal</td></tr>
+    <tr><td>DEF-016 busca oferecia material que a criação recusava</td><td>Média</td><td>Teste material × material</td></tr>
+    <tr><td>DEF-017 Solicitante perdia reservas após reinício</td><td>Alta</td><td>Teste de reinício com login real</td></tr>
+  </table>
+  <p class="suave" style="font-size:18px;margin-top:16px">Cada registro tem passos, resultado esperado e obtido, causa raiz, correção, reteste e limites.</p>
+  <div class="rodape"><span>DOCS/defeitos/DEF-001 a DEF-017</span><span>9</span></div>
+</section>
+
+<!-- 10. Desempenho -->
+<section class="slide">
+  <h2>Desempenho (JMeter, rodada 02)</h2>
+  <div class="grade g4">
+    <div class="card"><div class="num">400</div><div class="meta">usuários simultâneos no maior cenário, sem saturar</div></div>
+    <div class="card"><div class="num">8–12 <small>ms</small></div><div class="meta">p95 da criação de reserva sob disputa</div></div>
+    <div class="card"><div class="num">1–3 <small>ms</small></div><div class="meta">p95 da busca de disponibilidade</div></div>
+    <div class="card"><div class="num">0</div><div class="meta">erros reais e respostas 5xx</div></div>
+  </div>
+  <ul style="margin-top:28px">
+    <li>264,5 req/s (3.174 criações/min); CPU da aplicação no máximo 47,5% de um núcleo; maior pausa de GC 13,7 ms; pool Hikari sem espera.</li>
+    <li>Banco e aplicação recriados por cenário; dupla reserva conferida por SQL; dados brutos com SHA-256.</li>
+    <li class="suave">Limite: gerador, aplicação e banco na mesma máquina; ponto de saturação não encontrado.</li>
+  </ul>
+  <div class="rodape"><span>DOCS/performance/rnf.md (plano) · resultado-02.md (resultado)</span><span>10</span></div>
+</section>
+
+<!-- 11. Seguranca -->
+<section class="slide">
+  <h2>Segurança e robustez</h2>
+  <div class="grade g2">
+    <ul>
+      <li><b>Senha</b> com PBKDF2-HMAC-SHA256 e sal por conta; conferência em tempo constante.</li>
+      <li><b>Sessão</b> com token opaco de 256 bits, vence em 30 min sem uso ou 8 h; logout revoga.</li>
+      <li><b>Força bruta</b>: 5 senhas erradas bloqueiam o e-mail por 15 min (429), sem revelar se a conta existe.</li>
+    </ul>
+    <ul>
+      <li><b>Autorização</b> por perfil, dono e bloco, testada célula a célula com token do login real.</li>
+      <li><b>Erros</b> em ProblemDetail, sem stack trace, SQL ou nome de classe; mensagens em português.</li>
+      <li><b>Interface</b> com CSP restrita e dados inseridos só como texto (sem injeção de HTML).</li>
+    </ul>
+  </div>
+  <div class="rodape"><span>seguranca/matriz-autorizacao.md · SegurancaLoginTest · ArmazenamentoSenhaTest</span><span>11</span></div>
+</section>
+
+<!-- 12. Processo -->
+<section class="slide">
+  <h2>Processo e autoria</h2>
+  <div class="grade g2">
+    <ul>
+      <li>GitHub Actions em todo pull request: build, 597 testes, gate de cobertura e SonarCloud.</li>
+      <li>Branch <code>main</code> protegida: merge só com CI verde.</li>
+      <li>Histórico em pull requests temáticos, com commits <i>red</i> e <i>green</i>.</li>
+    </ul>
+    <div class="card laranja">
+      <h3>Trabalho individual</h3>
+      <p>Sem outro integrante para revisar, a revisão por pares foi substituída por verificações que não dependem do autor e bloqueiam o merge: CI obrigatório, mutação manual e automatizada, e relatório de qualidade com evidência, interpretação e limite.</p>
+    </div>
+  </div>
+  <div class="rodape"><span>README, "Autoria e revisão" · .github/workflows/ci.yml</span><span>12</span></div>
+</section>
+
+<!-- 13. Demonstracao -->
+<section class="slide">
+  <h2>Demonstração</h2>
+  <ol style="font-size:22px;line-height:1.6">
+    <li><b>Administrador</b> cadastra uma sala restrita e um kit de material.</li>
+    <li><b>Solicitante</b> busca, monta a reserva e pede: nasce <i>Solicitada</i>. Repete o pedido: 409 por sobreposição.</li>
+    <li><b>Responsável</b> aprova, inicia o uso, registra retirada e devolução, conclui e abre o histórico.</li>
+    <li><b>Responsável</b> gera o relatório de utilização e de conflitos evitados.</li>
+    <li><b>Administrador</b> bloqueia a sala sobre uma reserva aprovada: a tela pede confirmação.</li>
+    <li><b>Administrador</b> cria um usuário e consulta a auditoria.</li>
+  </ol>
+  <div class="rodape"><span>Plano B: o E2E percorre o mesmo fluxo no navegador</span><span>13</span></div>
+</section>
+
+<!-- 14. Limites -->
+<section class="slide">
+  <h2>Limites conhecidos</h2>
+  <ul>
+    <li>Com PostgreSQL, catálogo e reservas sobrevivem ao reinício; manutenções, usuários criados pelo Administrador e auditoria ficam em memória (decisão no ADR-010).</li>
+    <li>Material é exclusivo no horário (DEF-016, opção A): não divide unidades entre reservas diferentes.</li>
+    <li>Alteração de reserva muda o horário, não os recursos.</li>
+    <li>Carga medida numa máquina só; ponto de saturação não encontrado.</li>
+    <li>Mutação automatizada só no domínio; a camada HTTP é coberta por testes de API, sem mutação.</li>
+  </ul>
+  <div class="rodape"><span>relatorio-qualidade.md · ADR-010</span><span>14</span></div>
+</section>
+
+<!-- 15. Encerramento -->
+<section class="slide capa">
+  <div class="logo">E</div>
+  <h1>Obrigado</h1>
+  <p>Perguntas?</p>
+  <p style="font-size:18px;margin-top:40px">Repositório: github.com/DaniloDamasio/EduAloca · README → como executar · DOCS → evidências</p>
+</section>
+
+<div class="nav">← → para navegar · P para imprimir em PDF</div>
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let atual = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+  const mostrar = (i) => { atual = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('ativo', k === atual)); history.replaceState(null, '', '#' + (atual + 1)); };
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) mostrar(atual + 1);
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) mostrar(atual - 1);
+    if (e.key === 'Home') mostrar(0);
+    if (e.key === 'End') mostrar(slides.length - 1);
+    if (e.key.toLowerCase() === 'p') window.print();
+  });
+  document.addEventListener('click', (e) => { if (!e.target.closest('a')) mostrar(atual + (e.clientX > innerWidth / 2 ? 1 : -1)); });
+  mostrar(atual);
+</script>
+</body>
+</html>

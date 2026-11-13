@@ -1,5 +1,6 @@
 package com.edualoca.persistencia;
 
+import com.edualoca.domain.recurso.CatalogoRepositorio;
 import com.edualoca.domain.reserva.HistoricoReservaRepositorio;
 import com.edualoca.domain.reserva.ReservaRepositorio;
 import com.edualoca.domain.reserva.Transacao;
@@ -55,11 +56,26 @@ public class PersistenciaPostgresConfig {
         return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
     }
 
+    /**
+     * Catalogo no banco. Ao ser criado, sincroniza: o catalogo gravado vence o seed e o seed ausente e gravado. Roda antes de
+     * a aplicacao atender requisicoes, porque os servicos dependem deste bean.
+     */
+    @Bean
+    public CatalogoRepositorio catalogoRepositorioJdbc(DataSource dataSource, DataSourceInitializer esquemaReservas,
+                                                       TransactionTemplate transacaoReservas) {
+        CatalogoRepositorioJdbc catalogo = new CatalogoRepositorioJdbc(new JdbcTemplate(dataSource), transacaoReservas);
+        catalogo.sincronizarComOBanco();
+        return catalogo;
+    }
+
+    /** Depende do catalogo ja sincronizado: as reservas recarregadas apontam para os objetos do catalogo. */
     @Bean
     public ReservaRepositorio reservaRepositorioJdbc(DataSource dataSource, DataSourceInitializer esquemaReservas,
-                                                     TransactionTemplate transacaoReservas,
+                                                     TransactionTemplate transacaoReservas, CatalogoRepositorio catalogoRepositorioJdbc,
                                                      @Value("${edualoca.persistencia.fuso-horario:America/Sao_Paulo}") String fusoHorario) {
-        return new ReservaRepositorioJdbc(new JdbcTemplate(dataSource), transacaoReservas, ZoneId.of(fusoHorario));
+        ReservaRepositorioJdbc reservas = new ReservaRepositorioJdbc(new JdbcTemplate(dataSource), transacaoReservas, ZoneId.of(fusoHorario));
+        reservas.carregarNoCache();
+        return reservas;
     }
 
     @Bean

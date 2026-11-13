@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditoriaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.auditoria</a> &gt; <span class="el_source">AuditoriaService.java</span></div><h1>AuditoriaService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.auditoria;
+
+import com.edualoca.domain.comum.Banco;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+<span class="fc" id="L9">public class AuditoriaService {</span>
+
+    public static void registrar(String entidade, UUID entidadeId, String acao, UUID autorId, LocalDateTime dataHora) {
+<span class="fc" id="L12">        Banco.auditoria.add(new AuditoriaEvento(UUID.randomUUID(), entidade, entidadeId, acao, autorId, dataHora));</span>
+<span class="fc" id="L13">    }</span>
+
+    /**
+     * RF-28: eventos de auditoria do mais recente para o mais antigo, filtrados por entidade e acao (ignorando
+     * maiusculas; filtro nulo ou vazio nao restringe), no maximo {@code limite}. So leitura: nenhuma rota altera ou
+     * apaga eventos (RF-29).
+     */
+    public List&lt;AuditoriaEvento&gt; listar(String entidade, String acao, int limite) {
+<span class="fc" id="L21">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L22">        java.util.List&lt;AuditoriaEvento&gt; todos = new java.util.ArrayList&lt;&gt;(Banco.auditoria);</span>
+<span class="fc" id="L23">        java.util.Collections.reverse(todos);</span>
+<span class="fc" id="L24">        return todos.stream()</span>
+<span class="fc bfc" id="L25" title="All 4 branches covered.">                .filter(e -&gt; vazio(entidade) || entidade.strip().equalsIgnoreCase(e.getEntidade()))</span>
+<span class="fc bfc" id="L26" title="All 4 branches covered.">                .filter(e -&gt; vazio(acao) || acao.strip().equalsIgnoreCase(e.getAcao()))</span>
+<span class="fc" id="L27">                .limit(Math.max(0, limite))</span>
+<span class="fc" id="L28">                .toList();</span>
+    }
+
+    private static boolean vazio(String valor) {
+<span class="fc bfc" id="L32" title="All 4 branches covered.">        return valor == null || valor.isBlank();</span>
+    }
+
+    /**
+     * Eventos registrados para a entidade, na ordem de registro. Entidade sem eventos devolve lista vazia: a ausencia de
+     * registro e informacao de auditoria e nao pode ser mascarada por um evento fabricado (DEF-011).
+     */
+    public List&lt;AuditoriaEvento&gt; consultarPorEntidade(String entidade, UUID entidadeId) {
+<span class="fc" id="L40">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L41">        return Banco.auditoria.stream()</span>
+<span class="pc bpc" id="L42" title="1 of 4 branches missed.">                .filter(e -&gt; e.getEntidade().equals(entidade) &amp;&amp; e.getEntidadeId().equals(entidadeId))</span>
+<span class="fc" id="L43">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

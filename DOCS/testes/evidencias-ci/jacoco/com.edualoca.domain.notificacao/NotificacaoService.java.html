@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificacaoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.notificacao</a> &gt; <span class="el_source">NotificacaoService.java</span></div><h1>NotificacaoService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.notificacao;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.Reserva;
+
+import java.util.UUID;
+
+public class NotificacaoService {
+
+    public interface NotificadorExterno {
+        boolean enviar(Reserva reserva);
+    }
+
+    private final NotificadorExterno notificadorExterno;
+
+    public NotificacaoService() {
+<span class="fc" id="L18">        this(reserva -&gt; true);</span>
+<span class="fc" id="L19">    }</span>
+
+<span class="fc" id="L21">    public NotificacaoService(NotificadorExterno notificadorExterno) {</span>
+<span class="fc" id="L22">        this.notificadorExterno = notificadorExterno;</span>
+<span class="fc" id="L23">    }</span>
+
+    public NotificacaoEnviada notificarTransicaoDeEstado(Reserva reserva) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        StatusNotificacao status = enviarSemPropagar(reserva) ? StatusNotificacao.ENVIADA : StatusNotificacao.FALHA;</span>
+<span class="fc" id="L27">        NotificacaoEnviada notificacao = new NotificacaoEnviada(UUID.randomUUID(), reserva.getSolicitanteId(),</span>
+<span class="fc" id="L28">                &quot;Sua reserva mudou para &quot; + reserva.getEstado(), status);</span>
+<span class="fc" id="L29">        Banco.notificacoes.put(notificacao.getId(), notificacao);</span>
+<span class="fc" id="L30">        return notificacao;</span>
+    }
+
+    public NotificacaoEnviada notificarResponsavelCompetente(Reserva reserva) {
+<span class="fc" id="L34">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L35">        UUID responsavelId = encontrarResponsavelCompetente(reserva);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        StatusNotificacao status = responsavelId != null ? StatusNotificacao.ENVIADA : StatusNotificacao.FALHA;</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        UUID destinatario = responsavelId != null ? responsavelId : UUID.randomUUID();</span>
+<span class="fc" id="L38">        NotificacaoEnviada notificacao = new NotificacaoEnviada(UUID.randomUUID(), destinatario,</span>
+                &quot;Nova solicitação restrita pendente de aprovação&quot;, status);
+<span class="fc" id="L40">        Banco.notificacoes.put(notificacao.getId(), notificacao);</span>
+<span class="fc" id="L41">        return notificacao;</span>
+    }
+
+    /** RF-33: excecao do provedor vira {@code FALHA} registrada, nunca sobe para quem mudou o estado. */
+    private boolean enviarSemPropagar(Reserva reserva) {
+        try {
+<span class="fc" id="L47">            return notificadorExterno.enviar(reserva);</span>
+<span class="fc" id="L48">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L49">            return false;</span>
+        }
+    }
+
+    private UUID encontrarResponsavelCompetente(Reserva reserva) {
+<span class="fc" id="L54">        return reserva.getRecursos().stream()</span>
+<span class="fc" id="L55">                .map(rr -&gt; rr.getRecurso())</span>
+<span class="fc" id="L56">                .filter(Sala.class::isInstance)</span>
+<span class="fc" id="L57">                .map(Sala.class::cast)</span>
+<span class="fc" id="L58">                .map(sala -&gt; Banco.responsavelPorLocalizacao.get(sala.getLocalizacao()))</span>
+<span class="fc" id="L59">                .filter(java.util.Objects::nonNull)</span>
+<span class="fc" id="L60">                .findFirst()</span>
+<span class="fc" id="L61">                .orElse(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

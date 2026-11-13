@@ -17,8 +17,8 @@ estão afastados por teste automatizado, e os riscos que restam estão documenta
 
 | Meta | Alvo | Medido | Onde conferir |
 |---|---|---|---|
-| Cobertura de linhas | ≥ 80% | **97,07%** (1658/1708) | `verify` local de 13/11; §10.6 |
-| Cobertura de ramos | ≥ 70% | **89,42%** (634/709) | idem |
+| Cobertura de linhas | ≥ 80% | **96,97%** (1666/1718) | CI do commit entregue (PR #18, run 43353596650), versionado em [testes/evidencias-ci/](testes/evidencias-ci/); §10.7 |
+| Cobertura de ramos | ≥ 70% | **89,28%** (633/709) | idem |
 | Requisitos críticos na RTM | 100% | **32 de 32**, com teste e execução | [RTM.md](RTM.md); §8.1 |
 | Bugs e vulnerabilidades críticas | 0 | **0** no SonarCloud (gate OK, 0 issues, 0 hotspots; 93,0% de cobertura no código novo do PR #17); 17 defeitos registrados, **17 corrigidos** | §10.1; [defeitos/](defeitos/) |
 
@@ -31,8 +31,8 @@ estão afastados por teste automatizado, e os riscos que restam estão documenta
 
 **Testes (`./mvnw -B verify`, 13/11):** 573 unitários e 24 de integração, 0 falhas, 0 pulados. A suíte inclui
 unitários e parametrizados (JUnit 5), API caixa-preta, BDD (Cucumber), PostgreSQL real (Testcontainers), concorrência
-entre instâncias, reinício da aplicação, WireMock e E2E em Chromium (Playwright) de 360 a 1920 px. O CI do PR #17 está
-verde. Para mostrar que a cobertura não é inflada: mutação automatizada com PIT no domínio, **577 de 637 mutantes
+entre instâncias, reinício da aplicação, WireMock e E2E em Chromium (Playwright) de 360 a 1920 px. O CI está verde no
+PR #17, na `main` e no PR #18. Para mostrar que a cobertura não é inflada: mutação automatizada com PIT no domínio, **577 de 637 mutantes
 mortos (90,6%)**, mais a mutação manual das regras críticas (§10.5, [testes/mutacao-pit.md](testes/mutacao-pit.md)).
 
 **Defeitos:** 17 registrados (9 de severidade Alta, 5 Média, 3 Baixa) e 17 corrigidos, cada um com teste que falhava
@@ -50,8 +50,10 @@ na busca, 0 erros e 0 respostas 5xx ([performance/resultado-02.md](performance/r
   "Autoria e revisão").
 - O PIT foi medido antes da persistência do catálogo e mutou só o domínio.
 - Uma intermitência do IT de duas JVMs foi observada uma vez e não foi explicada; o diagnóstico foi melhorado (A-33).
-- Evidência do SonarCloud: análise do PR #17 (gate OK, 0 issues, 0 hotspots), com o mesmo código que entra na `main`;
-  a `main` é analisada de novo pelo CI a cada merge.
+- Evidência do SonarCloud: `main` em `6e97d9d` com gate OK, 0 bugs, 0 vulnerabilidades, 0 hotspots e 0 issues; o PR #18
+  também passou no gate. A `main` é analisada de novo pelo CI a cada merge.
+- Os relatórios JaCoCo, Surefire e Failsafe do commit entregue estão versionados em
+  [testes/evidencias-ci/](testes/evidencias-ci/), porque os artifacts do CI expiram.
 
 ---
 
@@ -711,6 +713,34 @@ As seções anteriores não foram alteradas; esta seção resolve as pendências
   de reinício não usava.
 - *Limite:* a persistência para neste ponto (ADR-010, "Decisão final"); manutenções, usuários criados pelo
   Administrador e auditoria continuam em memória.
+
+### 10.7 Evidência versionada e documentação do sistema entregue (2026-11-13, PR #18)
+
+**A-36. Os relatórios de teste e cobertura do commit entregue estão no repositório.**
+- *Evidência:* [testes/evidencias-ci/](testes/evidencias-ci/) traz o relatório JaCoCo completo (HTML e `jacoco.xml`) e
+  os XMLs do Surefire e do Failsafe do run
+  [43353596650](https://github.com/DaniloDamasio/EduAloca/actions/runs/43353596650) (PR #18, head `aa5e48d`): 573
+  unitários e 24 de integração, 0 falhas, 0 pulados; linhas 1666/1718 = **96,97%**, ramos 633/709 = **89,28%**. Depois
+  desse commit, o PR #18 só recebeu documentação: nada em `src/` nem no `pom.xml`. Os artifacts do CI passaram a ser
+  guardados por 90 dias (antes eram 7).
+- *Interpretação:* o número de cobertura deste relatório é o do código entregue, medido no CI, e não de um `verify`
+  local (que deu 97,07% em 13/11). A diferença é pequena e as duas medições ficam muito acima das metas.
+- *Limite:* em relação à `main` em `6e97d9d` (97,03% e 634/709), o PR #18 mudou só o intervalo padrão da tarefa
+  periódica e a documentação. A diferença de um ramo coberto não foi investigada. A suíte sem os ITs, rodada localmente
+  (`verify -DskipITs`), também atende o gate: 96,93% de linhas e 89,42% de ramos.
+
+**A-37. Arquitetura, plano de testes e README descrevem o sistema entregue.**
+- *Evidência:*
+  - Os §13 a §17 de [arquitetura.md](arquitetura.md) foram refeitos a partir do código: componentes, contêineres,
+    sequências e uma tabela de correspondência com o desenho de outubro.
+  - Novo [testes/plano-testes.md](testes/plano-testes.md), com critérios de entrada, saída e suspensão.
+  - O README ganhou pré-requisitos da suíte, execução sem Docker ou navegador e o que fazer quando o navegador não abre.
+  - A tarefa periódica passou de 60 s para 30 s, como na decisão D-6, o que mantém o RF-26 em "até 1 min".
+- *Interpretação:* os diagramas não citam mais Spring Security, JPA, SPA nem auditoria no banco, que não existem no
+  código.
+- *Limite:* na máquina do autor, um notebook corporativo com políticas de segurança da empresa, o Chromium baixado num
+  cache novo é encerrado pelo sistema. Por isso, a evidência do E2E num ambiente limpo é o CI (README, "Se o navegador
+  não abrir").
 
 ## Apêndice A: comandos usados
 

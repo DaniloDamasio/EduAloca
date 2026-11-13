@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.usuario</a> &gt; <span class="el_source">UsuarioService.java</span></div><h1>UsuarioService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.usuario;
+
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Gestao de usuarios pelo Administrador (escopo do enunciado: &quot;Administrador gerencia ... usuarios&quot;; RF-28 audita a
+ * alteracao de cadastro de usuario). Cadastra conta com perfil e, para Responsavel, o local sob sua responsabilidade;
+ * lista as contas; inativa conta (o login passa a falhar). A senha e guardada so como hash com sal (RNF-05).
+ */
+public class UsuarioService {
+
+    public static final int SENHA_MINIMA = 8;
+    public static final int TEXTO_MAXIMO = 120;
+
+    private final Clock clock;
+
+<span class="fc" id="L29">    public UsuarioService(Clock clock) {</span>
+<span class="fc" id="L30">        this.clock = clock;</span>
+<span class="fc" id="L31">    }</span>
+
+    /** Conta como o Administrador a ve; nunca inclui a senha nem o hash. */
+<span class="fc" id="L34">    public record ContaUsuario(UUID id, String email, Perfil perfil, boolean ativo, String localizacao) {</span>
+    }
+
+    public List&lt;ContaUsuario&gt; listar(Usuario ator) {
+<span class="fc" id="L38">        exigirAdministrador(ator);</span>
+<span class="fc" id="L39">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L40">        Set&lt;String&gt; emails = new HashSet&lt;&gt;(Banco.credenciais.keySet());</span>
+<span class="fc" id="L41">        emails.addAll(Banco.usuariosInativos);</span>
+<span class="fc" id="L42">        return emails.stream().sorted(Comparator.naturalOrder()).map(UsuarioService::conta).toList();</span>
+    }
+
+    public ContaUsuario cadastrar(Usuario ator, String email, String senha, Perfil perfil, String localizacao) {
+<span class="fc" id="L46">        exigirAdministrador(ator);</span>
+<span class="fc" id="L47">        Banco.seedSeNecessario();</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        String emailNormalizado = email == null ? &quot;&quot; : email.strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        if (emailNormalizado.length() &gt; TEXTO_MAXIMO || !emailValido(emailNormalizado)) {</span>
+<span class="fc" id="L50">            throw new RegraNegocioException(400, &quot;E-mail inválido: informe um endereço como nome@example.com&quot;);</span>
+        }
+<span class="pc bpc" id="L52" title="1 of 6 branches missed.">        if (senha == null || senha.length() &lt; SENHA_MINIMA || senha.length() &gt; TEXTO_MAXIMO) {</span>
+<span class="fc" id="L53">            throw new RegraNegocioException(400, &quot;Senha deve ter entre &quot; + SENHA_MINIMA + &quot; e &quot; + TEXTO_MAXIMO + &quot; caracteres&quot;);</span>
+        }
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (perfil == null) {</span>
+<span class="fc" id="L56">            throw new RegraNegocioException(400, &quot;Perfil obrigatório: use SOLICITANTE, RESPONSAVEL ou ADMINISTRADOR&quot;);</span>
+        }
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        String local = localizacao == null || localizacao.isBlank() ? null : localizacao.strip();</span>
+<span class="fc bfc" id="L59" title="All 4 branches covered.">        if (perfil == Perfil.RESPONSAVEL &amp;&amp; local == null) {</span>
+<span class="fc" id="L60">            throw new RegraNegocioException(400, &quot;Responsável precisa do local sob sua responsabilidade (ex.: Bloco A)&quot;);</span>
+        }
+<span class="fc bfc" id="L62" title="All 4 branches covered.">        if (local != null &amp;&amp; local.length() &gt; TEXTO_MAXIMO) {</span>
+<span class="fc" id="L63">            throw new RegraNegocioException(400, &quot;Campo 'localizacao' excede &quot; + TEXTO_MAXIMO + &quot; caracteres&quot;);</span>
+        }
+<span class="fc" id="L65">        synchronized (Banco.credenciais) {</span>
+<span class="fc bfc" id="L66" title="All 4 branches covered.">            if (Banco.credenciais.containsKey(emailNormalizado) || Banco.usuariosInativos.contains(emailNormalizado)) {</span>
+<span class="fc" id="L67">                throw new RegraNegocioException(409, &quot;E-mail já cadastrado&quot;);</span>
+            }
+<span class="fc bfc" id="L69" title="All 4 branches covered.">            if (perfil == Perfil.RESPONSAVEL &amp;&amp; Banco.responsavelPorLocalizacao.containsKey(local)) {</span>
+<span class="fc" id="L70">                throw new RegraNegocioException(409, &quot;O local informado já tem um Responsável&quot;);</span>
+            }
+<span class="fc" id="L72">            UUID id = UUID.randomUUID();</span>
+<span class="fc" id="L73">            Banco.registrarCredencial(emailNormalizado, senha);</span>
+<span class="fc" id="L74">            Banco.usuarioIdPorEmail.put(emailNormalizado, id);</span>
+<span class="fc" id="L75">            Banco.perfilPorEmail.put(emailNormalizado, perfil);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (perfil == Perfil.RESPONSAVEL) {</span>
+<span class="fc" id="L77">                Banco.responsavelPorLocalizacao.put(local, id);</span>
+            }
+<span class="fc" id="L79">            AuditoriaService.registrar(&quot;Usuario&quot;, id, &quot;CRIACAO&quot;, ator.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L80">            return conta(emailNormalizado);</span>
+        }
+    }
+
+    /**
+     * Inativa a conta: a credencial e apagada (o login responde 401 como para e-mail inexistente) e o Responsavel deixa
+     * de responder pelo local. O Administrador nao inativa a propria conta, para nao ficar sem acesso.
+     */
+    public ContaUsuario inativar(Usuario ator, UUID usuarioId) {
+<span class="fc" id="L89">        exigirAdministrador(ator);</span>
+<span class="fc" id="L90">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (ator.getId().equals(usuarioId)) {</span>
+<span class="fc" id="L92">            throw new RegraNegocioException(409, &quot;O Administrador não pode inativar a própria conta&quot;);</span>
+        }
+<span class="fc" id="L94">        synchronized (Banco.credenciais) {</span>
+<span class="fc" id="L95">            String email = Banco.credenciais.keySet().stream()</span>
+<span class="fc" id="L96">                    .filter(e -&gt; usuarioId.equals(Banco.usuarioIdPorEmail.get(e)))</span>
+<span class="fc" id="L97">                    .findFirst()</span>
+<span class="fc" id="L98">                    .orElseThrow(() -&gt; new RegraNegocioException(404, &quot;Usuário ativo inexistente&quot;));</span>
+<span class="fc" id="L99">            Banco.credenciais.remove(email);</span>
+<span class="fc" id="L100">            Banco.usuariosInativos.add(email);</span>
+<span class="fc" id="L101">            Banco.responsavelPorLocalizacao.values().removeIf(usuarioId::equals);</span>
+<span class="fc" id="L102">            AuditoriaService.registrar(&quot;Usuario&quot;, usuarioId, &quot;INATIVACAO&quot;, ator.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L103">            return conta(email);</span>
+        }
+    }
+
+    /**
+     * Um unico &quot;@&quot;, parte local nao vazia, dominio com ponto que nao esta na ponta e nenhum espaco. Sem regex, para nao
+     * haver backtracking super-linear com entrada maliciosa (Sonar java:S8786).
+     */
+    static boolean emailValido(String email) {
+<span class="fc" id="L112">        int arroba = email.indexOf('@');</span>
+<span class="fc bfc" id="L113" title="All 6 branches covered.">        if (arroba &lt;= 0 || arroba != email.lastIndexOf('@') || email.chars().anyMatch(Character::isWhitespace)) {</span>
+<span class="fc" id="L114">            return false;</span>
+        }
+<span class="fc" id="L116">        String dominio = email.substring(arroba + 1);</span>
+<span class="fc" id="L117">        int ponto = dominio.lastIndexOf('.');</span>
+<span class="fc bfc" id="L118" title="All 4 branches covered.">        return ponto &gt; 0 &amp;&amp; ponto &lt; dominio.length() - 1;</span>
+    }
+
+    private static ContaUsuario conta(String email) {
+        // Mesmo id que o login atribui (AutenticacaoService): contas de seed sem id ganham um na primeira consulta.
+<span class="pc" id="L123">        UUID id = Banco.usuarioIdPorEmail.computeIfAbsent(email, e -&gt; UUID.randomUUID());</span>
+<span class="fc" id="L124">        String local = Banco.responsavelPorLocalizacao.entrySet().stream()</span>
+<span class="fc" id="L125">                .filter(entrada -&gt; id.equals(entrada.getValue()))</span>
+<span class="fc" id="L126">                .map(Map.Entry::getKey)</span>
+<span class="fc" id="L127">                .sorted()</span>
+<span class="fc" id="L128">                .findFirst()</span>
+<span class="fc" id="L129">                .orElse(null);</span>
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        boolean ativo = Banco.credenciais.containsKey(email) &amp;&amp; !Banco.usuariosInativos.contains(email);</span>
+<span class="fc" id="L131">        return new ContaUsuario(id, email, Banco.perfilPorEmail.getOrDefault(email, Perfil.SOLICITANTE), ativo, local);</span>
+    }
+
+    private static void exigirAdministrador(Usuario ator) {
+<span class="pc bpc" id="L135" title="1 of 4 branches missed.">        if (ator == null || ator.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L136">            throw new RegraNegocioException(403, &quot;Apenas o Administrador pode gerenciar usuários&quot;);</span>
+        }
+<span class="fc" id="L138">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

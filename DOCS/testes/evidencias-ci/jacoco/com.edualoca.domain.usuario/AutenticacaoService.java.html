@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutenticacaoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.usuario</a> &gt; <span class="el_source">AutenticacaoService.java</span></div><h1>AutenticacaoService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.usuario;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Locale;
+import java.util.UUID;
+
+/**
+ * Login por e-mail e senha (RF-01, RNF-05). Contra forca bruta: depois de {@link #MAX_FALHAS} senhas erradas para o
+ * mesmo e-mail dentro de {@link #JANELA}, o login desse e-mail fica bloqueado por {@link #BLOQUEIO} (429), inclusive com
+ * a senha certa. A regra vale igual para e-mail inexistente, para que a resposta nao revele quais contas existem.
+ *
+ * &lt;p&gt;O relogio padrao e o do sistema: a protecao depende do tempo real, nao do {@code Clock} de negocio.
+ */
+public class AutenticacaoService {
+
+    public static final int MAX_FALHAS = 5;
+<span class="fc" id="L22">    public static final Duration JANELA = Duration.ofMinutes(15);</span>
+<span class="fc" id="L23">    public static final Duration BLOQUEIO = Duration.ofMinutes(15);</span>
+
+    private final Clock relogio;
+
+    public AutenticacaoService() {
+<span class="fc" id="L28">        this(Clock.systemUTC());</span>
+<span class="fc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public AutenticacaoService(Clock relogio) {</span>
+<span class="fc" id="L32">        this.relogio = relogio;</span>
+<span class="fc" id="L33">    }</span>
+
+    public Usuario autenticar(String email, String senha) {
+<span class="fc" id="L36">        Banco.seedSeNecessario();</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        String chave = email == null ? &quot;&quot; : email.strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L38">        Instant agora = relogio.instant();</span>
+<span class="fc" id="L39">        TentativasLogin tentativas = Banco.tentativasLogin.get(chave);</span>
+<span class="fc bfc" id="L40" title="All 6 branches covered.">        if (tentativas != null &amp;&amp; tentativas.bloqueadoAte() != null &amp;&amp; agora.isBefore(tentativas.bloqueadoAte())) {</span>
+<span class="fc" id="L41">            long minutos = Math.max(1, Duration.between(agora, tentativas.bloqueadoAte()).toMinutes());</span>
+<span class="fc" id="L42">            throw new RegraNegocioException(429,</span>
+                    &quot;Muitas tentativas de login: aguarde &quot; + minutos + &quot; minuto(s) e tente novamente&quot;);
+        }
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        String armazenado = email == null ? null : Banco.credenciais.get(email);</span>
+        // confere() gasta o mesmo custo quando a conta nao existe: a resposta e o tempo nao revelam o e-mail.
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (!SenhaHasher.confere(senha, armazenado)) {</span>
+<span class="fc" id="L48">            registrarFalha(chave, agora);</span>
+<span class="fc" id="L49">            throw new RegraNegocioException(401, &quot;Credenciais inválidas&quot;);</span>
+        }
+<span class="fc" id="L51">        Banco.tentativasLogin.remove(chave);</span>
+<span class="fc" id="L52">        UUID id = Banco.usuarioIdPorEmail.computeIfAbsent(email, e -&gt; UUID.randomUUID());</span>
+<span class="fc" id="L53">        Perfil perfil = Banco.perfilPorEmail.getOrDefault(email, Perfil.SOLICITANTE);</span>
+<span class="fc" id="L54">        return new Usuario(id, email, armazenado, perfil);</span>
+    }
+
+    private void registrarFalha(String chave, Instant agora) {
+<span class="fc" id="L58">        Banco.tentativasLogin.compute(chave, (k, atual) -&gt; {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            boolean janelaNova = atual == null</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                    || !agora.isBefore(atual.inicioDaJanela().plus(JANELA))</span>
+<span class="pc bpc" id="L61" title="3 of 4 branches missed.">                    || (atual.bloqueadoAte() != null &amp;&amp; !agora.isBefore(atual.bloqueadoAte()));</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            int falhas = janelaNova ? 1 : atual.falhas() + 1;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            Instant inicio = janelaNova ? agora : atual.inicioDaJanela();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            return new TentativasLogin(falhas, inicio, falhas &gt;= MAX_FALHAS ? agora.plus(BLOQUEIO) : null);</span>
+        });
+<span class="fc" id="L66">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

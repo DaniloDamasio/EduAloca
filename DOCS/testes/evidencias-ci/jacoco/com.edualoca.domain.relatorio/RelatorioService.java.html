@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelatorioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.relatorio</a> &gt; <span class="el_source">RelatorioService.java</span></div><h1>RelatorioService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.relatorio;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.Professor;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.relatorio.UtilizacaoPorPeriodo.CargaProfessor;
+import com.edualoca.domain.relatorio.UtilizacaoPorPeriodo.UsoRecurso;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaRecurso;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+public class RelatorioService {
+
+    /** Maior periodo aceito pelo relatorio por periodo (um ano, contando bissexto). */
+<span class="fc" id="L30">    static final Duration PERIODO_MAXIMO = Duration.ofDays(366);</span>
+
+    /** Reservas que contam como uso: confirmadas. Pendente, rejeitada, cancelada e nao comparecimento nao contam. */
+<span class="fc" id="L33">    private static final Set&lt;EstadoReserva&gt; ESTADOS_DE_USO =</span>
+<span class="fc" id="L34">            EnumSet.of(EstadoReserva.APROVADA, EstadoReserva.EM_USO, EstadoReserva.CONCLUIDA);</span>
+
+    /** Fuso em que as datas das reservas (LocalDateTime) sao interpretadas para medir tempo decorrido. */
+    private final ZoneId fuso;
+
+    public RelatorioService() {
+<span class="fc" id="L40">        this(ZoneId.systemDefault());</span>
+<span class="fc" id="L41">    }</span>
+
+<span class="fc" id="L43">    public RelatorioService(ZoneId fuso) {</span>
+<span class="fc" id="L44">        this.fuso = fuso;</span>
+<span class="fc" id="L45">    }</span>
+
+    /**
+     * RF-34/RF-35: horas reservadas por recurso (sala e material), carga horaria por professor e conflitos evitados
+     * no periodo semiaberto [inicio, fim). Reserva que cruza a borda conta so a parte de dentro do periodo.
+     */
+    public UtilizacaoPorPeriodo gerarUtilizacaoPorPeriodo(Usuario autor, LocalDateTime inicio, LocalDateTime fim) {
+<span class="fc" id="L52">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L53">        validarAcesso(autor);</span>
+<span class="fc" id="L54">        validarIntervalo(inicio, fim);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (decorrido(inicio, fim).compareTo(PERIODO_MAXIMO) &gt; 0) {</span>
+<span class="fc" id="L56">            throw new RegraNegocioException(400, &quot;Período do relatório não pode passar de 366 dias&quot;);</span>
+        }
+<span class="fc" id="L58">        Map&lt;UUID, UsoRecurso&gt; recursos = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L59">        Map&lt;UUID, CargaProfessor&gt; professores = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for (Reserva reserva : Banco.reservas.values()) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (!ESTADOS_DE_USO.contains(reserva.getEstado())</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                    || !Intervalos.sobrepoe(reserva.getInicio(), reserva.getFim(), inicio, fim)) {</span>
+<span class="fc" id="L63">                continue;</span>
+            }
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            LocalDateTime inicioDentro = reserva.getInicio().isBefore(inicio) ? inicio : reserva.getInicio();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            LocalDateTime fimDentro = reserva.getFim().isAfter(fim) ? fim : reserva.getFim();</span>
+<span class="fc" id="L67">            long minutos = decorrido(inicioDentro, fimDentro).toMinutes();</span>
+<span class="fc" id="L68">            reserva.getRecursos().stream().map(ReservaRecurso::getRecurso).distinct().forEach(recurso -&gt; {</span>
+<span class="pc bpc" id="L69" title="2 of 4 branches missed.">                switch (recurso) {</span>
+<span class="fc" id="L70">                    case Sala s -&gt; recursos.merge(s.getId(), new UsoRecurso(&quot;SALA&quot;, s.getId(), s.getNome(), minutos), UsoRecurso::somar);</span>
+<span class="nc" id="L71">                    case Material m -&gt; recursos.merge(m.getId(), new UsoRecurso(&quot;MATERIAL&quot;, m.getId(), m.getNome(), minutos), UsoRecurso::somar);</span>
+<span class="fc" id="L72">                    case Professor p -&gt; professores.merge(p.getId(), new CargaProfessor(p.getId(), p.getNome(), minutos), CargaProfessor::somar);</span>
+                    default -&gt; { }
+                }
+<span class="fc" id="L75">            });</span>
+<span class="fc" id="L76">        }</span>
+<span class="fc" id="L77">        return new UtilizacaoPorPeriodo(</span>
+<span class="fc" id="L78">                recursos.values().stream()</span>
+<span class="fc" id="L79">                        .sorted(Comparator.comparingLong(UsoRecurso::minutos).reversed().thenComparing(UsoRecurso::nome))</span>
+<span class="fc" id="L80">                        .toList(),</span>
+<span class="fc" id="L81">                professores.values().stream()</span>
+<span class="fc" id="L82">                        .sorted(Comparator.comparingLong(CargaProfessor::minutos).reversed().thenComparing(CargaProfessor::nome))</span>
+<span class="fc" id="L83">                        .toList(),</span>
+<span class="fc" id="L84">                contarRejeicoes(inicio, fim));</span>
+    }
+
+    /** Tempo realmente decorrido no fuso do servidor (horario de verao incluido), nao a diferenca de relogio de parede. */
+    private Duration decorrido(LocalDateTime inicio, LocalDateTime fim) {
+<span class="fc" id="L89">        return Duration.between(inicio.atZone(fuso), fim.atZone(fuso));</span>
+    }
+
+    /** Rejeicoes por sobreposicao registradas em auditoria em [inicio, fim) (criterio de aceite de RF-35). */
+    private long contarRejeicoes(LocalDateTime inicio, LocalDateTime fim) {
+<span class="fc" id="L94">        return Banco.auditoria.stream()</span>
+<span class="fc" id="L95">                .filter(e -&gt; &quot;Reserva&quot;.equals(e.getEntidade()))</span>
+<span class="fc" id="L96">                .filter(e -&gt; &quot;REJEICAO_SOBREPOSICAO&quot;.equals(e.getAcao()))</span>
+<span class="fc bfc" id="L97" title="All 4 branches covered.">                .filter(e -&gt; !e.getDataHora().isBefore(inicio) &amp;&amp; e.getDataHora().isBefore(fim))</span>
+<span class="fc" id="L98">                .count();</span>
+    }
+
+    /** RF-36: so Responsavel e Administrador. Publico para que a borda HTTP cheque o perfil antes da entrada. */
+    public void validarAcesso(Usuario autor) {
+<span class="fc bfc" id="L103" title="All 4 branches covered.">        if (autor.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; autor.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L104">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem acessar relatórios&quot;);</span>
+        }
+<span class="fc" id="L106">    }</span>
+
+    private void validarIntervalo(LocalDateTime inicio, LocalDateTime fim) {
+<span class="pc bpc" id="L109" title="2 of 6 branches missed.">        if (inicio == null || fim == null || !fim.isAfter(inicio)) {</span>
+<span class="fc" id="L110">            throw new RegraNegocioException(400, &quot;Intervalo de relatório inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')&quot;);</span>
+        }
+<span class="fc" id="L112">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

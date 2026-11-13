@@ -9,6 +9,10 @@
 >
 > Este documento **não altera** requisitos nem introduz tecnologia, usuário, volume ou SLA
 > não citado nos artefatos acima. Nenhum código foi implementado nesta etapa.
+>
+> **Atualização de 13/11/2026:** as seções 13 a 17 foram refeitas para descrever o sistema entregue (diagramas de
+> contêineres, componentes e sequências conferidos com o código da `main`). As demais seções são o registro da fase de
+> arquitetura, anterior à implementação.
 
 ---
 
@@ -265,23 +269,30 @@ confirmadas com o responsável do projeto antes de qualquer implementação:
   responsiva, mas nenhuma tecnologia de frontend é citada na stack mínima
   (enunciado.md:109-112, que lista apenas Java/Spring/Postgres). Suposição adotada apenas
   para desenhar os diagramas de contexto/contêineres a seguir; não é uma decisão de
-  arquitetura vinculante.
+  arquitetura vinculante. **Como ficou:** não há SPA. A interface é HTML, CSS e JavaScript puros, servida pelo
+  próprio jar (§15).
 
 Ver também lacunas já registradas em [§7](#7-lacunas-e-perguntas-em-aberto).
 
 ## 13. Responsabilidades, limites e interfaces dos componentes
 
-| Componente | Responsabilidade | Limites (o que NÃO faz) | Interface |
+> **Revisão de 13/11/2026: as seções 13 a 17 descrevem o sistema entregue.** A primeira versão destas seções (outubro,
+> commit `18c396d`) era o desenho anterior à implementação: Spring Security, Spring Data JPA, uma SPA separada, auditoria
+> no banco e um job com checkpoint. Nada disso entrou no código, então os diagramas foram refeitos a partir do código da
+> `main`. O desenho original continua no histórico do git. As decisões que explicam as diferenças estão no
+> [ADR-009](adr/ADR-009-exclusao-gist-tstzrange.md), no [ADR-010](adr/ADR-010-escopo-da-persistencia-postgresql.md) e nas
+> notas de cada diagrama. As seções 1 a 12 e a 19 seguem como registro da fase de arquitetura.
+
+| Componente (pacote) | Responsabilidade | Limites (o que NÃO faz) | Interface |
 |---|---|---|---|
-| **Cliente Web (SPA)** — suposição S4 | Renderizar UI responsiva (RF-37), chamar a API, exibir mensagens de erro compreensíveis (RF-38). | Não decide regra de negócio nem revalida autorização — apenas reflete o que a API retorna (RNF-04 exige validação server-side). | HTTPS/JSON → Backend API. |
-| **Camada de Apresentação (Controllers)** | Autenticar (RF-01), autorizar por perfil/endpoint (RF-02, RF-03), validar forma de entrada (RNF-04), traduzir exceções de domínio em respostas HTTP compreensíveis sem stacktrace (RF-38, RNF-06). | Não contém regra de negócio nem acessa persistência diretamente (RNF-15 — separação de camadas). | HTTP/JSON (entrada); chama Camada de Serviço (saída). |
-| **Camada de Serviço (domínio)** | Máquina de estados da reserva (J9), detecção de sobreposição (RF-15, RF-16), controle de concorrência (RF-17), fluxo de aprovação (RF-18–20), bloqueio por manutenção (RF-22, RF-23), disparo de auditoria (RF-27, RF-28) e de notificação best-effort (RF-31–33), cálculo de relatórios (RF-34, RF-35). | Não conhece detalhes de HTTP; não escreve SQL diretamente (usa Repositórios); não chama API externa de notificação diretamente (usa `NotificacaoPort`). | Chamada in-process pelos Controllers; usa Repositórios e `NotificacaoPort`. |
-| **Camada de Persistência (Repositórios JPA)** | Mapeamento objeto-relacional, delega a integridade crítica ao banco (constraint `EXCLUDE USING gist`, `CHECK (fim > inicio)`, unicidade de e-mail). | Não contém regra de negócio. | JDBC/JPA → PostgreSQL. |
-| **PostgreSQL** | Persistência durável; garante, no nível de banco, a regra "duas solicitações simultâneas → uma única aceita" (Driver #2, §11) e `fim > inicio` (Driver #3). | Não decide fluxo de aprovação nem envia notificação. | SQL/JDBC. |
-| **Módulo de Auditoria (cross-cutting)** | Intercepta toda transição de estado de reserva e toda mutação de cadastro, grava `AuditoriaEvento` append-only, **na mesma transação** da mutação de negócio. | Não expõe UPDATE/DELETE (RF-29); não decide a regra de negócio, apenas observa seu resultado. | Invocação in-process síncrona a partir da Camada de Serviço. |
-| **`NotificacaoPort` (porta + adaptadores)** | Abstrai o canal de notificação (RF-31, RF-32); duas implementações — Simulado e API externa (RNF-16, isolável via WireMock em teste). | Falha do adaptador **nunca** reverte a transação de negócio (RF-33) — por isso é invocado fora da transação principal (pós-commit, best-effort). | Interface interna (porta); HTTP/REST para o adaptador externo. |
-| **Job agendado (scheduler)** — suposição S1 | Verifica periodicamente `RetiradaDevolucao` vencidas e sinaliza pendência (RF-26). | Não cria nem altera estado de `Reserva`; apenas sinaliza/consulta. | Leitura/escrita restrita à tabela `RetiradaDevolucao` via Repositório. |
-| **Módulo de Relatórios** | Consultas agregadas read-only de utilização e conflitos evitados (RF-34, RF-35), restritas a RES/ADM (RF-36). | Não altera estado de nenhuma entidade. | Chamado pelo `RelatorioController`; lê via Repositórios. |
+| **Interface web** (`src/main/resources/static`) | Telas dos três perfis em HTML, CSS e JavaScript puros, servidas pelo próprio jar. Responsiva de 360 a 1920 px (RF-37). Mostra a mensagem do `ProblemDetail` devolvido pela API (RF-38). | Não decide regra de negócio nem autorização, só reflete as respostas da API. Texto vindo do usuário entra na página só por `textContent`. | HTTP/JSON com token Bearer, na mesma origem da API. |
+| **Segurança da API** (`api.seguranca`, `api.CabecalhosSegurancaFiltro`) | `LoginController` autentica (RF-01) e devolve um token opaco. `TokenService` aplica 30 min de inatividade e 8 h de duração máxima, e revoga o token no logout e na inativação da conta. `UsuarioAutenticadoResolver` resolve o usuário do cabeçalho `Authorization` em todo parâmetro `@UsuarioAutenticado`: sem token válido, 401. `Perfis.exigir` e os serviços aplicam perfil e competência por local: 403 (RF-02, RF-03). Depois de 5 falhas em 15 min, o login daquele e-mail fica bloqueado por 15 min: 429 (`AutenticacaoService`). O filtro acrescenta CSP, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. | Não usa Spring Security (não está no `pom.xml`). Sessões e tentativas de login ficam em memória (ADR-010). | Argument resolver e filtro do Spring MVC. |
+| **Controllers** (`api.*`) | `ReservaController`, `CatalogoController`, `SalaController`, `ManutencaoController`, `RetiradaController`, `RelatorioController`, `UsuarioController`, `AuditoriaController` e `LoginController`: 40 operações, documentadas em `openapi.yaml` e [api.md](api.md). Traduzem JSON para chamadas de domínio. `TratadorDeErros` converte `RegraNegocioException` e erros do framework em `ProblemDetail` (RFC 9457), sem stacktrace (RF-38, RNF-06). | Sem regra de negócio e sem acesso a persistência ou integração (RNF-15, conferido por `ArquiteturaCamadasTest`). | HTTP/JSON na entrada; chamam os serviços de domínio. |
+| **Serviços de domínio** (`domain.*`) | `ReservaService`: máquina de estados, sobreposição (RF-15, RF-16), lock por recurso (RF-17), aprovação por competência (RF-18 a RF-20), não comparecimento automático e cancelamento por manutenção. `PesquisaRecursoService`: busca (RF-08 a RF-11). `CadastroRecursoService`: cadastro e manutenção (RF-04 a RF-07, RF-21 a RF-23). `RetiradaMaterialService` (RF-24 a RF-26), `RelatorioService` (RF-34 a RF-36), `UsuarioService`, `AutenticacaoService`, `AuditoriaService` (RF-27 a RF-29) e `NotificacaoService` (RF-31 a RF-33). São POJOs com `Clock` injetado. | Não conhecem HTTP, SQL, Spring nem o cliente HTTP de notificação. Usam as portas `ReservaRepositorio`, `HistoricoReservaRepositorio`, `CatalogoRepositorio`, `Transacao` e `NotificacaoService.NotificadorExterno`. | Chamadas in-process. |
+| **Estado em memória** (`domain.comum.Banco`) | Cache compartilhado pela JVM: catálogo, reservas, usuários e credenciais, manutenções, retiradas, auditoria, notificações e tentativas de login, com seed no primeiro uso. No modo padrão, é o único armazenamento. | Não é durável. Num reinício, volta ao seed tudo o que não está no PostgreSQL (ADR-010). | Mapas estáticos lidos pelos serviços. |
+| **Persistência PostgreSQL** (`persistencia.*`, opcional) | Ligada por `edualoca.persistencia.url` (`PersistenciaPostgresConfig`). `ReservaRepositorioJdbc` e `HistoricoReservaRepositorioJdbc` gravam reserva, recursos e histórico na mesma transação (`TransacaoJdbc`). `CatalogoRepositorioJdbc` grava o catálogo com upsert. Na subida, a aplicação sincroniza o catálogo e recarrega as reservas no cache. A constraint `ex_reserva_recurso_sem_sobreposicao` (ADR-009) recusa sobreposição entre instâncias, e um trigger torna o histórico append-only. JDBC puro (`JdbcTemplate`, HikariCP), sem JPA. | Auditoria, usuários, manutenções, retiradas, notificações e tokens continuam em memória (ADR-010). | JDBC para o PostgreSQL 16. |
+| **Integração de notificação** (`integracao.*`) | `IntegracaoConfig` escolhe o modo. O simulado é o padrão e registra em `Banco.notificacoes`. Com `edualoca.notificacao.externa.habilitada=true`, entra o `NotificacaoHttpAdapter`: `POST /notificacoes` com a chave vinda de variável de ambiente, timeouts de conexão e leitura, e uma nova tentativa só em 5xx. | Uma falha nunca desfaz a transição (RF-33): vira notificação com status `FALHA`. Não conhece a API nem a persistência. | Porta `NotificadorExterno`; HTTP/REST para o provedor. |
+| **Tarefa periódica** (`agendamento.AgendamentoConfig`) | A cada 30 s (D-6): encerra como `NAO_COMPARECEU` a reserva `APROVADA` que passou do fim, com autor `sistema` (P-08), e sinaliza o material retirado e não devolvido depois do fim da reserva (RF-26). | Não fala HTTP nem SQL, só chama `ReservaService` e `RetiradaMaterialService`. Fica desligada na suíte de testes, que chama esses métodos diretamente. | `@Scheduled(fixedDelay)`, intervalo em `edualoca.agendamento.intervalo-ms`. |
 
 ## 14. Diagrama de Contexto (C4)
 
@@ -295,79 +306,124 @@ C4Context
 
   System(edualoca, "EduAloca", "Organiza alocação de salas, professores e materiais, evitando conflitos de horário e dupla reserva (enunciado.md:16)")
 
-  System_Ext(notifExterna, "Canal de notificação (simulado ou API externa via WireMock)", "RF-31, RF-32, RF-33, RNF-16 — fora de escopo a implementação real (OBJETIVOS.md:40-45)")
+  System_Ext(notifExterna, "Provedor de notificação (opcional)", "Simulado por padrão; WireMock nos testes (RF-31 a RF-33, RNF-16)")
 
-  Rel(solicitante, edualoca, "Consulta disponibilidade; cria/altera/cancela reservas próprias", "HTTPS")
-  Rel(responsavel, edualoca, "Aprova/rejeita recursos restritos; registra retirada/devolução", "HTTPS")
-  Rel(administrador, edualoca, "Gerencia cadastros, manutenção e relatórios", "HTTPS")
+  Rel(solicitante, edualoca, "Busca disponibilidade; cria, altera e cancela as próprias reservas", "navegador")
+  Rel(responsavel, edualoca, "Aprova ou rejeita recursos restritos do seu local; registra uso, retirada e devolução; vê relatórios", "navegador")
+  Rel(administrador, edualoca, "Gerencia cadastros, manutenções, usuários; consulta auditoria e relatórios", "navegador")
   Rel(edualoca, notifExterna, "Notifica mudança de estado (best-effort, não bloqueante)", "HTTP/REST")
 ```
 
 Nota: integrações acadêmicas externas (SIGAA, Moodle) estão explicitamente fora de escopo
-(OBJETIVOS.md:40-45) e por isso não aparecem no diagrama.
+(OBJETIVOS.md:40-45) e por isso não aparecem no diagrama. A demonstração local usa HTTP em `localhost`; TLS ficaria a
+cargo da infraestrutura de implantação, que também está fora do escopo (§7).
 
 ## 15. Diagrama de Contêineres (C4)
 
 ```mermaid
 C4Container
-  title Diagrama de Contêineres — EduAloca
+  title Diagrama de Contêineres — EduAloca (sistema entregue)
 
   Person(solicitante, "Solicitante")
   Person(responsavel, "Responsável")
   Person(administrador, "Administrador")
 
   System_Boundary(edualoca, "EduAloca") {
-    Container(web, "Cliente Web (SPA)", "Tecnologia não definida na stack mínima — suposição S4", "Interface responsiva 360–1920px (RF-37)")
-    Container(api, "Backend API", "Java 21 / Spring Boot 4.1.1 (MVC)", "Autenticação, regras de negócio, auditoria, relatórios (RNF-15)")
-    ContainerDb(db, "Banco de dados", "PostgreSQL", "Reservas, recursos, auditoria; EXCLUDE USING gist (§11)")
-    Container(scheduler, "Job agendado", "Spring @Scheduled — suposição S1", "Verificação de pendência de devolução (RF-26)")
+    Container(web, "Interface web", "HTML, CSS e JavaScript puros, no navegador", "Telas dos três perfis, 360 a 1920 px (RF-37). Arquivos estáticos servidos pelo jar")
+    Container(app, "Aplicação EduAloca", "Java 21, Spring Boot 4.1.1 (MVC), jar executável", "API REST (40 operações), regras de negócio, tarefa periódica a cada 30 s, cache em memória")
+    ContainerDb(db, "PostgreSQL 16 (opcional)", "Ligado por edualoca.persistencia.url", "Catálogo, reservas, recursos da reserva e histórico; constraint de exclusão GiST (ADR-009)")
   }
 
-  System_Ext(notif, "Endpoint de notificação", "Simulado em dev/teste via WireMock (RNF-16)")
+  System_Ext(notif, "Provedor de notificação (opcional)", "Simulado por padrão; WireMock nos testes (RNF-16)")
 
-  Rel(solicitante, web, "Usa", "HTTPS")
-  Rel(responsavel, web, "Usa", "HTTPS")
-  Rel(administrador, web, "Usa", "HTTPS")
-  Rel(web, api, "Chama", "HTTPS/JSON")
-  Rel(api, db, "Lê e escreve", "JDBC")
-  Rel(scheduler, db, "Lê pendências / grava sinalização", "JDBC")
-  Rel(api, notif, "Notifica (pós-commit, best-effort)", "HTTP/REST")
+  Rel(solicitante, web, "Usa", "navegador")
+  Rel(responsavel, web, "Usa", "navegador")
+  Rel(administrador, web, "Usa", "navegador")
+  Rel(web, app, "Baixa a interface e chama a API", "HTTP/JSON, token Bearer")
+  Rel(app, db, "Grava na transação; recarrega na subida", "JDBC")
+  Rel(app, notif, "Notifica depois da gravação (best-effort)", "HTTP/REST")
 ```
 
-## 16. Diagrama de Componentes (C4) — contêiner "Backend API"
+**O que mudou em relação ao desenho de outubro, e por quê:**
+
+- **Não há SPA separada.** A interface é um conjunto de arquivos estáticos dentro do jar, sem build de frontend nem
+  servidor próprio. Um único `java -jar` sobe tudo, o que simplifica a execução e o E2E (`FluxoCompletoNavegadorIT`).
+- **A tarefa periódica roda dentro da aplicação** (`@Scheduled`), e não como contêiner à parte. Ela não acessa o banco
+  diretamente, só os serviços de domínio, como confere o `ArquiteturaCamadasTest`.
+- **O PostgreSQL é opcional.** Sem as propriedades `edualoca.persistencia.*`, tudo fica em memória. Com elas, o banco
+  guarda o escopo do ADR-010: catálogo, reservas, recursos e histórico. A auditoria **não** vai para o banco.
+- **Mais de uma instância pode usar o mesmo banco.** A dupla reserva entre instâncias é barrada pela constraint
+  (`ConcorrenciaReservaMultiInstanciaIT`). Os dados que ficam em memória (sessões, manutenções etc.) não são
+  compartilhados entre elas (ADR-010).
+
+## 16. Diagrama de Componentes (C4) — contêiner "Aplicação EduAloca"
 
 ```mermaid
 C4Component
-  title Diagrama de Componentes — Backend API
+  title Diagrama de Componentes — Aplicação EduAloca (sistema entregue)
 
-  Container_Boundary(api, "Backend API") {
-    Component(authFilter, "Filtro de Autenticação/Autorização", "Spring Security", "RF-01, RF-02, RF-03")
-    Component(reservaController, "ReservaController", "Spring MVC", "RF-12, RF-13, RF-14")
-    Component(recursoController, "RecursoController", "Spring MVC", "RF-04 a RF-07")
-    Component(aprovacaoController, "AprovacaoController", "Spring MVC", "RF-19, RF-20")
-    Component(manutencaoController, "ManutencaoController", "Spring MVC", "RF-21, RF-22, RF-23")
-    Component(relatorioController, "RelatorioController", "Spring MVC", "RF-34, RF-35, RF-36")
+  Container(web, "Interface web", "HTML/CSS/JS")
+  ContainerDb(db, "PostgreSQL 16 (opcional)", "JDBC")
+  System_Ext(notif, "Provedor de notificação (opcional)", "HTTP/REST")
 
-    Component(reservaService, "ReservaService", "Serviço de domínio", "Máquina de estados; sobreposição RF-15/RF-16; concorrência RF-17")
-    Component(disponibilidadeService, "DisponibilidadeService", "Serviço de domínio", "Busca RF-08, RF-09, RF-10, RF-11")
-    Component(auditoriaService, "AuditoriaService", "Cross-cutting", "RF-27, RF-28, RF-29 — append-only, mesma transação")
-    Component(notificacaoPort, "NotificacaoPort", "Interface + adaptadores", "RF-31, RF-32, RF-33 — pós-commit")
-    Component(repository, "Repositórios JPA", "Spring Data", "Persistência; delega constraints críticas ao banco")
+  Container_Boundary(app, "Aplicação EduAloca") {
+    Component(seg, "Segurança", "LoginController, TokenService, UsuarioAutenticadoResolver, Perfis, CabecalhosSegurancaFiltro", "Login, token opaco, 401/403/429, cabeçalhos CSP")
+    Component(ctrl, "Controllers REST", "Spring MVC", "Reserva, Catalogo, Sala, Manutencao, Retirada, Relatorio, Usuario, Auditoria")
+    Component(erros, "TratadorDeErros", "@RestControllerAdvice", "ProblemDetail sem stacktrace (RF-38, RNF-06)")
 
-    Rel(authFilter, reservaController, "Autoriza antes de", "in-process")
-    Rel(authFilter, aprovacaoController, "Autoriza antes de", "in-process")
-    Rel(authFilter, relatorioController, "Autoriza antes de (RF-36)", "in-process")
-    Rel(reservaController, reservaService, "Delega regra de negócio")
-    Rel(aprovacaoController, reservaService, "Delega aprovação/rejeição")
-    Rel(manutencaoController, reservaService, "Verifica conflito com reservas (RF-23)")
-    Rel(disponibilidadeService, repository, "Consulta sobreposição/manutenção")
-    Rel(reservaService, disponibilidadeService, "Revalida disponibilidade (RF-13)")
-    Rel(reservaService, auditoriaService, "Emite evento de auditoria (mesma tx)")
-    Rel(reservaService, notificacaoPort, "Publica evento (pós-commit)")
-    Rel(reservaService, repository, "Persiste com campo versao + constraint de exclusão")
-    Rel(relatorioController, repository, "Consulta agregada read-only")
+    Component(reservaSrv, "ReservaService", "Domínio", "Estados, sobreposição, lock por recurso, aprovação por competência")
+    Component(catalogoSrv, "CadastroRecursoService, PesquisaRecursoService", "Domínio", "Catálogo, manutenção (RF-23) e busca")
+    Component(apoioSrv, "RetiradaMaterialService, RelatorioService, UsuarioService, AutenticacaoService", "Domínio", "Retirada, relatório, contas, login")
+    Component(auditoria, "AuditoriaService", "Domínio", "Eventos append-only em memória (ADR-010)")
+    Component(notifSrv, "NotificacaoService", "Domínio + porta NotificadorExterno", "Falha vira status FALHA (RF-33)")
+    ComponentDb(banco, "Banco", "Cache em memória", "Seed e estado da JVM")
+
+    Component(jdbc, "Repositórios JDBC", "ReservaRepositorioJdbc, HistoricoReservaRepositorioJdbc, CatalogoRepositorioJdbc, TransacaoJdbc", "Só com PostgreSQL ligado")
+    Component(http, "NotificacaoHttpAdapter", "RestClient + JDK HttpClient", "Só com a integração externa habilitada")
+    Component(agenda, "AgendamentoConfig", "@Scheduled, 30 s", "Não comparecimento automático e pendência de devolução")
   }
+
+  Rel(web, ctrl, "Chama", "HTTP/JSON")
+  Rel(ctrl, seg, "Resolve o usuário do token")
+  Rel(ctrl, reservaSrv, "Delega")
+  Rel(ctrl, catalogoSrv, "Delega")
+  Rel(ctrl, apoioSrv, "Delega")
+  Rel(ctrl, erros, "Exceções viram ProblemDetail")
+  Rel(reservaSrv, auditoria, "Registra eventos")
+  Rel(catalogoSrv, auditoria, "Registra eventos")
+  Rel(reservaSrv, notifSrv, "Notifica depois da gravação")
+  Rel(reservaSrv, jdbc, "ReservaRepositorio, HistoricoReservaRepositorio, Transacao")
+  Rel(catalogoSrv, jdbc, "CatalogoRepositorio")
+  Rel(reservaSrv, banco, "Lê o cache")
+  Rel(jdbc, banco, "Atualiza após o commit; recarrega na subida")
+  Rel(jdbc, db, "SQL", "JDBC")
+  Rel(notifSrv, http, "NotificadorExterno")
+  Rel(http, notif, "POST /notificacoes", "HTTP/REST")
+  Rel(agenda, reservaSrv, "registrarNaoComparecimentosVencidos")
+  Rel(agenda, apoioSrv, "sinalizarPendencias")
 ```
+
+Sem PostgreSQL, os serviços recebem as implementações em memória das mesmas portas (`ReservaRepositorioEmMemoria`,
+`HistoricoReservaRepositorioEmMemoria`, `Transacao.direta()`, `CatalogoRepositorio.NENHUM`), escolhidas em `ApiConfig`.
+O domínio não muda entre os dois modos.
+
+**Regras de dependência verificadas** (`ArquiteturaCamadasTest`, RNF-15): `domain` não importa `api`, `persistencia`,
+`integracao`, Spring, Servlet nem `java.sql`. `api` não importa `persistencia`, `integracao` nem `java.sql`.
+`persistencia` e `integracao` não importam `api`. `agendamento` só chama o domínio.
+
+**Correspondência com o desenho de outubro:**
+
+| Desenho de outubro | Sistema entregue | Motivo |
+|---|---|---|
+| Filtro Spring Security | `UsuarioAutenticadoResolver` + `TokenService` + `Perfis` | Token opaco simples, sem dependência extra. A autorização fica perto da regra (competência por local), coberta por `MatrizAutorizacaoApiTest` |
+| `RecursoController` | `CatalogoController` (cadastro, `/recursos`, busca de professor e material) e `SalaController` (busca de sala) | — |
+| `AprovacaoController` | Rotas `/reservas/{id}/aprovacao` e `/rejeicao` dentro de `ReservaController` | A aprovação é uma transição da reserva, como as demais |
+| `DisponibilidadeService` | `PesquisaRecursoService` (busca) e a validação de sobreposição em `ReservaService` | — |
+| `NotificacaoPort` | `NotificacaoService.NotificadorExterno` (porta) e `NotificacaoHttpAdapter` | — |
+| Repositórios JPA / Spring Data | Repositórios JDBC (`JdbcTemplate`) e o cache `Banco` | O tipo `tstzrange` e a constraint GiST (ADR-009) são escritos em SQL. O escopo do banco segue o ADR-010 |
+| Lock otimista por campo `versao` | Lock por recurso (`ReentrantLock`, em ordem) na JVM e constraint de exclusão no banco entre instâncias | O teste de concorrência exige exatamente uma reserva aceita. O lock resolve dentro de uma instância, e a constraint resolve entre instâncias (DEF-001) |
+| Auditoria no banco, na mesma transação | `AuditoriaService` em memória; o histórico de **reservas** fica no banco, na transação, append-only | ADR-010 |
+| — | `ManutencaoController`, `RetiradaController`, `UsuarioController`, `AuditoriaController`, `CatalogoRepositorioJdbc`, `AgendamentoConfig` | Funções do Administrador, retirada e devolução, persistência do catálogo e tarefa periódica, que surgiram na implementação |
 
 ## 17. Fluxos de sequência críticos
 
@@ -377,130 +433,133 @@ C4Component
 sequenceDiagram
     actor A as Solicitante A
     actor B as Solicitante B
-    participant API as Backend API
+    participant API as ReservaController
     participant SRV as ReservaService
-    participant DB as PostgreSQL
+    participant DB as PostgreSQL (opcional)
+    participant AUD as AuditoriaService
+    participant NOT as NotificacaoService
 
     par Requisições quase simultâneas
-        A->>API: POST /reservas (recurso X, 10h-12h)
-        API->>SRV: criarReserva(A)
+        A->>API: POST /reservas (sala X, 10h-12h)
+        API->>SRV: criar(A, ...)
     and
-        B->>API: POST /reservas (recurso X, 10h-12h)
-        API->>SRV: criarReserva(B)
+        B->>API: POST /reservas (sala X, 10h-12h)
+        API->>SRV: criar(B, ...)
     end
 
-    SRV->>DB: SELECT sobreposição (recurso X, 10h-12h) [RF-15]
-    SRV->>DB: INSERT reserva + reserva_recurso (versao=0) [dentro de transação]
-    DB-->>SRV: OK (A) / violação EXCLUDE USING gist (B) [Driver #2, §11]
-
-    alt B colide com A (constraint de banco rejeita)
-        SRV-->>API: 409 Conflict (B)
-        API-->>B: HTTP 409 "recurso X já reservado nesse horário" (RF-38)
+    SRV->>SRV: adquire os locks dos recursos, em ordem (mesma JVM: B espera)
+    SRV->>SRV: manutenção no período? (memória) [RF-22]
+    SRV->>DB: existe reserva ativa sobreposta? (sem banco: no cache) [RF-15, RF-16]
+    SRV->>DB: transação: INSERT reserva + reserva_recurso + reserva_historico
+    DB-->>SRV: commit (A)
+    SRV->>AUD: CRIACAO (reserva A)
+    SRV-->>API: reserva A (APROVADA, ou SOLICITADA se o recurso é restrito)
+    API-->>A: 201
+    opt recurso restrito
+        SRV->>NOT: notifica o Responsável do local [RF-32, best-effort]
     end
+    SRV->>SRV: libera os locks
 
-    SRV->>DB: INSERT auditoria_evento (CRIACAO, reserva A) [mesma transação, RF-27]
-    SRV-->>API: 201 Created (A)
-    API-->>A: HTTP 201 reserva confirmada
-
-    Note over SRV,DB: Retry/recuperação: se a transação de A falhar por<br/>timeout de conexão, a camada de serviço não reusa<br/>estado parcial — nova tentativa refaz a checagem completa<br/>(idempotência garantida pela constraint, não por chave de idempotência de cliente).
-    SRV->>notificacaoPort: notificar(A, "APROVADA") [pós-commit, best-effort, RF-33]
+    alt B checa depois do commit de A (mesma instância, ou outra mais tarde)
+        SRV->>DB: existe sobreposição? sim
+    else B em outra instância checa antes do commit de A
+        SRV->>DB: INSERT
+        DB-->>SRV: 23P01 (ex_reserva_recurso_sem_sobreposicao), rollback
+    end
+    SRV->>AUD: REJEICAO_SOBREPOSICAO (autor B) [RF-28, RF-35]
+    API-->>B: 409 ProblemDetail "sobreposição" (RF-38)
 ```
 
-**Observações justificadas por requisito:**
-- O **lock/controle de concorrência** é resolvido em duas camadas (defesa em profundidade,
-  §11): otimista via campo `versao` na camada de serviço e pessimista/estrutural via
-  `EXCLUDE USING gist` no banco — Driver #2, RF-17, RNF-08.
-- **Idempotência**: a operação de criação não é idempotente por natureza (cada chamada cria
-  uma nova reserva), mas o *par* `(recurso, intervalo)` é protegido de duplicidade pela
-  constraint de exclusão — não há requisito de chave de idempotência enviada pelo cliente
-  (ex.: `Idempotency-Key`); **decisão sem requisito explícito**: se o cliente reenviar a
-  mesma requisição por timeout de rede, duas reservas idênticas *não* seriam bloqueadas pela
-  constraint (recursos/horários iguais, porém IDs de reserva diferentes seriam aceitos se o
-  usuário solicitante for o mesmo e não houver sobreposição com *outro* recurso) — risco a
-  esclarecer com o responsável do projeto.
-- **Retry/recuperação**: não há requisito explícito de retry automático; o enunciado exige
-  apenas que, sob concorrência, "exatamente uma" reserva seja aceita (RF-17) — o retry aqui
-  é responsabilidade do cliente (nova tentativa manual), não do backend.
+**Observações:**
+- **Concorrência em duas camadas** (Driver #2, RF-17, RNF-08). Dentro de uma instância, um `ReentrantLock` por
+  recurso, adquirido em ordem para não haver deadlock, serializa as criações do mesmo recurso, e a checagem de sobreposição já encontra a reserva gravada. Entre instâncias, a
+  checagem pode acontecer antes do commit da outra; aí quem decide é a constraint de exclusão GiST sobre `tstzrange` ([ADR-009](adr/ADR-009-exclusao-gist-tstzrange.md)), e a
+  violação vira 409. Evidência: `ConcorrenciaReservaIT` (20 requisições, 1×201 e 19×409) e
+  `ConcorrenciaReservaMultiInstanciaIT` (as mesmas 20 divididas entre 2 JVMs), contra PostgreSQL real; na carga,
+  0 duplas reservas em 6.308 janelas disputadas ([resultado-02](performance/resultado-02.md)).
+- **Atomicidade.** Reserva, recursos e a primeira linha do histórico entram na mesma transação (`TransacaoJdbc`). O cache
+  só é atualizado depois do commit. A auditoria e a notificação vêm depois da gravação, e falha de notificação não
+  desfaz nada (RF-33).
+- **Idempotência.** A criação não é idempotente por chave de cliente; não há requisito para isso. Um reenvio do mesmo
+  pedido pelo mesmo solicitante é recusado como sobreposição, porque o recurso já está ocupado no intervalo.
+- **Retry.** O servidor não repete a operação; o cliente vê o 409 e escolhe outro horário.
 
-### 17.2 Fluxo batch — Job de verificação de pendência de devolução (RF-26, suposição S1)
+### 17.2 Fluxo batch — Tarefa periódica: não comparecimento e pendência de devolução (P-08, RF-26)
 
 ```mermaid
 sequenceDiagram
-    participant SCH as Scheduler (@Scheduled)
-    participant SRV as RetiradaDevolucaoService
-    participant DB as PostgreSQL
-    participant NOT as NotificacaoPort
+    participant SCH as AgendamentoConfig (@Scheduled, 30 s)
+    participant RES as ReservaService
+    participant RET as RetiradaMaterialService
+    participant DB as PostgreSQL (opcional)
+    participant NOT as NotificacaoService
+    actor R as Responsável
 
-    loop A cada execução agendada (período não definido no enunciado — gap)
-        SCH->>SRV: verificarPendencias(ultimoCheckpoint)
-        SRV->>DB: SELECT retirada_devolucao WHERE devolvidoEm IS NULL<br/>AND reserva.fim < now() AND atualizadoEm > ultimoCheckpoint
-        DB-->>SRV: lista de pendências novas/alteradas desde o checkpoint
-        SRV->>DB: UPDATE flag pendenciaSinalizada = true WHERE id IN (...)
-        Note over SRV,DB: Idempotência: UPDATE condicional (WHERE pendenciaSinalizada = false)<br/>garante que reexecutar o job não gera sinalização duplicada.
-        SRV->>NOT: notificar(Responsável, pendência) [best-effort, RF-31/RF-32 por analogia]
-        SRV->>SCH: salvarCheckpoint(now())
+    loop a cada 30 s depois do fim da execução anterior (fixedDelay)
+        SCH->>RES: registrarNaoComparecimentosVencidos()
+        loop cada reserva APROVADA com fim ≤ agora
+            RES->>DB: transação: UPDATE estado + INSERT histórico (autor "sistema")
+            RES->>NOT: notifica o Solicitante [RF-31, best-effort]
+            Note over RES: falha numa reserva é registrada em log<br/>e não impede as demais; a próxima passada tenta de novo
+        end
+        SCH->>RET: sinalizarPendencias(agora)
+        Note over RET: retirada sem devolução cuja reserva já terminou<br/>recebe pendenciaSinalizada = true (em memória)
     end
-
-    Note over SCH,DB: Retry/recuperação: se o job cair no meio da execução,<br/>a próxima execução usa o mesmo ultimoCheckpoint (não avançado)<br/>e reprocessa o lote — seguro pois o UPDATE é idempotente.
+    R->>RET: GET /retiradas/pendentes (só do seu local)
 ```
 
-**Observações justificadas por requisito e lacunas marcadas:**
-- **Watermark/checkpoint**: RF-26 exige detecção "em até 1 min após vencimento", mas não
-  define a periodicidade do mecanismo de verificação nem exige explicitamente um checkpoint
-  — **decisão sem requisito direto**: o checkpoint é necessário apenas para não
-  reprocessar toda a tabela a cada execução (eficiência), não para corretude funcional, já
-  que o `UPDATE` condicional já garante idempotência mesmo sem checkpoint.
-- **Idempotência**: garantida pela condição `WHERE pendenciaSinalizada = false` no update,
-  não por deduplicação de mensagem a jusante.
-- **Retry/recuperação**: na ausência de orquestrador externo (S1), não há reexecução
-  automática em caso de falha do processo — apenas a próxima execução agendada cobre o
-  intervalo perdido, o que é suficiente para a meta de 1 minuto apenas se a frequência do
-  job for compatível (ex.: a cada 30s) — **gap**: frequência não especificada em nenhum
-  artefato, a definir com o responsável.
-- **Qualidade e linhagem**: cada sinalização é rastreável à linha `RetiradaDevolucao` e,
-  por consequência, à `Reserva` e à trilha de `AuditoriaEvento` da reserva original — não há
-  requisito de linhagem adicional (ex.: lineage de pipeline de dados), pois não há pipeline
-  de dados neste projeto (suposição S2/S3).
+**Observações:**
+- **Prazo do RF-26.** Com `fixedDelay` de 30 s (D-6), a sinalização acontece no máximo 30 s mais a duração de uma
+  execução depois do vencimento, dentro do "até 1 min". O intervalo pode ser ajustado em
+  `edualoca.agendamento.intervalo-ms`.
+- **Idempotência sem checkpoint.** O desenho de outubro previa um checkpoint. Não foi preciso, porque a varredura é
+  sobre o cache em memória e cada item é filtrado pelo próprio estado: só `APROVADA` vencida vira `NAO_COMPARECEU`, e
+  retirada já sinalizada ou devolvida é ignorada. Reexecutar não duplica histórico, auditoria nem sinalização
+  (`NaoComparecimentoAutomaticoTest`).
+- **Várias instâncias.** Cada instância roda a própria tarefa. A transição só sai de `APROVADA`, então duas instâncias
+  não geram dois encerramentos válidos para a mesma reserva. As retiradas ficam em memória e não são compartilhadas
+  (ADR-010).
+- **Observabilidade.** Uma linha de log quando há encerramentos e um aviso por falha, só com o id da reserva.
 
-### 17.3 Fluxo de análise — Geração de relatório de utilização e conflitos evitados (RF-34, RF-35, J8)
+### 17.3 Fluxo de análise — Relatório de utilização e conflitos evitados (RF-34, RF-35, RF-36, J8)
 
 ```mermaid
 sequenceDiagram
-    actor ADM as Administrador/Responsável
+    actor U as Responsável/Administrador
     participant API as RelatorioController
+    participant SEG as Segurança (token)
     participant SRV as RelatorioService
-    participant DB as PostgreSQL
+    participant C as Banco (cache)
 
-    ADM->>API: GET /relatorios/utilizacao?inicio=...&fim=...
-    API->>API: autorizar(perfil in {RES, ADM}) [RF-36]
-    alt perfil == SOLICITANTE
-        API-->>ADM: HTTP 403 (RF-36)
+    U->>API: GET /relatorios/utilizacao?inicio=...&fim=...
+    API->>SEG: resolve o usuário (401 sem token válido)
+    API->>SRV: gerarUtilizacaoPorPeriodo(usuario, inicio, fim)
+    alt perfil SOLICITANTE
+        SRV-->>API: 403, antes de validar o período (RF-36)
+    else fim ≤ inicio
+        SRV-->>API: 400
     end
-    API->>SRV: gerarUtilizacaoPorPeriodo(intervalo)
-    SRV->>DB: SELECT reservas WHERE estado IN (APROVADA, EM_USO, CONCLUIDA)<br/>AND intervalo sobrepõe [inicio, fim] — agregado por recurso
-    SRV->>DB: SELECT auditoria_evento WHERE acao = 'REJEICAO_SOBREPOSICAO'<br/>AND dataHora BETWEEN inicio AND fim [RF-35, conflitos evitados]
-    DB-->>SRV: linhas agregadas
-    SRV-->>API: relatório (utilização, carga horária, conflitos evitados)
-    API-->>ADM: HTTP 200 relatório
+    SRV->>C: reservas APROVADA, EM_USO e CONCLUIDA que cruzam [inicio, fim)
+    Note over SRV: recorta cada reserva no período e soma minutos<br/>por recurso e por professor (fuso do Clock)
+    SRV->>C: auditoria: REJEICAO_SOBREPOSICAO de Reserva em [inicio, fim)
+    SRV-->>API: recursos, professores, conflitosEvitados
+    API-->>U: 200
 ```
 
-**Observações justificadas por requisito e itens marcados como não aplicáveis:**
-- **Reprodutibilidade**: a consulta é determinística sobre dados já finais (`CONCLUIDA`,
-  auditoria append-only imutável — RF-29), logo o mesmo intervalo de datas sempre produz o
-  mesmo resultado, desde que não haja novas reservas `CONCLUIDA` retroativas no período —
-  não há requisito de versionamento de dataset, pois o relatório lê diretamente o estado
-  transacional, não um snapshot analítico separado (suposição S3).
-- **Qualidade e linhagem**: cada número do relatório é rastreável a registros concretos de
-  `Reserva`/`AuditoriaEvento` (RF-27, RF-35: "contagem de conflitos evitados bate com número
-  de rejeições HTTP 409 registradas em auditoria"); não há ETL intermediário a auditar.
-- **Validação de modelo / versionamento-registry / promoção / rollback de modelo**: **não
-  aplicável** — não há modelo de Machine Learning no escopo do projeto (suposição S2). Caso
-  este requisito seja confirmado como necessário no futuro, as decisões abaixo precisarão
-  ser tomadas e documentadas à parte: estratégia de treino/validação, formato de registry
-  (ex.: MLflow), critério de promoção (ex.: métrica mínima em holdout) e rollback (ex.:
-  reapontar para versão anterior do modelo registrado).
+**Observações:**
+- **Fonte dos números.** O relatório lê o cache em memória. Com PostgreSQL, as reservas do cache são recarregadas do
+  banco na subida e atualizadas a cada commit, então as horas sobrevivem a um reinício. A contagem de conflitos evitados
+  vem da auditoria, que fica em memória (ADR-010): **num reinício, essa contagem recomeça do zero.**
+- **Reprodutibilidade.** O mesmo período e o mesmo estado produzem o mesmo relatório. O período é semiaberto
+  `[inicio, fim)` (`RelatorioUtilizacaoApiTest`, `RelatorioFusoHorarioTest`, `RelatoriosTest`).
+- **Validação, registry, promoção e rollback de modelo:** não se aplicam, porque não há Machine Learning no escopo
+  (suposição S2).
 
 ## 18. Aspectos transversais por fluxo
+
+> Tabela da fase de arquitetura (outubro). Onde o sistema entregue difere, vale o descrito nas observações do §17:
+> não há checkpoint nem campo `versao` (a idempotência vem do filtro por estado e a concorrência do lock por recurso
+> com a constraint de exclusão), e a auditoria fica em memória (ADR-010).
 
 | Aspecto | Fluxo Online (reserva) | Fluxo Batch (pendência) | Fluxo Análise (relatório) | Base (requisito) ou marcação |
 |---|---|---|---|---|

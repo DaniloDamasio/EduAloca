@@ -20,6 +20,8 @@ import java.util.List;
  *   <li>P-08: reserva {@code APROVADA} que chegou ao fim do horario sem inicio do uso vira {@code NAO_COMPARECEU};</li>
  *   <li>RF-26: material retirado e nao devolvido depois do fim da reserva e sinalizado como pendente.</li>
  * </ul>
+ * Roda a cada 30 s (decisao D-6 de {@code DOCS/arquitetura.md}): com {@code fixedDelay}, o atraso maximo entre o
+ * vencimento e a sinalizacao fica em 30 s mais a duracao de uma execucao, dentro do "ate 1 min" do RF-26.
  * Ligado por padrao ({@code edualoca.agendamento.habilitado}); desligado na suite de testes
  * ({@code src/test/resources/config/application.properties}), em que os testes chamam os metodos diretamente.
  */
@@ -40,8 +42,8 @@ public class AgendamentoConfig {
         this.clock = clock;
     }
 
-    @Scheduled(initialDelayString = "${edualoca.agendamento.intervalo-ms:60000}",
-            fixedDelayString = "${edualoca.agendamento.intervalo-ms:60000}")
+    @Scheduled(initialDelayString = "${edualoca.agendamento.intervalo-ms:30000}",
+            fixedDelayString = "${edualoca.agendamento.intervalo-ms:30000}")
     public void executar() {
         List<Reserva> encerradas = reservas.registrarNaoComparecimentosVencidos();
         if (!encerradas.isEmpty()) {

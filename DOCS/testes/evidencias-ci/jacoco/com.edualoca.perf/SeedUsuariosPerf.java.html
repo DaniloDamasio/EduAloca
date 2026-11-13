@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SeedUsuariosPerf.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.perf</a> &gt; <span class="el_source">SeedUsuariosPerf.java</span></div><h1>SeedUsuariosPerf.java</h1><pre class="source lang-java linenums">package com.edualoca.perf;
+
+import com.edualoca.domain.comum.Banco;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+/**
+ * Cadastra os usuarios ficticios do teste de carga (perf/usuarios.csv, colunas email,senha).
+ * Ativo somente no perfil Spring {@code perf}: nunca carrega contas de teste em outros ambientes.
+ */
+@Component
+@Profile(&quot;perf&quot;)
+public class SeedUsuariosPerf implements ApplicationRunner {
+
+<span class="fc" id="L27">    private static final Logger LOG = LoggerFactory.getLogger(SeedUsuariosPerf.class);</span>
+
+    private final Path arquivo;
+
+<span class="fc" id="L31">    public SeedUsuariosPerf(@Value(&quot;${edualoca.perf.usuarios-csv:perf/usuarios.csv}&quot;) Path arquivo) {</span>
+<span class="fc" id="L32">        this.arquivo = arquivo;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public void run(ApplicationArguments args) {
+<span class="fc" id="L37">        Banco.seedSeNecessario();</span>
+        List&lt;String&gt; linhas;
+        try {
+<span class="fc" id="L40">            linhas = Files.readAllLines(arquivo, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L41">        } catch (IOException e) {</span>
+<span class="fc" id="L42">            throw new UncheckedIOException(&quot;Nao foi possivel ler os usuarios de carga em &quot; + arquivo.toAbsolutePath(), e);</span>
+<span class="fc" id="L43">        }</span>
+<span class="fc" id="L44">        int cadastrados = 0;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (String linha : linhas.subList(Math.min(1, linhas.size()), linhas.size())) {</span>
+<span class="fc" id="L46">            String[] campos = linha.split(&quot;,&quot;, 2);</span>
+<span class="fc bfc" id="L47" title="All 6 branches covered.">            if (campos.length == 2 &amp;&amp; !campos[0].isBlank() &amp;&amp; !campos[1].isBlank()) {</span>
+<span class="fc" id="L48">                Banco.registrarCredencial(campos[0].trim(), campos[1].trim());</span>
+<span class="fc" id="L49">                cadastrados++;</span>
+            }
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">        LOG.info(&quot;Perfil perf: {} usuarios ficticios de carga cadastrados a partir de {}&quot;, cadastrados, arquivo);</span>
+<span class="fc" id="L53">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

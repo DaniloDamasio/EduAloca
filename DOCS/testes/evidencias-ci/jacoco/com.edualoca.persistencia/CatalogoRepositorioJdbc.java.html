@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogoRepositorioJdbc.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.persistencia</a> &gt; <span class="el_source">CatalogoRepositorioJdbc.java</span></div><h1>CatalogoRepositorioJdbc.java</h1><pre class="source lang-java linenums">package com.edualoca.persistencia;
+
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.CatalogoRepositorio;
+import com.edualoca.domain.recurso.Competencia;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.Professor;
+import com.edualoca.domain.recurso.Sala;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Catalogo no PostgreSQL. {@link #salvar} grava cada mudanca de cadastro (upsert); {@link #sincronizarComOBanco} roda na
+ * subida da aplicacao: o que esta no banco vence (edicoes e inativacoes feitas antes do reinicio) e o seed que ainda nao
+ * existe no banco e inserido. O {@link Banco} continua sendo o cache de leitura, entao o dominio segue comparando
+ * recursos por referencia de objeto.
+ */
+public class CatalogoRepositorioJdbc implements CatalogoRepositorio {
+
+    private final JdbcTemplate jdbc;
+    private final TransactionTemplate transacao;
+
+<span class="fc" id="L33">    public CatalogoRepositorioJdbc(JdbcTemplate jdbc, TransactionTemplate transacao) {</span>
+<span class="fc" id="L34">        this.jdbc = jdbc;</span>
+<span class="fc" id="L35">        this.transacao = transacao;</span>
+<span class="fc" id="L36">    }</span>
+
+    @Override
+    public void salvar(Sala sala) {
+<span class="fc" id="L40">        jdbc.update(&quot;&quot;&quot;</span>
+                        INSERT INTO sala (id, nome, tipo, capacidade, localizacao, restrito, ativo) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, tipo = EXCLUDED.tipo,
+                            capacidade = EXCLUDED.capacidade, localizacao = EXCLUDED.localizacao,
+                            restrito = EXCLUDED.restrito, ativo = EXCLUDED.ativo&quot;&quot;&quot;,
+<span class="fc" id="L45">                sala.getId(), sala.getNome(), sala.getTipo(), sala.getCapacidade(), sala.getLocalizacao(),</span>
+<span class="fc" id="L46">                sala.isRestrito(), sala.isAtivo());</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public void salvar(Professor professor) {
+        try {
+<span class="fc" id="L52">            transacao.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L53">                jdbc.update(&quot;&quot;&quot;</span>
+                                INSERT INTO professor (id, nome, identificador_institucional, ativo) VALUES (?, ?, ?, ?)
+                                ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, ativo = EXCLUDED.ativo&quot;&quot;&quot;,
+<span class="fc" id="L56">                        professor.getId(), professor.getNome(), professor.getIdentificadorInstitucional(), professor.isAtivo());</span>
+<span class="fc" id="L57">                jdbc.update(&quot;DELETE FROM professor_competencia WHERE professor_id = ?&quot;, professor.getId());</span>
+<span class="fc" id="L58">                inserirCompetencias(professor);</span>
+<span class="fc" id="L59">            });</span>
+<span class="fc" id="L60">        } catch (DuplicateKeyException e) {</span>
+            // Outra instancia ja gravou um professor com o mesmo identificador institucional.
+<span class="fc" id="L62">            throw new RegraNegocioException(409, &quot;Identificador institucional já cadastrado&quot;);</span>
+<span class="fc" id="L63">        }</span>
+<span class="fc" id="L64">    }</span>
+
+    @Override
+    public void salvar(Material material) {
+<span class="fc" id="L68">        jdbc.update(&quot;&quot;&quot;</span>
+                        INSERT INTO material (id, nome, tipo, quantidade_total, restrito, ativo) VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, tipo = EXCLUDED.tipo,
+                            quantidade_total = EXCLUDED.quantidade_total, restrito = EXCLUDED.restrito, ativo = EXCLUDED.ativo&quot;&quot;&quot;,
+<span class="fc" id="L72">                material.getId(), material.getNome(), material.getTipo(), material.getQuantidadeTotal(),</span>
+<span class="fc" id="L73">                material.isRestrito(), material.isAtivo());</span>
+<span class="fc" id="L74">    }</span>
+
+    /**
+     * Subida no modo PostgreSQL: semeia o cache, sobrepoe nele o catalogo gravado (o banco vence) e grava no banco o seed
+     * que faltar, sem sobrescrever nada que ja exista (ON CONFLICT DO NOTHING: seguro com duas instancias subindo juntas).
+     */
+    public void sincronizarComOBanco() {
+<span class="fc" id="L81">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L82">        Set&lt;UUID&gt; salasNoBanco = carregarSalas();</span>
+<span class="fc" id="L83">        Set&lt;UUID&gt; materiaisNoBanco = carregarMateriais();</span>
+<span class="fc" id="L84">        Set&lt;UUID&gt; professoresNoBanco = carregarProfessores();</span>
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        Banco.salas.values().stream().filter(s -&gt; !salasNoBanco.contains(s.getId())).forEach(this::inserirSeAusente);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        Banco.materiais.values().stream().filter(m -&gt; !materiaisNoBanco.contains(m.getId())).forEach(this::inserirSeAusente);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        Banco.professores.values().stream().filter(p -&gt; !professoresNoBanco.contains(p.getId())).forEach(this::inserirSeAusente);</span>
+<span class="fc" id="L89">    }</span>
+
+    private Set&lt;UUID&gt; carregarSalas() {
+<span class="fc" id="L92">        Set&lt;UUID&gt; ids = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L93">        jdbc.query(&quot;SELECT id, nome, tipo, capacidade, localizacao, restrito, ativo FROM sala&quot;, rs -&gt; {</span>
+<span class="fc" id="L94">            Sala sala = new Sala(rs.getObject(&quot;id&quot;, UUID.class), rs.getString(&quot;nome&quot;), rs.getString(&quot;tipo&quot;),</span>
+<span class="fc" id="L95">                    rs.getInt(&quot;capacidade&quot;), rs.getString(&quot;localizacao&quot;), rs.getBoolean(&quot;restrito&quot;));</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (!rs.getBoolean(&quot;ativo&quot;)) {</span>
+<span class="fc" id="L97">                sala.inativar();</span>
+            }
+<span class="fc" id="L99">            Banco.salas.put(sala.getId(), sala);</span>
+<span class="fc" id="L100">            ids.add(sala.getId());</span>
+<span class="fc" id="L101">        });</span>
+<span class="fc" id="L102">        return ids;</span>
+    }
+
+    private Set&lt;UUID&gt; carregarMateriais() {
+<span class="fc" id="L106">        Set&lt;UUID&gt; ids = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L107">        jdbc.query(&quot;SELECT id, nome, tipo, quantidade_total, restrito, ativo FROM material&quot;, rs -&gt; {</span>
+<span class="fc" id="L108">            Material material = new Material(rs.getObject(&quot;id&quot;, UUID.class), rs.getString(&quot;nome&quot;), rs.getString(&quot;tipo&quot;),</span>
+<span class="fc" id="L109">                    rs.getInt(&quot;quantidade_total&quot;), rs.getBoolean(&quot;restrito&quot;));</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (!rs.getBoolean(&quot;ativo&quot;)) {</span>
+<span class="fc" id="L111">                material.inativar();</span>
+            }
+<span class="fc" id="L113">            Banco.materiais.put(material.getId(), material);</span>
+<span class="fc" id="L114">            ids.add(material.getId());</span>
+<span class="fc" id="L115">        });</span>
+<span class="fc" id="L116">        return ids;</span>
+    }
+
+    private Set&lt;UUID&gt; carregarProfessores() {
+<span class="fc" id="L120">        Map&lt;UUID, List&lt;Competencia&gt;&gt; competencias = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L121">        jdbc.query(&quot;SELECT professor_id, nome FROM professor_competencia ORDER BY professor_id, ordem&quot;, rs -&gt; {</span>
+<span class="fc" id="L122">            competencias.computeIfAbsent(rs.getObject(&quot;professor_id&quot;, UUID.class), id -&gt; new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L123">                    .add(new Competencia(rs.getString(&quot;nome&quot;)));</span>
+<span class="fc" id="L124">        });</span>
+<span class="fc" id="L125">        Set&lt;UUID&gt; ids = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L126">        jdbc.query(&quot;SELECT id, nome, identificador_institucional, ativo FROM professor&quot;, rs -&gt; {</span>
+<span class="fc" id="L127">            UUID id = rs.getObject(&quot;id&quot;, UUID.class);</span>
+<span class="fc" id="L128">            Professor professor = new Professor(id, rs.getString(&quot;nome&quot;), rs.getString(&quot;identificador_institucional&quot;),</span>
+<span class="fc" id="L129">                    competencias.getOrDefault(id, List.of()));</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">            if (!rs.getBoolean(&quot;ativo&quot;)) {</span>
+<span class="nc" id="L131">                professor.inativar();</span>
+            }
+<span class="fc" id="L133">            Banco.professores.put(id, professor);</span>
+<span class="fc" id="L134">            Banco.professorIdPorIdentificador.put(professor.getIdentificadorInstitucional(), id);</span>
+<span class="fc" id="L135">            ids.add(id);</span>
+<span class="fc" id="L136">        });</span>
+<span class="fc" id="L137">        return ids;</span>
+    }
+
+    private void inserirSeAusente(Sala sala) {
+<span class="fc" id="L141">        jdbc.update(&quot;&quot;&quot;</span>
+                        INSERT INTO sala (id, nome, tipo, capacidade, localizacao, restrito, ativo) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO NOTHING&quot;&quot;&quot;,
+<span class="fc" id="L144">                sala.getId(), sala.getNome(), sala.getTipo(), sala.getCapacidade(), sala.getLocalizacao(),</span>
+<span class="fc" id="L145">                sala.isRestrito(), sala.isAtivo());</span>
+<span class="fc" id="L146">    }</span>
+
+    private void inserirSeAusente(Material material) {
+<span class="fc" id="L149">        jdbc.update(&quot;&quot;&quot;</span>
+                        INSERT INTO material (id, nome, tipo, quantidade_total, restrito, ativo) VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO NOTHING&quot;&quot;&quot;,
+<span class="fc" id="L152">                material.getId(), material.getNome(), material.getTipo(), material.getQuantidadeTotal(),</span>
+<span class="fc" id="L153">                material.isRestrito(), material.isAtivo());</span>
+<span class="fc" id="L154">    }</span>
+
+    private void inserirSeAusente(Professor professor) {
+<span class="fc" id="L157">        transacao.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L158">            int inseridos = jdbc.update(&quot;&quot;&quot;</span>
+                            INSERT INTO professor (id, nome, identificador_institucional, ativo) VALUES (?, ?, ?, ?)
+                            ON CONFLICT DO NOTHING&quot;&quot;&quot;,
+<span class="fc" id="L161">                    professor.getId(), professor.getNome(), professor.getIdentificadorInstitucional(), professor.isAtivo());</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">            if (inseridos == 1) {</span>
+<span class="fc" id="L163">                inserirCompetencias(professor);</span>
+            }
+<span class="fc" id="L165">        });</span>
+<span class="fc" id="L166">    }</span>
+
+    private void inserirCompetencias(Professor professor) {
+<span class="fc" id="L169">        List&lt;Competencia&gt; lista = professor.getCompetencias();</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        for (int ordem = 0; ordem &lt; lista.size(); ordem++) {</span>
+<span class="fc" id="L171">            jdbc.update(&quot;INSERT INTO professor_competencia (professor_id, ordem, nome) VALUES (?, ?, ?)&quot;,</span>
+<span class="fc" id="L172">                    professor.getId(), ordem, lista.get(ordem).getNome());</span>
+        }
+<span class="fc" id="L174">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

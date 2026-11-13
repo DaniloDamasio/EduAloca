@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetiradaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.retirada</a> &gt; <span class="el_source">RetiradaController.java</span></div><h1>RetiradaController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.retirada;
+
+import com.edualoca.api.seguranca.Perfis;
+import com.edualoca.api.seguranca.UsuarioAutenticado;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.retirada.CondicaoItem;
+import com.edualoca.domain.retirada.RegistroRetirada;
+import com.edualoca.domain.retirada.RetiradaMaterialService;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+/**
+ * Retirada e devolucao de material (RF-24, RF-25). So Responsavel e Administrador; o Responsavel so atua nas reservas
+ * que pode decidir (mesma regra de {@link ReservaService#listar}). Data e autor vem do servidor e do token.
+ */
+@RestController
+public class RetiradaController {
+
+    private static final String SO_RESPONSAVEL = &quot;Apenas Responsável ou Administrador registram retirada e devolução&quot;;
+
+    private final RetiradaMaterialService retiradas;
+    private final ReservaService reservas;
+    private final Clock clock;
+
+<span class="fc" id="L39">    public RetiradaController(RetiradaMaterialService retiradas, ReservaService reservas, Clock clock) {</span>
+<span class="fc" id="L40">        this.retiradas = retiradas;</span>
+<span class="fc" id="L41">        this.reservas = reservas;</span>
+<span class="fc" id="L42">        this.clock = clock;</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="fc" id="L45">    public record RetiradaRequisicao(UUID materialId) {</span>
+    }
+
+<span class="fc" id="L48">    public record DevolucaoRequisicao(String condicao) {</span>
+    }
+
+    /** {@code pendente} (RF-26): retirado e nao devolvido depois do fim da reserva, sinalizado pelo agendador. */
+<span class="fc" id="L52">    public record RetiradaResposta(UUID id, UUID reservaId, UUID materialId, UUID autorId, LocalDateTime dataRetirada,</span>
+                                   LocalDateTime dataDevolucao, String condicaoDevolucao, boolean pendente) {
+
+        static RetiradaResposta de(RegistroRetirada r) {
+<span class="fc" id="L56">            return new RetiradaResposta(r.getId(), r.getReservaId(), r.getItemId(), r.getAutorId(), r.getDataRetirada(),</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                    r.getDataDevolucao(), r.getCondicaoDevolucao() == null ? null : r.getCondicaoDevolucao().name(),</span>
+<span class="fc bfc" id="L58" title="All 4 branches covered.">                    r.isPendenciaSinalizada() &amp;&amp; r.getDataDevolucao() == null);</span>
+        }
+    }
+
+    /**
+     * RF-26: devolucoes em atraso das reservas que o usuario pode acompanhar (Responsavel do local ou Administrador),
+     * da retirada mais antiga para a mais recente.
+     */
+    @GetMapping(&quot;/retiradas/pendentes&quot;)
+    public List&lt;RetiradaResposta&gt; pendentes(@UsuarioAutenticado Usuario usuario) {
+<span class="fc" id="L68">        Perfis.exigir(usuario, SO_RESPONSAVEL, Perfil.RESPONSAVEL, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L69">        java.util.Set&lt;UUID&gt; visiveis = reservas.listar(usuario).stream()</span>
+<span class="fc" id="L70">                .map(com.edualoca.domain.reserva.Reserva::getId)</span>
+<span class="fc" id="L71">                .collect(java.util.stream.Collectors.toSet());</span>
+<span class="fc" id="L72">        return retiradas.listarPendentes().stream()</span>
+<span class="fc" id="L73">                .filter(r -&gt; visiveis.contains(r.getReservaId()))</span>
+<span class="fc" id="L74">                .map(RetiradaResposta::de)</span>
+<span class="fc" id="L75">                .toList();</span>
+    }
+
+    @GetMapping(&quot;/reservas/{id}/retiradas&quot;)
+    public List&lt;RetiradaResposta&gt; listar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+<span class="fc" id="L80">        exigirCompetencia(usuario, id);</span>
+<span class="fc" id="L81">        return retiradas.listarPorReserva(id).stream().map(RetiradaResposta::de).toList();</span>
+    }
+
+    @PostMapping(&quot;/reservas/{id}/retiradas&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    public RetiradaResposta registrarRetirada(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                              @RequestBody RetiradaRequisicao requisicao) {
+<span class="fc" id="L88">        exigirCompetencia(usuario, id);</span>
+<span class="fc" id="L89">        return RetiradaResposta.de(retiradas.registrarRetirada(usuario, id, requisicao.materialId(), LocalDateTime.now(clock)));</span>
+    }
+
+    @PostMapping(&quot;/retiradas/{id}/devolucao&quot;)
+    public RetiradaResposta registrarDevolucao(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id,
+                                               @RequestBody DevolucaoRequisicao requisicao) {
+<span class="fc" id="L95">        Perfis.exigir(usuario, SO_RESPONSAVEL, Perfil.RESPONSAVEL, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L96">        CondicaoItem condicao = condicao(requisicao.condicao());</span>
+<span class="fc" id="L97">        RegistroRetirada registro = retiradas.buscar(id);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (registro == null) {</span>
+<span class="fc" id="L99">            throw new RegraNegocioException(409, &quot;Não existe retirada em aberto para este registro&quot;);</span>
+        }
+<span class="fc" id="L101">        exigirCompetencia(usuario, registro.getReservaId());</span>
+<span class="fc" id="L102">        return RetiradaResposta.de(retiradas.registrarDevolucao(usuario, id, LocalDateTime.now(clock), condicao));</span>
+    }
+
+    /** Perfil antes da reserva; reserva inexistente ou de outro local recebe o mesmo 403 (nao revela ids). */
+    private void exigirCompetencia(Usuario usuario, UUID reservaId) {
+<span class="fc" id="L107">        Perfis.exigir(usuario, SO_RESPONSAVEL, Perfil.RESPONSAVEL, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L108">        boolean visivel = reservas.listar(usuario).stream().anyMatch(r -&gt; r.getId().equals(reservaId));</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (!visivel) {</span>
+<span class="fc" id="L110">            throw new RegraNegocioException(403, &quot;Reserva fora da sua responsabilidade ou inexistente&quot;);</span>
+        }
+<span class="fc" id="L112">    }</span>
+
+    private static CondicaoItem condicao(String valor) {
+<span class="pc bpc" id="L115" title="2 of 4 branches missed.">        if (valor == null || valor.isBlank()) {</span>
+<span class="nc" id="L116">            throw new RegraNegocioException(400, &quot;Condição de devolução é obrigatória: use INTEGRO ou DANIFICADO&quot;);</span>
+        }
+        try {
+<span class="fc" id="L119">            return CondicaoItem.valueOf(valor.strip().toUpperCase(Locale.ROOT));</span>
+<span class="fc" id="L120">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L121">            throw new RegraNegocioException(400, &quot;Condição de devolução inválida: use INTEGRO ou DANIFICADO&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

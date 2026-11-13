@@ -209,14 +209,14 @@ de 2 vCPUs do banco ou o pool de 10 conexões.
 
 A regra "os brutos não são versionados" mudou: os **resumos e logs de cada rodada passaram a ser versionados** em
 `perf/resultados/`, para que cada número deste documento aponte para um arquivo do repositório. Só os `.jtl` (uma linha
-por requisição) ficam fora do git, por tamanho, e estão compactados na release
-[`carga-rodada-02`](https://github.com/DaniloDamasio/EduAloca/releases/tag/carga-rodada-02) do GitHub:
+por requisição) ficam fora do git, por tamanho. O autor guarda os arquivos compactados abaixo, e os SHA-256 permitem
+conferir uma cópia, se for pedida:
 
-| Arquivo da release | Conteúdo | SHA-256 |
+| Arquivo | Conteúdo | SHA-256 |
 |---|---|---|
 | `rodada-02-jtl.tar.gz` (2,9 MB) | os 11 `rodada.jtl` da rodada 02 (8 cenários e 3 repetições), com o caminho `rodada-02/<cenário>/` | `99cf7ff406e36877f86f38646dd85def550e385f4c81f014f08e056077ca42cf` |
 | `rodada-01.jtl.gz` (81 KB) | `rodada-01.jtl`; descompactado, o SHA-256 começa com `dcfeada7c825bdee`, igual ao da rodada 01 | `78bc783f22efdf20e49ca89bc04130c566169245e1d32498fee6298fe11cbbe0` |
 
-Para conferir: baixar o arquivo, `shasum -a 256 <arquivo>` e extrair em `perf/resultados/`
+Para conferir uma cópia: `shasum -a 256 <arquivo>` e extrair em `perf/resultados/`
 (`tar -xzf rodada-02-jtl.tar.gz -C perf/resultados`). A tentativa descartada da rodada 02 (suspensão da máquina) e o
-relatório HTML do JMeter (regerável a partir do `.jtl`) não são publicados.
+relatório HTML do JMeter (regerável a partir do `.jtl`) não são guardados.

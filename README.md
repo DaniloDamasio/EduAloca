@@ -113,10 +113,12 @@ EduAloca/
 
 ## Integração Contínua
 
-Pipeline em [.github/workflows/ci.yml](.github/workflows/ci.yml), disparado em `pull_request`
-e em `push` na `main`: Java 21 (Temurin), `./mvnw -B verify` e publicação dos relatórios de
-Surefire e Failsafe como artifact. O check `Build e Testes` é obrigatório na branch `main`
-(configurado em Settings → Branches → Branch protection rules).
+Pipeline em [.github/workflows/ci.yml](.github/workflows/ci.yml), disparado em `pull_request` e em `push` na `main`:
+Java 21 (Temurin), instalação do Chromium para o E2E, `./mvnw -B verify` (unitários, integração com PostgreSQL, E2E e
+gate JaCoCo), análise do [SonarCloud](https://sonarcloud.io/project/overview?id=DaniloDamasio_EduAloca) e publicação dos
+relatórios Surefire, Failsafe e JaCoCo como artifacts, guardados por 90 dias. Como os artifacts expiram, os relatórios
+do commit entregue também estão versionados em [DOCS/testes/evidencias-ci/](DOCS/testes/evidencias-ci/). O check
+`Build e Testes` é obrigatório na branch `main` (configurado em Settings → Branches → Branch protection rules).
 
 Runs de validação do pipeline (PR [#4](https://github.com/DaniloDamasio/EduAloca/pull/4)):
 
@@ -174,6 +176,9 @@ java -jar target/edualoca-0.0.1-SNAPSHOT.jar \
 O esquema é criado na subida (`db/postgres/schema.sql`, idempotente). Reiniciar o `java -jar` mantém o catálogo e as
 reservas.
 
+Se o contêiner `edualoca-pg` já existir de uma execução anterior, o `docker run` falha com nome em uso. Use
+`docker start edualoca-pg` para reaproveitar os dados, ou `docker rm -f edualoca-pg` para começar do zero.
+
 ### Contas de demonstração
 
 A tela de login tem um botão para cada conta. As senhas são de seed e servem só para teste e demonstração.
@@ -206,7 +211,7 @@ A tela de login tem um botão para cada conta. As senhas são de seed e servem s
    decide reservas de salas do Bloco C. Inative a conta e o acesso é encerrado na hora.
 9. **Administrador** → *Auditoria*: filtre por entidade (Reserva, Sala, Usuário…) e veja quem fez cada mudança.
 10. **Não comparecimento automático:** uma reserva aprovada que chega ao fim do horário sem início de uso vira
-    *Não compareceu* sozinha (tarefa a cada 60 s; o histórico mostra o autor "sistema"). Para ver ao vivo, crie uma
+    *Não compareceu* sozinha (tarefa a cada 30 s; o histórico mostra o autor "sistema"). Para ver ao vivo, crie uma
     reserva que termine em poucos minutos.
 
 ### Rotas usadas pela interface
@@ -236,21 +241,30 @@ Testes das rotas acima: [InterfacePerfisApiTest](src/test/java/com/edualoca/Inte
 
 ## Executando a Suíte Localmente
 
+### Pré-requisitos
+
+| O que | Para quê | Sem isso |
+|---|---|---|
+| JDK 21 | compilar e rodar tudo | nada roda |
+| Internet na primeira execução | o Maven baixa as dependências e o Playwright baixa os navegadores (Chromium, Firefox, WebKit e ffmpeg, centenas de MB) para o cache do usuário (`~/Library/Caches/ms-playwright` no macOS, `~/.cache/ms-playwright` no Linux) | a primeira execução falha; depois disso roda offline |
+| Docker acessível (Docker Desktop, Colima ou Docker Engine) | as 6 classes de integração com PostgreSQL real (Testcontainers) | essas 6 classes falham com "Could not find a valid Docker environment" |
+| Permissão para executar o Chromium baixado | o E2E `FluxoCompletoNavegadorIT` | o E2E falha ao abrir o navegador (ver "Se o navegador não abrir") |
+
+### Suíte completa (o que o CI roda)
+
 ```
 ./mvnw -B verify
 ```
 
-Isso roda toda a suíte (unitária e de integração) e o gate de cobertura do JaCoCo
-(≥80% linha, ≥70% branch). Os testes de integração com o provedor de notificação externa
-([IntegracaoNotificacaoExternaTest](src/test/java/com/edualoca/IntegracaoNotificacaoExternaTest.java))
-sobem um servidor WireMock em porta dinâmica — não dependem de rede externa nem de
-nenhuma credencial real, e rodam de forma determinística em qualquer máquina.
+Roda os testes unitários (Surefire), os de integração e o E2E (Failsafe), e depois o gate do JaCoCo (≥ 80% de linhas,
+≥ 70% de ramos) sobre a soma das duas fases. Relatório de cobertura em `target/site/jacoco/index.html`. Os testes com o
+provedor de notificação externa ([IntegracaoNotificacaoExternaTest](src/test/java/com/edualoca/IntegracaoNotificacaoExternaTest.java))
+sobem um WireMock em porta dinâmica e não dependem de rede externa nem de credencial real.
 
-As 6 classes de teste de integração com PostgreSQL (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
-`ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`, `CatalogoRepositorioJdbcIT` e `PersistenciaReinicioIT`, com
-Testcontainers) precisam de um Docker acessível. O E2E (`FluxoCompletoNavegadorIT`) roda no modo em memória. Com **Colima** no
-macOS, o Testcontainers não encontra o socket sozinho e os ITs falham com "Could not find a valid Docker
-environment". Nesse caso:
+As 6 classes de integração com PostgreSQL (`ConcorrenciaReservaIT`, `ConcorrenciaReservaMultiInstanciaIT`,
+`ReservaRepositorioJdbcIT`, `HistoricoReservaTransacaoIT`, `CatalogoRepositorioJdbcIT` e `PersistenciaReinicioIT`) sobem
+um `postgres:16-alpine` com Testcontainers. Com Docker Desktop ou no CI (`ubuntu-latest`), basta o comando acima. Com
+**Colima** no macOS, o Testcontainers não acha o socket sozinho. Exporte as variáveis antes:
 
 ```
 DOCKER_HOST=unix://$HOME/.colima/default/docker.sock \
@@ -258,12 +272,47 @@ TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
 ./mvnw -B verify
 ```
 
-Com Docker Desktop ou no CI (`ubuntu-latest`), basta `./mvnw -B verify`.
+O E2E [FluxoCompletoNavegadorIT](src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java) roda no modo em memória e
+abre a interface real em Chromium headless (Playwright 1.64.0). Ele percorre o fluxo dos três perfis, do cadastro à
+conclusão, e confere o layout em 360, 375 e 1920 px. No CI, o passo `npx playwright@1.64.0 install --with-deps chromium`
+instala o navegador antes do `verify`.
 
-O teste end-to-end [FluxoCompletoNavegadorIT](src/test/java/com/edualoca/FluxoCompletoNavegadorIT.java) abre a interface
-real em Chromium headless (Playwright 1.64.0) e percorre o fluxo dos três perfis, do cadastro à conclusão, além de
-conferir o layout em 375 px. Na primeira execução, o Playwright baixa o navegador para o cache do usuário. No CI, o
-passo `npx playwright@1.64.0 install --with-deps chromium` faz isso antes do `verify`.
+### Sem Docker ou sem navegador
+
+Sem Docker e sem navegador, rode só os unitários com o gate de cobertura:
+
+```
+./mvnw -B verify -DskipITs
+```
+
+O Failsafe é pulado e o JaCoCo mede só os unitários. Na execução de 13/11/2026 foram 573 testes, com 96,9% de linhas e
+89,4% de ramos, então o gate também passa sem os ITs. Para pular só o E2E e manter os ITs com PostgreSQL:
+
+```
+./mvnw -B verify -Dit.test='!FluxoCompletoNavegadorIT'
+```
+
+A evidência da suíte completa de cada commit da `main` é o CI. Os relatórios do commit entregue estão versionados em
+[DOCS/testes/evidencias-ci/](DOCS/testes/evidencias-ci/).
+
+### Se o navegador não abrir
+
+O sintoma é o E2E falhar em `abrirNavegador` com `TargetClosedError`, ou o Chromium ser encerrado logo ao abrir.
+
+1. Instale o navegador e as dependências do sistema com a mesma versão do `pom.xml`:
+   `npx playwright@1.64.0 install --with-deps chromium`.
+2. Em Linux sem interface gráfica, o `--with-deps` instala as bibliotecas que faltam.
+3. Se o binário for morto pelo sistema (código de saída 137, SIGKILL), alguma política de segurança da máquina está
+   bloqueando executáveis recém-baixados. Use uma máquina sem essa restrição, rode sem o E2E (comando acima) ou confira
+   no CI.
+
+**Na máquina do autor, o E2E pode falhar por causa dela, não do projeto.** O desenvolvimento foi feito num notebook
+corporativo, com políticas de segurança gerenciadas pela empresa. Elas encerram (SIGKILL) binários recém-baixados, como
+um Chromium novo do Playwright num cache limpo, e restringem a configuração do Docker (por isso o Colima e as variáveis
+acima). Nessa máquina, o E2E só passa com o navegador que já estava no cache do usuário. Num clone limpo, com cache
+novo, ele falha ao abrir o Chromium, e o `verify` para no Failsafe sem gerar o relatório JaCoCo local. A mesma suíte
+passa inteira no CI (`ubuntu-latest`), que é a evidência de referência: 573 unitários e 24 de integração, incluindo os
+5 casos do E2E, verdes na `main`.
 
 ## Teste de carga (JMeter)
 
@@ -434,7 +483,7 @@ Camada HTTP em `com.edualoca.api` (reservas, manutenção, disponibilidade de sa
 - [x] Ciclo completo de estados: concluir e não comparecimento (P-05/P-07/P-08)
 - [x] Teste end-to-end em navegador real (Playwright)
 - [x] Documentação da API ([DOCS/api.md](DOCS/api.md)) e escopo da persistência ([ADR-010](DOCS/adr/ADR-010-escopo-da-persistencia-postgresql.md))
-- [x] OpenAPI 3 das 39 operações, com teste de sincronia (RF-39)
+- [x] OpenAPI 3 das 40 operações, com teste de sincronia (RF-39)
 - [x] Gestão de usuários, consulta de auditoria, lista de manutenções e confirmação explícita (RF-23)
 - [x] Não comparecimento automático no fim do horário (P-08) e devoluções em atraso (RF-26)
 - [x] Roteiro de apresentação e demonstração ([DOCS/apresentacao.md](DOCS/apresentacao.md)) e slides ([DOCS/apresentacao/slides.html](DOCS/apresentacao/slides.html); o PDF é gerado a partir dele)

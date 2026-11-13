@@ -1,10 +1,9 @@
 # Requisitos de desempenho: consulta de disponibilidade e criação de reserva
 
-> **Status: PROPOSTA, aguardando validação do grupo.**
-> Os números abaixo são uma proposta inicial do engenheiro de desempenho e ainda não foram acordados.
-> Enquanto o grupo não validar, os critérios oficiais continuam sendo RNF-01, RNF-02 e RNF-03 de
-> [REQUISITOS.md](../REQUISITOS/REQUISITOS.md). Cada número tem uma justificativa para que o grupo
-> possa aceitá-lo, ajustá-lo ou recusá-lo.
+> **Status: vigente (atualizado em 13/11/2026).** Trabalho individual: as metas "-P" abaixo foram definidas pelo autor e
+> usadas como critério nas rodadas [01](resultado-01.md) e [02](resultado-02.md). Elas **complementam** RNF-01, RNF-02 e
+> RNF-03 de [REQUISITOS.md](../REQUISITOS/REQUISITOS.md), que continuam sendo os critérios oficiais. Os resultados são
+> sempre comparados com os dois. As decisões que antes estavam em aberto estão na seção 6.
 
 ## 1. Relação com os requisitos atuais
 
@@ -16,8 +15,7 @@
 
 Por que apertar: 2 s e 3 s são limites de "não travar", não de boa experiência. A consulta é feita
 várias vezes antes de cada reserva, e um p95 de 300 ms deixa a busca com sensação de resposta
-imediata. Se o grupo preferir manter 2 s / 3 s, o plano JMeter continua válido; basta mudar o
-critério de aceite.
+imediata. Para avaliar só contra 2 s / 3 s, o plano JMeter continua válido; basta mudar o critério de aceite.
 
 ## 2. Requisitos propostos
 
@@ -40,8 +38,8 @@ critério de aceite.
   Na disputa, **409 é resultado correto e não conta como erro**. Qualquer outro status conta como erro.
 
 Por que 500 ms para escrita e não 300 ms: a criação passa pela validação de conflito e pela gravação
-com a constraint `EXCLUDE` do PostgreSQL (DEF-001), que são mais caras que uma leitura. Se o grupo
-quiser uma meta única de 300 ms para as duas operações, como no exemplo do enunciado, basta trocar o
+com a constraint `EXCLUDE` do PostgreSQL (DEF-001), que são mais caras que uma leitura. Para uma
+meta única de 300 ms para as duas operações, como no exemplo do enunciado, basta trocar o
 número aqui.
 
 ### RNF-03-P: robustez e correção sob disputa (obrigatório, independe dos tempos)
@@ -150,7 +148,7 @@ uma reserva aceita.
   `reserva`: **nenhuma dupla reserva** e nenhum status fora de {201, 409}.
 - Mistura real: 80 % consultas e 20 % criações, como no modelo.
 
-**Ressalvas (importantes para o grupo):**
+**Ressalvas:**
 
 1. **Ambiente otimista.** Gerador de carga, aplicação e banco rodaram na mesma máquina, sem rede e com
    o banco quase vazio. Os tempos em milissegundos mostram que a aplicação não é gargalo nessa carga,
@@ -164,10 +162,11 @@ uma reserva aceita.
    instância não enxerga reservas criadas pelas outras (já registrado no Javadoc de
    `ReservaRepositorioJdbc`). A criação continua protegida pela constraint `EXCLUDE`.
 
-## 6. Pontos para o grupo decidir
+## 6. Decisões (antes "pontos para o grupo decidir")
 
-1. Aceitar 300 ms (consulta) e 500 ms (criação), ou manter 2 s / 3 s?
-2. A mistura 80/20 representa o uso esperado? (Por exemplo, em época de matrícula a proporção de
-   criação pode ser maior.)
-3. 50 usuários simultâneos continua sendo o pico esperado da instituição?
-4. Quando validado, substituir RNF-01/02/03 em REQUISITOS.md ou manter estes como complementares?
+| Ponto | Decisão |
+|---|---|
+| Aceitar 300 ms (consulta) e 500 ms (criação), ou manter 2 s / 3 s? | Os dois: RNF-01 a RNF-03 continuam os critérios oficiais, e RNF-01-P a RNF-03-P são metas internas, mais exigentes. A [rodada 02](resultado-02.md) atende a ambos |
+| A mistura 80/20 representa o uso esperado? | Mantida: não há dado de uso real. A rodada 02 também mediu disputa concentrada (sala única e 10 salas) |
+| 50 usuários simultâneos é o pico esperado? | Mantido como referência, por ser o número dos RNFs. A rodada 02 foi além e mediu 100, 200 e 400 usuários para procurar saturação, sem encontrá-la |
+| Substituir RNF-01/02/03 em REQUISITOS.md? | Não. As metas "-P" ficam neste documento como complementares |

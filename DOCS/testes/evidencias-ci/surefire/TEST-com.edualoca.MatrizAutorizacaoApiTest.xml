@@ -1,0 +1,760 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.edualoca.MatrizAutorizacaoApiTest" time="19.786" tests="114" errors="0" skipped="0" failures="0" flakes="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/runner/work/EduAloca/EduAloca/target/test-classes:/home/runner/work/EduAloca/EduAloca/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/4.1.1/spring-boot-starter-web-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-jackson/4.1.1/spring-boot-starter-jackson-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-jackson/4.1.1/spring-boot-jackson-4.1.1.jar:/home/runner/.m2/repository/tools/jackson/core/jackson-databind/3.1.5/jackson-databind-3.1.5.jar:/home/runner/.m2/repository/tools/jackson/core/jackson-core/3.1.5/jackson-core-3.1.5.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/4.1.1/spring-boot-starter-tomcat-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat-runtime/4.1.1/spring-boot-starter-tomcat-runtime-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-web-server/4.1.1/spring-boot-web-server-4.1.1.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/11.0.24/tomcat-embed-core-11.0.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/11.0.24/tomcat-embed-el-11.0.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/11.0.24/tomcat-embed-websocket-11.0.24.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-tomcat/4.1.1/spring-boot-tomcat-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-http-converter/4.1.1/spring-boot-http-converter-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/4.1.1/spring-boot-4.1.1.jar:/home/runner/.m2/repository/org/springframework/spring-context/7.0.9/spring-context-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-web/7.0.9/spring-web-7.0.9.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.17.1/micrometer-observation-1.17.1.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.17.1/micrometer-commons-1.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-webmvc/4.1.1/spring-boot-webmvc-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-servlet/4.1.1/spring-boot-servlet-4.1.1.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/7.0.9/spring-webmvc-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-aop/7.0.9/spring-aop-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-expression/7.0.9/spring-expression-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-jdbc/7.0.9/spring-jdbc-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-beans/7.0.9/spring-beans-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-core/7.0.9/spring-core-7.0.9.jar:/home/runner/.m2/repository/commons-logging/commons-logging/1.3.6/commons-logging-1.3.6.jar:/home/runner/.m2/repository/org/springframework/spring-tx/7.0.9/spring-tx-7.0.9.jar:/home/runner/.m2/repository/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar:/home/runner/.m2/repository/org/postgresql/postgresql/42.7.13/postgresql-42.7.13.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.55.1/checker-qual-3.55.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/4.1.1/spring-boot-starter-test-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/4.1.1/spring-boot-starter-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/4.1.1/spring-boot-starter-logging-4.1.1.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.38/logback-classic-1.5.38.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.38/logback-core-1.5.38.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.25.5/log4j-to-slf4j-2.25.5.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.25.5/log4j-api-2.25.5.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.18/jul-to-slf4j-2.0.18.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/4.1.1/spring-boot-autoconfigure-4.1.1.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.6/snakeyaml-2.6.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/4.1.1/spring-boot-test-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/4.1.1/spring-boot-test-autoconfigure-4.1.1.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.10.0/json-path-2.10.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.5/jakarta.xml.bind-api-4.0.5.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.6.0/json-smart-2.6.0.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.6.0/accessors-smart-2.6.0.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.27.7/assertj-core-3.27.7.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.18.11/byte-buddy-1.18.11.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.3.0/awaitility-4.3.0.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/6.0.3/junit-jupiter-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/6.0.3/junit-jupiter-api-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/6.0.3/junit-jupiter-params-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/6.0.3/junit-jupiter-engine-6.0.3.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.23.0/mockito-junit-jupiter-5.23.0.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar:/home/runner/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar:/home/runner/.m2/repository/org/springframework/spring-test/7.0.9/spring-test-7.0.9.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.11.0/xmlunit-core-2.11.0.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-postgresql/2.0.5/testcontainers-postgresql-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-jdbc/2.0.5/testcontainers-jdbc-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-database-commons/2.0.5/testcontainers-database-commons-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-junit-jupiter/2.0.5/testcontainers-junit-jupiter-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/2.0.5/testcontainers-2.0.5.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar:/home/runner/.m2/repository/commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.jar:/home/runner/.m2/repository/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.7.1/docker-java-api-3.7.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.7.1/docker-java-transport-zerodep-3.7.1.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.7.1/docker-java-transport-3.7.1.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.18.1/jna-5.18.1.jar:/home/runner/.m2/repository/io/cucumber/cucumber-java/8.0.4/cucumber-java-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-core/8.0.4/cucumber-core-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-gherkin/8.0.4/cucumber-gherkin-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-gherkin-messages/8.0.4/cucumber-gherkin-messages-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/gherkin/42.0.1/gherkin-42.0.1.jar:/home/runner/.m2/repository/io/cucumber/messages/34.2.1/messages-34.2.1.jar:/home/runner/.m2/repository/io/cucumber/messages-ndjson/0.5.2/messages-ndjson-0.5.2.jar:/home/runner/.m2/repository/io/cucumber/pretty-formatter/4.1.0/pretty-formatter-4.1.0.jar:/home/runner/.m2/repository/io/cucumber/query/16.1.1/query-16.1.1.jar:/home/runner/.m2/repository/io/cucumber/teamcity-formatter/0.3.1/teamcity-formatter-0.3.1.jar:/home/runner/.m2/repository/io/cucumber/testng-xml-formatter/0.9.0/testng-xml-formatter-0.9.0.jar:/home/runner/.m2/repository/io/cucumber/usage-formatter/0.2.1/usage-formatter-0.2.1.jar:/home/runner/.m2/repository/io/cucumber/tag-expressions/11.0.1/tag-expressions-11.0.1.jar:/home/runner/.m2/repository/io/cucumber/cucumber-expressions/20.1.0/cucumber-expressions-20.1.0.jar:/home/runner/.m2/repository/io/cucumber/cucumber-json-formatter/0.4.2/cucumber-json-formatter-0.4.2.jar:/home/runner/.m2/repository/io/cucumber/datatable/8.0.4/datatable-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-plugin/8.0.4/cucumber-plugin-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/docstring/8.0.4/docstring-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/html-formatter/24.2.0/html-formatter-24.2.0.jar:/home/runner/.m2/repository/io/cucumber/junit-xml-formatter/0.15.0/junit-xml-formatter-0.15.0.jar:/home/runner/.m2/repository/io/cucumber/ci-environment/15.0.0/ci-environment-15.0.0.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/io/cucumber/cucumber-junit-platform-engine/8.0.4/cucumber-junit-platform-engine-8.0.4.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/6.0.3/junit-platform-engine-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/6.0.3/junit-platform-commons-6.0.3.jar:/home/runner/.m2/repository/io/cucumber/cucumber-spring/8.0.4/cucumber-spring-8.0.4.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite/6.0.3/junit-platform-suite-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite-api/6.0.3/junit-platform-suite-api-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite-engine/6.0.3/junit-platform-suite-engine-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-launcher/6.0.3/junit-platform-launcher-6.0.3.jar:/home/runner/.m2/repository/org/wiremock/wiremock-standalone/3.13.1/wiremock-standalone-3.13.1.jar:/home/runner/.m2/repository/com/microsoft/playwright/playwright/1.64.0/playwright-1.64.0.jar:/home/runner/.m2/repository/com/google/code/gson/gson/2.13.2/gson-2.13.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar:/home/runner/.m2/repository/org/jspecify/jspecify/1.0.1/jspecify-1.0.1.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/com/microsoft/playwright/driver/1.64.0/driver-1.64.0.jar:/home/runner/.m2/repository/com/microsoft/playwright/driver-bundle/1.64.0/driver-bundle-1.64.0.jar:"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="Etc/UTC"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="APPLICATION_NAME" value="edualoca"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/temurin-21-jdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/runner/work/EduAloca/EduAloca/target/surefire/surefirebooter-20261113023926854_3.jar /home/runner/work/EduAloca/EduAloca/target/surefire 2026-11-13T02-39-26_768-jvmRun1 surefire-20261113023926854_1tmp surefire_0-20261113023926854_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/runner/work/EduAloca/EduAloca/target/test-classes:/home/runner/work/EduAloca/EduAloca/target/classes:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-web/4.1.1/spring-boot-starter-web-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-jackson/4.1.1/spring-boot-starter-jackson-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-jackson/4.1.1/spring-boot-jackson-4.1.1.jar:/home/runner/.m2/repository/tools/jackson/core/jackson-databind/3.1.5/jackson-databind-3.1.5.jar:/home/runner/.m2/repository/tools/jackson/core/jackson-core/3.1.5/jackson-core-3.1.5.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/4.1.1/spring-boot-starter-tomcat-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat-runtime/4.1.1/spring-boot-starter-tomcat-runtime-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-web-server/4.1.1/spring-boot-web-server-4.1.1.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/11.0.24/tomcat-embed-core-11.0.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/11.0.24/tomcat-embed-el-11.0.24.jar:/home/runner/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/11.0.24/tomcat-embed-websocket-11.0.24.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-tomcat/4.1.1/spring-boot-tomcat-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-http-converter/4.1.1/spring-boot-http-converter-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot/4.1.1/spring-boot-4.1.1.jar:/home/runner/.m2/repository/org/springframework/spring-context/7.0.9/spring-context-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-web/7.0.9/spring-web-7.0.9.jar:/home/runner/.m2/repository/io/micrometer/micrometer-observation/1.17.1/micrometer-observation-1.17.1.jar:/home/runner/.m2/repository/io/micrometer/micrometer-commons/1.17.1/micrometer-commons-1.17.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-webmvc/4.1.1/spring-boot-webmvc-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-servlet/4.1.1/spring-boot-servlet-4.1.1.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/7.0.9/spring-webmvc-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-aop/7.0.9/spring-aop-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-expression/7.0.9/spring-expression-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-jdbc/7.0.9/spring-jdbc-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-beans/7.0.9/spring-beans-7.0.9.jar:/home/runner/.m2/repository/org/springframework/spring-core/7.0.9/spring-core-7.0.9.jar:/home/runner/.m2/repository/commons-logging/commons-logging/1.3.6/commons-logging-1.3.6.jar:/home/runner/.m2/repository/org/springframework/spring-tx/7.0.9/spring-tx-7.0.9.jar:/home/runner/.m2/repository/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar:/home/runner/.m2/repository/org/postgresql/postgresql/42.7.13/postgresql-42.7.13.jar:/home/runner/.m2/repository/org/checkerframework/checker-qual/3.55.1/checker-qual-3.55.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-test/4.1.1/spring-boot-starter-test-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter/4.1.1/spring-boot-starter-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-starter-logging/4.1.1/spring-boot-starter-logging-4.1.1.jar:/home/runner/.m2/repository/ch/qos/logback/logback-classic/1.5.38/logback-classic-1.5.38.jar:/home/runner/.m2/repository/ch/qos/logback/logback-core/1.5.38/logback-core-1.5.38.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.25.5/log4j-to-slf4j-2.25.5.jar:/home/runner/.m2/repository/org/apache/logging/log4j/log4j-api/2.25.5/log4j-api-2.25.5.jar:/home/runner/.m2/repository/org/slf4j/jul-to-slf4j/2.0.18/jul-to-slf4j-2.0.18.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/4.1.1/spring-boot-autoconfigure-4.1.1.jar:/home/runner/.m2/repository/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar:/home/runner/.m2/repository/org/yaml/snakeyaml/2.6/snakeyaml-2.6.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test/4.1.1/spring-boot-test-4.1.1.jar:/home/runner/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/4.1.1/spring-boot-test-autoconfigure-4.1.1.jar:/home/runner/.m2/repository/com/jayway/jsonpath/json-path/2.10.0/json-path-2.10.0.jar:/home/runner/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.5/jakarta.xml.bind-api-4.0.5.jar:/home/runner/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar:/home/runner/.m2/repository/net/minidev/json-smart/2.6.0/json-smart-2.6.0.jar:/home/runner/.m2/repository/net/minidev/accessors-smart/2.6.0/accessors-smart-2.6.0.jar:/home/runner/.m2/repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar:/home/runner/.m2/repository/org/assertj/assertj-core/3.27.7/assertj-core-3.27.7.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy/1.18.11/byte-buddy-1.18.11.jar:/home/runner/.m2/repository/org/awaitility/awaitility/4.3.0/awaitility-4.3.0.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter/6.0.3/junit-jupiter-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-api/6.0.3/junit-jupiter-api-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-params/6.0.3/junit-jupiter-params-6.0.3.jar:/home/runner/.m2/repository/org/junit/jupiter/junit-jupiter-engine/6.0.3/junit-jupiter-engine-6.0.3.jar:/home/runner/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar:/home/runner/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar:/home/runner/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/runner/.m2/repository/org/mockito/mockito-junit-jupiter/5.23.0/mockito-junit-jupiter-5.23.0.jar:/home/runner/.m2/repository/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar:/home/runner/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar:/home/runner/.m2/repository/org/springframework/spring-test/7.0.9/spring-test-7.0.9.jar:/home/runner/.m2/repository/org/xmlunit/xmlunit-core/2.11.0/xmlunit-core-2.11.0.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-postgresql/2.0.5/testcontainers-postgresql-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-jdbc/2.0.5/testcontainers-jdbc-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-database-commons/2.0.5/testcontainers-database-commons-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers-junit-jupiter/2.0.5/testcontainers-junit-jupiter-2.0.5.jar:/home/runner/.m2/repository/org/testcontainers/testcontainers/2.0.5/testcontainers-2.0.5.jar:/home/runner/.m2/repository/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar:/home/runner/.m2/repository/commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.jar:/home/runner/.m2/repository/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar:/home/runner/.m2/repository/org/rnorth/duct-tape/duct-tape/1.0.8/duct-tape-1.0.8.jar:/home/runner/.m2/repository/org/jetbrains/annotations/17.0.0/annotations-17.0.0.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-api/3.7.1/docker-java-api-3.7.1.jar:/home/runner/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport-zerodep/3.7.1/docker-java-transport-zerodep-3.7.1.jar:/home/runner/.m2/repository/com/github/docker-java/docker-java-transport/3.7.1/docker-java-transport-3.7.1.jar:/home/runner/.m2/repository/net/java/dev/jna/jna/5.18.1/jna-5.18.1.jar:/home/runner/.m2/repository/io/cucumber/cucumber-java/8.0.4/cucumber-java-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-core/8.0.4/cucumber-core-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-gherkin/8.0.4/cucumber-gherkin-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-gherkin-messages/8.0.4/cucumber-gherkin-messages-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/gherkin/42.0.1/gherkin-42.0.1.jar:/home/runner/.m2/repository/io/cucumber/messages/34.2.1/messages-34.2.1.jar:/home/runner/.m2/repository/io/cucumber/messages-ndjson/0.5.2/messages-ndjson-0.5.2.jar:/home/runner/.m2/repository/io/cucumber/pretty-formatter/4.1.0/pretty-formatter-4.1.0.jar:/home/runner/.m2/repository/io/cucumber/query/16.1.1/query-16.1.1.jar:/home/runner/.m2/repository/io/cucumber/teamcity-formatter/0.3.1/teamcity-formatter-0.3.1.jar:/home/runner/.m2/repository/io/cucumber/testng-xml-formatter/0.9.0/testng-xml-formatter-0.9.0.jar:/home/runner/.m2/repository/io/cucumber/usage-formatter/0.2.1/usage-formatter-0.2.1.jar:/home/runner/.m2/repository/io/cucumber/tag-expressions/11.0.1/tag-expressions-11.0.1.jar:/home/runner/.m2/repository/io/cucumber/cucumber-expressions/20.1.0/cucumber-expressions-20.1.0.jar:/home/runner/.m2/repository/io/cucumber/cucumber-json-formatter/0.4.2/cucumber-json-formatter-0.4.2.jar:/home/runner/.m2/repository/io/cucumber/datatable/8.0.4/datatable-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/cucumber-plugin/8.0.4/cucumber-plugin-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/docstring/8.0.4/docstring-8.0.4.jar:/home/runner/.m2/repository/io/cucumber/html-formatter/24.2.0/html-formatter-24.2.0.jar:/home/runner/.m2/repository/io/cucumber/junit-xml-formatter/0.15.0/junit-xml-formatter-0.15.0.jar:/home/runner/.m2/repository/io/cucumber/ci-environment/15.0.0/ci-environment-15.0.0.jar:/home/runner/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/runner/.m2/repository/io/cucumber/cucumber-junit-platform-engine/8.0.4/cucumber-junit-platform-engine-8.0.4.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-engine/6.0.3/junit-platform-engine-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-commons/6.0.3/junit-platform-commons-6.0.3.jar:/home/runner/.m2/repository/io/cucumber/cucumber-spring/8.0.4/cucumber-spring-8.0.4.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite/6.0.3/junit-platform-suite-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite-api/6.0.3/junit-platform-suite-api-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-suite-engine/6.0.3/junit-platform-suite-engine-6.0.3.jar:/home/runner/.m2/repository/org/junit/platform/junit-platform-launcher/6.0.3/junit-platform-launcher-6.0.3.jar:/home/runner/.m2/repository/org/wiremock/wiremock-standalone/3.13.1/wiremock-standalone-3.13.1.jar:/home/runner/.m2/repository/com/microsoft/playwright/playwright/1.64.0/playwright-1.64.0.jar:/home/runner/.m2/repository/com/google/code/gson/gson/2.13.2/gson-2.13.2.jar:/home/runner/.m2/repository/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar:/home/runner/.m2/repository/org/jspecify/jspecify/1.0.1/jspecify-1.0.1.jar:/home/runner/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/runner/.m2/repository/com/microsoft/playwright/driver/1.64.0/driver-1.64.0.jar:/home/runner/.m2/repository/com/microsoft/playwright/driver-bundle/1.64.0/driver-bundle-1.64.0.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/runner"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-10-20"/>
+    <property name="java.home" value="/usr/lib/jvm/temurin-21-jdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/runner/work/EduAloca/EduAloca"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="/home/runner/work/EduAloca/EduAloca/target/surefire/surefirebooter-20261113023926854_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.13+9-LTS"/>
+    <property name="user.name" value="runner"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="7.0.0-1019-azure"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="Temurin-21.0.13+9"/>
+    <property name="localRepository" value="/home/runner/.m2/repository"/>
+    <property name="javax.xml.xpath.XPathFactory:http://java.sun.com/jaxp/xpath/dom" value="com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="jetty.git.hash" value="5dfc59a691b748796f922208956bd1f2794bcd16"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="wiremock.org.eclipse.jetty.http.HttpGenerator.STRICT" value="true"/>
+    <property name="java.version" value="21.0.13"/>
+    <property name="user.dir" value="/home/runner/work/EduAloca/EduAloca"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="2868"/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vm.version" value="21.0.13+9-LTS"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="javax.xml.transform.TransformerFactory" value="com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"/>
+    <property name="java.class.version" value="65.0"/>
+    <property name="LOGGED_APPLICATION_NAME" value="[edualoca] "/>
+  </properties>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[1]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.241">
+    <system-out><![CDATA[2026-11-13T02:39:48.027Z  INFO 2868 --- [edualoca] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.edualoca.MatrizAutorizacaoApiTest]: MatrizAutorizacaoApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-13T02:39:48.028Z  INFO 2868 --- [edualoca] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.edualoca.EduAlocaApplication for test class com.edualoca.MatrizAutorizacaoApiTest
+2026-11-13T02:39:48.029Z  INFO 2868 --- [edualoca] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.edualoca.MatrizAutorizacaoApiTest]: MatrizAutorizacaoApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-13T02:39:48.030Z  INFO 2868 --- [edualoca] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.edualoca.EduAlocaApplication for test class com.edualoca.MatrizAutorizacaoApiTest
+2026-11-13T02:39:48.036Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:48.036Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:48.037Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[2]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.234">
+    <system-out><![CDATA[2026-11-13T02:39:48.278Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:48.278Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:48.278Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[3]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.234">
+    <system-out><![CDATA[2026-11-13T02:39:48.514Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:48.514Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:48.514Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[4]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:39:48.749Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:48.750Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:48.750Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[5]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.122">
+    <system-out><![CDATA[2026-11-13T02:39:48.981Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:48.982Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:48.982Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[6]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.122">
+    <system-out><![CDATA[2026-11-13T02:39:49.105Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.105Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.105Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[7]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.268">
+    <system-out><![CDATA[2026-11-13T02:39:49.229Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.229Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.230Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[8]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:49.497Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.498Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.498Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[9]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.121">
+    <system-out><![CDATA[2026-11-13T02:39:49.731Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.731Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.732Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[10]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:49.854Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.854Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.855Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[11]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.24">
+    <system-out><![CDATA[2026-11-13T02:39:49.975Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:49.975Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:49.976Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[12]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.236">
+    <system-out><![CDATA[2026-11-13T02:39:50.216Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:50.216Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:50.217Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[13]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.124">
+    <system-out><![CDATA[2026-11-13T02:39:50.454Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:50.454Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:50.454Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[14]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:50.578Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:50.579Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:50.579Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[15]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.236">
+    <system-out><![CDATA[2026-11-13T02:39:50.698Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:50.699Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:50.699Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[16]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.123">
+    <system-out><![CDATA[2026-11-13T02:39:50.936Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:50.936Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:50.936Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[17]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:39:51.060Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:51.060Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:51.060Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[18]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.235">
+    <system-out><![CDATA[2026-11-13T02:39:51.291Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:51.291Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:51.292Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[19]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:51.527Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:51.527Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:51.527Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[20]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:51.646Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:51.646Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:51.647Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[21]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.238">
+    <system-out><![CDATA[2026-11-13T02:39:51.766Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:51.766Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:51.767Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[22]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.12">
+    <system-out><![CDATA[2026-11-13T02:39:52.005Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.005Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.006Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[23]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.234">
+    <system-out><![CDATA[2026-11-13T02:39:52.126Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.127Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.127Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[24]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.24">
+    <system-out><![CDATA[2026-11-13T02:39:52.361Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.361Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.362Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[25]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.122">
+    <system-out><![CDATA[2026-11-13T02:39:52.602Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.603Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.603Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[26]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:52.726Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.726Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.727Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[27]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:52.846Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:52.846Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:52.846Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[28]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:53.079Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.079Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.080Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[29]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.237">
+    <system-out><![CDATA[2026-11-13T02:39:53.198Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.198Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.199Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[30]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:39:53.436Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.436Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.437Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[31]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:53.668Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.669Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.669Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[32]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:53.786Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.786Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.787Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[33]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.246">
+    <system-out><![CDATA[2026-11-13T02:39:53.905Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:53.905Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:53.905Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[34]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.253">
+    <system-out><![CDATA[2026-11-13T02:39:54.152Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:54.152Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:54.152Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[35]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:39:54.406Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:54.406Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:54.407Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[36]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:54.638Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:54.638Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:54.638Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[37]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.12">
+    <system-out><![CDATA[2026-11-13T02:39:54.756Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:54.757Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:54.757Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[38]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:54.878Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:54.878Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:54.878Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[39]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:55.111Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:55.111Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:55.111Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[40]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:39:55.344Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:55.344Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:55.344Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[41]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:55.576Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:55.576Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:55.577Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[42]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:55.695Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:55.696Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:55.696Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[43]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:39:55.814Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:55.814Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:55.814Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[44]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.224">
+    <system-out><![CDATA[2026-11-13T02:39:56.044Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.044Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.045Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[45]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:39:56.270Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.270Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.270Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[46]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:39:56.386Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.387Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.387Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[47]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:56.504Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.504Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.504Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[48]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.227">
+    <system-out><![CDATA[2026-11-13T02:39:56.622Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.622Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.622Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[49]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.239">
+    <system-out><![CDATA[2026-11-13T02:39:56.850Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:56.850Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:56.850Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[50]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:57.090Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.090Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.091Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[51]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:57.208Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.208Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.209Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[52]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:39:57.328Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.328Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.328Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[53]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:57.560Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.560Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.560Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[54]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:57.792Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.792Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.793Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[55]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:57.911Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:57.912Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:57.912Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[56]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.236">
+    <system-out><![CDATA[2026-11-13T02:39:58.031Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.031Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.031Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDaMatriz(Operacao, String, Ator, Alvo, int)[57]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.268">
+    <system-out><![CDATA[2026-11-13T02:39:58.268Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.268Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.268Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[1]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:58.538Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.539Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.539Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[2]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:58.657Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.658Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.658Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[3]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:58.777Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.777Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.778Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[4]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:58.897Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:58.897Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:58.897Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[5]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:39:59.015Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.016Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.016Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[6]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.228">
+    <system-out><![CDATA[2026-11-13T02:39:59.249Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.249Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.249Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[7]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:39:59.478Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.478Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.478Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[8]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:39:59.598Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.598Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.599Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[9]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:39:59.716Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.716Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.717Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[10]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:59.835Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.835Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.835Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[11]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:39:59.952Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:39:59.952Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:39:59.953Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[12]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:00.071Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.071Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.071Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[13]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:00.189Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.189Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.189Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[14]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:00.307Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.307Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.307Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[15]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:40:00.424Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.424Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.424Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[16]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:40:00.656Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.656Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.657Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[17]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:00.887Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:00.888Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:00.888Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[18]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:40:01.004Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.004Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.005Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="entradaInvalida(String, Ator, Alvo, String, Function)[19]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.115">
+    <system-out><![CDATA[2026-11-13T02:40:01.236Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.236Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.237Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[1]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.126">
+    <system-out><![CDATA[2026-11-13T02:40:01.354Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.354Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.354Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[2]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:40:01.481Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.481Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.481Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[3]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:01.600Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.600Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.600Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[4]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:01.830Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:01.830Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:01.830Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[5]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:40:02.060Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.060Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.060Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[6]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:02.179Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.179Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.180Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[7]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:02.409Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.409Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.409Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[8]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:40:02.525Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.525Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.526Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[9]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:40:02.644Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.644Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.645Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[10]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:02.875Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.876Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.876Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[11]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:40:02.993Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:02.994Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:02.994Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[12]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.233">
+    <system-out><![CDATA[2026-11-13T02:40:03.227Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:03.227Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:03.228Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[13]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.119">
+    <system-out><![CDATA[2026-11-13T02:40:03.461Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:03.461Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:03.461Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[14]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.235">
+    <system-out><![CDATA[2026-11-13T02:40:03.582Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:03.582Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:03.582Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[15]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.122">
+    <system-out><![CDATA[2026-11-13T02:40:03.817Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:03.818Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:03.818Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[16]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.232">
+    <system-out><![CDATA[2026-11-13T02:40:03.940Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:03.940Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:03.941Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[17]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:04.173Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.173Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.174Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[18]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.115">
+    <system-out><![CDATA[2026-11-13T02:40:04.404Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.404Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.404Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[19]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:04.520Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.520Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.520Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[20]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:04.636Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.636Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.637Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[21]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:40:04.867Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.867Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.867Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[22]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:04.985Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:04.985Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:04.986Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[23]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.231">
+    <system-out><![CDATA[2026-11-13T02:40:05.104Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.104Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.105Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[24]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:05.337Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.337Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.338Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[25]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:05.454Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.454Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.455Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[26]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.118">
+    <system-out><![CDATA[2026-11-13T02:40:05.572Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.572Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.572Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[27]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:05.690Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.690Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.691Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[28]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.116">
+    <system-out><![CDATA[2026-11-13T02:40:05.808Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.809Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.809Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[29]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:40:05.926Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:05.926Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:05.926Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[30]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.229">
+    <system-out><![CDATA[2026-11-13T02:40:06.157Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.157Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.157Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[31]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.117">
+    <system-out><![CDATA[2026-11-13T02:40:06.387Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.387Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.387Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[32]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.115">
+    <system-out><![CDATA[2026-11-13T02:40:06.504Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.505Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.505Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[33]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.227">
+    <system-out><![CDATA[2026-11-13T02:40:06.621Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.621Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.621Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[34]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.123">
+    <system-out><![CDATA[2026-11-13T02:40:06.849Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.849Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.849Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="celulaDeErroEmProblemDetail(Operacao, String, Ator, Alvo, int)[35]" classname="com.edualoca.MatrizAutorizacaoApiTest" time="0.145">
+    <system-out><![CDATA[2026-11-13T02:40:06.973Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:06.973Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:06.973Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="alterarReservaAlheia" classname="Posse: Solicitante nao altera nem cancela a reserva de outro Solicitante pelo id" time="0.228">
+    <system-out><![CDATA[2026-11-13T02:40:07.119Z  INFO 2868 --- [edualoca] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.edualoca.MatrizAutorizacaoApiTest$Posse]: Posse does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-13T02:40:07.120Z  INFO 2868 --- [edualoca] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.edualoca.EduAlocaApplication for test class com.edualoca.MatrizAutorizacaoApiTest$Posse
+2026-11-13T02:40:07.121Z  INFO 2868 --- [edualoca] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.edualoca.MatrizAutorizacaoApiTest$Posse]: Posse does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-13T02:40:07.121Z  INFO 2868 --- [edualoca] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.edualoca.MatrizAutorizacaoApiTest]: MatrizAutorizacaoApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-13T02:40:07.121Z  INFO 2868 --- [edualoca] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.edualoca.EduAlocaApplication for test class com.edualoca.MatrizAutorizacaoApiTest$Posse
+2026-11-13T02:40:07.124Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:07.124Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:07.124Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="cancelarReservaAlheia" classname="Posse: Solicitante nao altera nem cancela a reserva de outro Solicitante pelo id" time="0.227">
+    <system-out><![CDATA[2026-11-13T02:40:07.353Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:07.353Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:07.353Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="idAlheioEIdInexistenteSaoIndistinguiveis" classname="Posse: Solicitante nao altera nem cancela a reserva de outro Solicitante pelo id" time="0.23">
+    <system-out><![CDATA[2026-11-13T02:40:07.581Z  INFO 2868 --- [edualoca] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-13T02:40:07.581Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-13T02:40:07.581Z  INFO 2868 --- [edualoca] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+</testsuite>

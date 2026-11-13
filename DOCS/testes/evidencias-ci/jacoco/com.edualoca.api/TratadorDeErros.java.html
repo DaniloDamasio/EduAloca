@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TratadorDeErros.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api</a> &gt; <span class="el_source">TratadorDeErros.java</span></div><h1>TratadorDeErros.java</h1><pre class="source lang-java linenums">package com.edualoca.api;
+
+import com.edualoca.domain.comum.RegraNegocioException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+/**
+ * Traduz excecoes em respostas HTTP compreensiveis no formato ProblemDetail (RFC 9457,
+ * {@code application/problem+json}). Nenhuma resposta leva stacktrace, nome de classe ou mensagem tecnica do
+ * framework; o detalhe de erro inesperado fica so no log do servidor (RF-38, RNF-06).
+ *
+ * &lt;p&gt;Alem dos campos do padrao ({@code type}, {@code title}, {@code status}, {@code detail}, {@code instance}), o
+ * corpo repete o {@code detail} na propriedade {@code mensagem}, o campo do contrato anterior a DEF-002, para nao
+ * quebrar clientes existentes.
+ */
+@RestControllerAdvice
+<span class="fc" id="L26">public class TratadorDeErros {</span>
+
+<span class="fc" id="L28">    private static final Logger LOG = LoggerFactory.getLogger(TratadorDeErros.class);</span>
+
+    @ExceptionHandler(RegraNegocioException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; regraDeNegocio(RegraNegocioException e) {
+<span class="fc" id="L32">        return problema(e.getStatusHttp(), e.getMessage());</span>
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; corpoIlegivel(HttpMessageNotReadableException e) {
+<span class="fc" id="L37">        return problema(400, &quot;Requisição inválida: verifique os campos e o formato das datas (aaaa-mm-ddThh:mm)&quot;);</span>
+    }
+
+    /**
+     * DEF-008: nomeia o parametro, que e contrato publico da API (o mesmo nome que o cliente envia na URL). O valor
+     * recebido nao e ecoado, para nao refletir entrada do cliente na resposta.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; parametroAusente(MissingServletRequestParameterException e) {
+<span class="fc" id="L46">        return problema(400, &quot;Parametro obrigatorio ausente: informe '&quot; + e.getParameterName() + &quot;'&quot;);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; parametroInvalido(MethodArgumentTypeMismatchException e) {
+<span class="nc" id="L51">        return problema(400, &quot;Valor inválido para '&quot; + e.getName()</span>
+                + &quot;': use número inteiro, UUID ou data no formato aaaa-mm-ddThh:mm, conforme o campo&quot;);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ProblemDetail&gt; inesperado(Exception e) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (e instanceof ErrorResponse erroDoFramework) {</span>
+            // 404 (rota inexistente), 405 (metodo), 415 (tipo de midia) etc.: mantem o status, sem detalhe interno.
+<span class="fc" id="L59">            int status = erroDoFramework.getStatusCode().value();</span>
+<span class="fc" id="L60">            return problema(status, mensagemPara(status));</span>
+        }
+<span class="fc" id="L62">        LOG.error(&quot;Erro inesperado ao processar requisicao&quot;, e);</span>
+<span class="fc" id="L63">        return problema(500, &quot;Não foi possível concluir a operação. Tente novamente mais tarde.&quot;);</span>
+    }
+
+    private static ResponseEntity&lt;ProblemDetail&gt; problema(int status, String mensagem) {
+<span class="fc" id="L67">        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(status), mensagem);</span>
+<span class="fc" id="L68">        problema.setTitle(tituloPara(status));</span>
+<span class="fc" id="L69">        problema.setProperty(&quot;mensagem&quot;, mensagem);</span>
+<span class="fc" id="L70">        return ResponseEntity.status(status).body(problema);</span>
+    }
+
+    private static String tituloPara(int status) {
+<span class="pc bpc" id="L74" title="2 of 10 branches missed.">        return switch (status) {</span>
+<span class="fc" id="L75">            case 400 -&gt; &quot;Requisição inválida&quot;;</span>
+<span class="fc" id="L76">            case 401 -&gt; &quot;Autenticação necessária&quot;;</span>
+<span class="fc" id="L77">            case 403 -&gt; &quot;Acesso negado&quot;;</span>
+<span class="fc" id="L78">            case 404 -&gt; &quot;Não encontrado&quot;;</span>
+<span class="fc" id="L79">            case 405 -&gt; &quot;Operação não permitida&quot;;</span>
+<span class="fc" id="L80">            case 409 -&gt; &quot;Conflito&quot;;</span>
+<span class="nc" id="L81">            case 415 -&gt; &quot;Formato não suportado&quot;;</span>
+<span class="fc" id="L82">            case 429 -&gt; &quot;Muitas tentativas&quot;;</span>
+<span class="fc" id="L83">            case 500 -&gt; &quot;Erro interno&quot;;</span>
+<span class="nc" id="L84">            default -&gt; &quot;Requisição não atendida&quot;;</span>
+        };
+    }
+
+    private static String mensagemPara(int status) {
+<span class="pc bpc" id="L89" title="2 of 4 branches missed.">        return switch (status) {</span>
+<span class="fc" id="L90">            case 404 -&gt; &quot;Endereço da API não encontrado&quot;;</span>
+<span class="fc" id="L91">            case 405 -&gt; &quot;Operação não permitida para este endereço&quot;;</span>
+<span class="nc" id="L92">            case 415 -&gt; &quot;Formato da requisição não suportado: envie JSON&quot;;</span>
+<span class="nc" id="L93">            default -&gt; &quot;Requisição não pode ser atendida&quot;;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.domain.reserva</a> &gt; <span class="el_source">ReservaService.java</span></div><h1>ReservaService.java</h1><pre class="source lang-java linenums">package com.edualoca.domain.reserva;
+
+import com.edualoca.domain.auditoria.AuditoriaService;
+import com.edualoca.domain.comum.Banco;
+import com.edualoca.domain.comum.Intervalos;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.notificacao.NotificacaoService;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class ReservaService {
+
+<span class="fc" id="L24">    private static final ConcurrentHashMap&lt;UUID, ReentrantLock&gt; LOCKS_POR_RECURSO = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L25">    private static final Logger LOG = Logger.getLogger(ReservaService.class.getName());</span>
+
+    private final Clock clock;
+    private final ReservaRepositorio repositorio;
+    private final HistoricoReservaRepositorio historico;
+    private final Transacao transacao;
+    private final NotificacaoService notificacao;
+
+    public ReservaService() {
+<span class="fc" id="L34">        this(Clock.systemDefaultZone());</span>
+<span class="fc" id="L35">    }</span>
+
+    public ReservaService(Clock clock) {
+<span class="fc" id="L38">        this(clock, new ReservaRepositorioEmMemoria());</span>
+<span class="fc" id="L39">    }</span>
+
+    public ReservaService(Clock clock, ReservaRepositorio repositorio) {
+<span class="fc" id="L42">        this(clock, repositorio, new HistoricoReservaRepositorioEmMemoria(), Transacao.direta());</span>
+<span class="fc" id="L43">    }</span>
+
+    public ReservaService(Clock clock, ReservaRepositorio repositorio, HistoricoReservaRepositorio historico,
+                          Transacao transacao) {
+<span class="fc" id="L47">        this(clock, repositorio, historico, transacao, new NotificacaoService());</span>
+<span class="fc" id="L48">    }</span>
+
+    /** RF-31/32: {@code notificacao} e avisada depois que a mudanca ja foi gravada (nunca dentro da transacao). */
+    public ReservaService(Clock clock, ReservaRepositorio repositorio, HistoricoReservaRepositorio historico,
+<span class="fc" id="L52">                          Transacao transacao, NotificacaoService notificacao) {</span>
+<span class="fc" id="L53">        this.clock = clock;</span>
+<span class="fc" id="L54">        this.repositorio = repositorio;</span>
+<span class="fc" id="L55">        this.historico = historico;</span>
+<span class="fc" id="L56">        this.transacao = transacao;</span>
+<span class="fc" id="L57">        this.notificacao = notificacao;</span>
+<span class="fc" id="L58">    }</span>
+
+    public Reserva criar(Usuario solicitante, LocalDateTime inicio, LocalDateTime fim,
+                          String finalidade, List&lt;ReservaRecurso&gt; recursos) {
+<span class="fc" id="L62">        Banco.seedSeNecessario();</span>
+        // RF-12: so o Solicitante cria reserva (DEF-009). Perfil antes da entrada: 403 nao depende do corpo.
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (solicitante.getPerfil() != Perfil.SOLICITANTE) {</span>
+<span class="fc" id="L65">            throw new RegraNegocioException(403, &quot;Apenas o Solicitante pode criar reservas&quot;);</span>
+        }
+<span class="fc" id="L67">        validarIntervalo(inicio, fim);</span>
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">        if (finalidade == null || finalidade.isBlank()) {</span>
+<span class="fc" id="L69">            throw new RegraNegocioException(400, &quot;Finalidade da reserva é obrigatória&quot;);</span>
+        }
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">        if (recursos == null || recursos.isEmpty()) {</span>
+<span class="fc" id="L72">            throw new RegraNegocioException(400, &quot;Reserva deve ter ao menos um recurso vinculado&quot;);</span>
+        }
+
+<span class="fc" id="L75">        UUID reservaId = UUID.randomUUID();</span>
+<span class="fc" id="L76">        List&lt;ReentrantLock&gt; locksAdquiridos = adquirirLocksOrdenados(recursos);</span>
+        try {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            for (ReservaRecurso rr : recursos) {</span>
+<span class="fc" id="L79">                validarRecursoDisponivel(rr.getRecurso(), inicio, fim, null, reservaId, solicitante);</span>
+<span class="fc" id="L80">            }</span>
+
+<span class="fc" id="L82">            boolean algumRestrito = recursos.stream().anyMatch(this::ehRestrito);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            EstadoReserva estadoInicial = algumRestrito ? EstadoReserva.SOLICITADA : EstadoReserva.APROVADA;</span>
+
+<span class="fc" id="L85">            Reserva reserva = new Reserva(reservaId, solicitante.getId(), inicio, fim,</span>
+                    finalidade, recursos, estadoInicial);
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            String motivo = algumRestrito ? &quot;Criação: recurso restrito aguarda aprovação&quot; : &quot;Criação: aprovada automaticamente&quot;;</span>
+<span class="fc" id="L88">            auditandoRecusaDoBanco(reservaId, solicitante, () -&gt; transacao.executar(() -&gt; {</span>
+<span class="fc" id="L89">                repositorio.inserir(reserva);</span>
+<span class="fc" id="L90">                historico.registrar(registro(reserva, solicitante, null, motivo));</span>
+<span class="fc" id="L91">            }));</span>
+<span class="fc" id="L92">            AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;CRIACAO&quot;, solicitante.getId(), LocalDateTime.now(clock));</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (algumRestrito) {</span>
+<span class="fc" id="L94">                notificarSemPropagar(() -&gt; notificacao.notificarResponsavelCompetente(reserva), reserva);</span>
+            }
+<span class="fc" id="L96">            return reserva;</span>
+        } finally {
+<span class="fc" id="L98">            liberarLocks(locksAdquiridos);</span>
+        }
+    }
+
+    public Reserva alterar(Usuario autor, UUID reservaId, LocalDateTime novoInicio, LocalDateTime novoFim) {
+<span class="fc" id="L103">        Banco.seedSeNecessario();</span>
+        // Intervalo antes da posse: com intervalo invalido, id alheio e inexistente recebem o mesmo 400.
+<span class="fc" id="L105">        validarIntervalo(novoInicio, novoFim);</span>
+<span class="fc" id="L106">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (!ehDono(autor, reserva)) {</span>
+<span class="fc" id="L108">            throw new RegraNegocioException(403, &quot;Usuário não autorizado a alterar reserva de outro solicitante&quot;);</span>
+        }
+<span class="fc bfc" id="L110" title="All 4 branches covered.">        if (reserva.getEstado() != EstadoReserva.SOLICITADA &amp;&amp; reserva.getEstado() != EstadoReserva.APROVADA) {</span>
+<span class="fc" id="L111">            throw new RegraNegocioException(409, &quot;Reserva em estado incompatível com alteração&quot;);</span>
+        }
+<span class="fc" id="L113">        List&lt;ReentrantLock&gt; locksAdquiridos = adquirirLocksOrdenados(reserva.getRecursos());</span>
+        try {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            for (ReservaRecurso rr : reserva.getRecursos()) {</span>
+<span class="fc" id="L116">                validarRecursoDisponivel(rr.getRecurso(), novoInicio, novoFim, reservaId, reservaId, autor);</span>
+<span class="fc" id="L117">            }</span>
+<span class="fc" id="L118">            LocalDateTime inicioAnterior = reserva.getInicio();</span>
+<span class="fc" id="L119">            LocalDateTime fimAnterior = reserva.getFim();</span>
+<span class="fc" id="L120">            reserva.setInicio(novoInicio);</span>
+<span class="fc" id="L121">            reserva.setFim(novoFim);</span>
+            try {
+<span class="fc" id="L123">                auditandoRecusaDoBanco(reservaId, autor, () -&gt; repositorio.atualizar(reserva));</span>
+<span class="fc" id="L124">            } catch (RuntimeException e) {</span>
+                // A gravacao foi recusada (ex.: sobreposicao detectada pelo banco); desfaz a alteracao em memoria.
+<span class="fc" id="L126">                reserva.setInicio(inicioAnterior);</span>
+<span class="fc" id="L127">                reserva.setFim(fimAnterior);</span>
+<span class="fc" id="L128">                throw e;</span>
+<span class="fc" id="L129">            }</span>
+<span class="fc" id="L130">            AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;ATUALIZACAO&quot;, autor.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L131">            return reserva;</span>
+        } finally {
+<span class="fc" id="L133">            liberarLocks(locksAdquiridos);</span>
+        }
+    }
+
+    public Reserva cancelar(Usuario autor, UUID reservaId, String motivo) {
+<span class="fc" id="L138">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L139" title="All 4 branches covered.">        if (motivo == null || motivo.isBlank()) {</span>
+<span class="fc" id="L140">            throw new RegraNegocioException(400, &quot;Motivo do cancelamento é obrigatório&quot;);</span>
+        }
+<span class="fc" id="L142">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (!ehDono(autor, reserva)) {</span>
+<span class="fc" id="L144">            throw new RegraNegocioException(403, &quot;Usuário não autorizado a cancelar reserva de outro solicitante&quot;);</span>
+        }
+<span class="fc bfc" id="L146" title="All 4 branches covered.">        if (reserva.getEstado() == EstadoReserva.CONCLUIDA || reserva.getEstado() == EstadoReserva.CANCELADA</span>
+<span class="fc bfc" id="L147" title="All 4 branches covered.">                || reserva.getEstado() == EstadoReserva.REJEITADA || reserva.getEstado() == EstadoReserva.NAO_COMPARECEU) {</span>
+<span class="fc" id="L148">            throw new RegraNegocioException(409, &quot;Reserva em estado terminal não pode ser cancelada&quot;);</span>
+        }
+<span class="fc" id="L150">        transicionar(reserva, autor, motivo, () -&gt; reserva.setEstado(EstadoReserva.CANCELADA));</span>
+<span class="fc" id="L151">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;CANCELAMENTO&quot;, autor.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L152">        return reserva;</span>
+    }
+
+    /**
+     * RF-23 (confirmacao explicita): ao confirmar uma manutencao que colide com reserva {@code APROVADA}, o
+     * Administrador cancela essa reserva. Grava historico com o motivo, um evento {@code CANCELAMENTO_POR_MANUTENCAO} e
+     * notifica o Solicitante. Reserva {@code EM_USO} nao e cancelada aqui (409): o recurso ja esta em uso.
+     */
+    public Reserva cancelarPorManutencao(Usuario administrador, UUID reservaId, String motivoManutencao) {
+<span class="fc" id="L161">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (administrador.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L163">            throw new RegraNegocioException(403, &quot;Apenas o Administrador pode cancelar reservas para manutenção&quot;);</span>
+        }
+<span class="pc bpc" id="L165" title="1 of 4 branches missed.">        if (motivoManutencao == null || motivoManutencao.isBlank()) {</span>
+<span class="fc" id="L166">            throw new RegraNegocioException(400, &quot;Motivo da manutenção é obrigatório&quot;);</span>
+        }
+<span class="fc" id="L168">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L169" title="All 4 branches covered.">        if (reserva == null || reserva.getEstado() != EstadoReserva.APROVADA) {</span>
+<span class="fc" id="L170">            throw new RegraNegocioException(409, &quot;Só reserva APROVADA pode ser cancelada para manutenção&quot;);</span>
+        }
+<span class="fc" id="L172">        transicionar(reserva, administrador, &quot;Cancelada para manutenção: &quot; + motivoManutencao.strip(),</span>
+<span class="fc" id="L173">                () -&gt; reserva.setEstado(EstadoReserva.CANCELADA));</span>
+<span class="fc" id="L174">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;CANCELAMENTO_POR_MANUTENCAO&quot;, administrador.getId(),</span>
+<span class="fc" id="L175">                LocalDateTime.now(clock));</span>
+<span class="fc" id="L176">        return reserva;</span>
+    }
+
+    public Reserva aprovar(Usuario responsavel, UUID reservaId) {
+<span class="fc" id="L180">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L181" title="All 4 branches covered.">        if (responsavel.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; responsavel.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L182">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem aprovar reservas&quot;);</span>
+        }
+<span class="fc" id="L184">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (reserva == null) {</span>
+<span class="fc" id="L186">            throw new RegraNegocioException(409, &quot;Reserva não está em estado SOLICITADA para aprovação&quot;);</span>
+        }
+<span class="fc" id="L188">        exigirDecisorCompetente(responsavel, reserva, &quot;aprovar&quot;);</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {</span>
+<span class="fc" id="L190">            throw new RegraNegocioException(409, &quot;Reserva não está em estado SOLICITADA para aprovação&quot;);</span>
+        }
+<span class="fc" id="L192">        transicionar(reserva, responsavel, &quot;Aprovação da solicitação&quot;, () -&gt; reserva.setEstado(EstadoReserva.APROVADA));</span>
+<span class="fc" id="L193">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;APROVACAO&quot;, responsavel.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L194">        return reserva;</span>
+    }
+
+    /**
+     * RF-18 / P-07 (decisao de 12/11/2026: inicio manual). So {@code APROVADA} vai para {@code EM_USO}: reserva
+     * restrita {@code SOLICITADA} nunca pula a aprovacao. Mesmo controle de acesso da aprovacao: Administrador, ou
+     * Responsavel do local, checado antes do estado. Grava historico e um evento {@code INICIO_USO}.
+     */
+    public Reserva iniciarUso(Usuario ator, UUID reservaId) {
+<span class="fc" id="L203">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L204" title="All 4 branches covered.">        if (ator.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; ator.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L205">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem iniciar o uso da reserva&quot;);</span>
+        }
+<span class="fc" id="L207">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (reserva == null) {</span>
+<span class="fc" id="L209">            throw new RegraNegocioException(409, &quot;Reserva não está APROVADA para iniciar o uso&quot;);</span>
+        }
+<span class="fc" id="L211">        exigirDecisorCompetente(ator, reserva, &quot;iniciar o uso de&quot;);</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (reserva.getEstado() != EstadoReserva.APROVADA) {</span>
+<span class="fc" id="L213">            throw new RegraNegocioException(409, &quot;Reserva não está APROVADA para iniciar o uso&quot;);</span>
+        }
+<span class="fc" id="L215">        transicionar(reserva, ator, &quot;Início do uso&quot;, () -&gt; reserva.setEstado(EstadoReserva.EM_USO));</span>
+<span class="fc" id="L216">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;INICIO_USO&quot;, ator.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L217">        return reserva;</span>
+    }
+
+    /** Tolerancia de atraso antes de registrar o nao comparecimento (P-08, decisao de 12/11/2026). */
+<span class="fc" id="L221">    public static final java.time.Duration TOLERANCIA_NAO_COMPARECIMENTO = java.time.Duration.ofMinutes(15);</span>
+
+    /**
+     * P-07 (decisao de 12/11/2026): {@code EM_USO -&gt; CONCLUIDA}, manual, por Responsavel competente ou Administrador.
+     * Mesmo controle de acesso do inicio de uso; grava historico e um evento {@code CONCLUSAO}.
+     */
+    public Reserva concluir(Usuario ator, UUID reservaId) {
+<span class="fc" id="L228">        Reserva reserva = decisorSobreReserva(ator, reservaId, &quot;concluir&quot;, EstadoReserva.EM_USO);</span>
+<span class="fc" id="L229">        transicionar(reserva, ator, &quot;Conclusão do uso&quot;, () -&gt; reserva.setEstado(EstadoReserva.CONCLUIDA));</span>
+<span class="fc" id="L230">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;CONCLUSAO&quot;, ator.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L231">        return reserva;</span>
+    }
+
+    /**
+     * P-05 / P-08 (decisao de 12/11/2026): {@code APROVADA -&gt; NAO_COMPARECEU}, manual, por Responsavel competente ou
+     * Administrador, so quando o relogio do servidor ja passou de inicio + {@link #TOLERANCIA_NAO_COMPARECIMENTO}.
+     */
+    public Reserva registrarNaoComparecimento(Usuario ator, UUID reservaId) {
+<span class="fc" id="L239">        Reserva reserva = decisorSobreReserva(ator, reservaId, &quot;registrar o não comparecimento de&quot;, EstadoReserva.APROVADA);</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (LocalDateTime.now(clock).isBefore(reserva.getInicio().plus(TOLERANCIA_NAO_COMPARECIMENTO))) {</span>
+<span class="fc" id="L241">            throw new RegraNegocioException(409, &quot;Não comparecimento só pode ser registrado &quot;</span>
+<span class="fc" id="L242">                    + TOLERANCIA_NAO_COMPARECIMENTO.toMinutes() + &quot; minutos depois do início da reserva&quot;);</span>
+        }
+<span class="fc" id="L244">        transicionar(reserva, ator, &quot;Não comparecimento&quot;, () -&gt; reserva.setEstado(EstadoReserva.NAO_COMPARECEU));</span>
+<span class="fc" id="L245">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;NAO_COMPARECIMENTO&quot;, ator.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L246">        return reserva;</span>
+    }
+
+    /**
+     * P-08 (decisao de 12/11/2026, complemento automatico): reserva que chega ao fim do horario ainda {@code APROVADA}
+     * (o uso nunca foi iniciado) vira {@code NAO_COMPARECEU} sem acao humana. O registro manual continua valendo antes
+     * disso, a partir de inicio + {@link #TOLERANCIA_NAO_COMPARECIMENTO}. A borda e inclusiva: no instante {@code fim}
+     * a reserva ja e encerrada. O autor do historico e da auditoria e {@link Banco#SISTEMA_ID}.
+     *
+     * &lt;p&gt;Chamado periodicamente pelo agendador ({@code com.edualoca.agendamento}); seguro para chamar de novo, porque so
+     * mexe em reservas ainda {@code APROVADA}.
+     *
+     * @return as reservas encerradas nesta passada
+     */
+    public List&lt;Reserva&gt; registrarNaoComparecimentosVencidos() {
+<span class="fc" id="L261">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L262">        LocalDateTime agora = LocalDateTime.now(clock);</span>
+<span class="fc" id="L263">        Usuario sistema = new Usuario(Banco.SISTEMA_ID, &quot;sistema&quot;, null, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L264">        List&lt;Reserva&gt; encerradas = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        for (Reserva reserva : repositorio.listar()) {</span>
+<span class="fc bfc" id="L266" title="All 4 branches covered.">            if (reserva.getEstado() != EstadoReserva.APROVADA || agora.isBefore(reserva.getFim())) {</span>
+<span class="fc" id="L267">                continue;</span>
+            }
+            try {
+<span class="fc" id="L270">                transicionar(reserva, sistema, &quot;Não comparecimento automático: fim do horário sem início do uso&quot;,</span>
+<span class="fc" id="L271">                        () -&gt; reserva.setEstado(EstadoReserva.NAO_COMPARECEU));</span>
+<span class="fc" id="L272">                AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;NAO_COMPARECIMENTO&quot;, Banco.SISTEMA_ID, agora);</span>
+<span class="fc" id="L273">                encerradas.add(reserva);</span>
+<span class="nc" id="L274">            } catch (RuntimeException e) {</span>
+                // Uma reserva com falha de gravacao nao impede as demais; a proxima passada tenta de novo.
+<span class="nc" id="L276">                LOG.log(Level.WARNING, &quot;Nao comparecimento automatico da reserva {0} falhou ({1})&quot;,</span>
+<span class="nc" id="L277">                        new Object[]{reserva.getId(), e.getClass().getSimpleName()});</span>
+<span class="fc" id="L278">            }</span>
+<span class="fc" id="L279">        }</span>
+<span class="fc" id="L280">        return encerradas;</span>
+    }
+
+    /** Perfil, existencia, competencia (antes do estado, para nao revelar estado a quem nao decide) e estado exigido. */
+    private Reserva decisorSobreReserva(Usuario ator, UUID reservaId, String acao, EstadoReserva estadoExigido) {
+<span class="fc" id="L285">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L286" title="All 4 branches covered.">        if (ator.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; ator.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L287">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem &quot; + acao + &quot; a reserva&quot;);</span>
+        }
+<span class="fc" id="L289">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc" id="L290">        String foraDoEstado = &quot;Reserva não está &quot; + estadoExigido + &quot; para &quot; + acao + &quot; a reserva&quot;;</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        if (reserva == null) {</span>
+<span class="fc" id="L292">            throw new RegraNegocioException(409, foraDoEstado);</span>
+        }
+<span class="fc" id="L294">        exigirDecisorCompetente(ator, reserva, acao);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        if (reserva.getEstado() != estadoExigido) {</span>
+<span class="fc" id="L296">            throw new RegraNegocioException(409, foraDoEstado);</span>
+        }
+<span class="fc" id="L298">        return reserva;</span>
+    }
+
+    public Reserva rejeitar(Usuario responsavel, UUID reservaId, String justificativa) {
+<span class="fc" id="L302">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L303" title="All 4 branches covered.">        if (responsavel.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; responsavel.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L304">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem rejeitar reservas&quot;);</span>
+        }
+<span class="fc bfc" id="L306" title="All 4 branches covered.">        if (justificativa == null || justificativa.isBlank()) {</span>
+<span class="fc" id="L307">            throw new RegraNegocioException(400, &quot;Justificativa da rejeição é obrigatória&quot;);</span>
+        }
+<span class="fc" id="L309">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">        if (reserva == null) {</span>
+<span class="fc" id="L311">            throw new RegraNegocioException(409, &quot;Reserva não está em estado SOLICITADA para rejeição&quot;);</span>
+        }
+<span class="fc" id="L313">        exigirDecisorCompetente(responsavel, reserva, &quot;rejeitar&quot;);</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        if (reserva.getEstado() != EstadoReserva.SOLICITADA) {</span>
+<span class="fc" id="L315">            throw new RegraNegocioException(409, &quot;Reserva não está em estado SOLICITADA para rejeição&quot;);</span>
+        }
+<span class="fc" id="L317">        transicionar(reserva, responsavel, justificativa, () -&gt; reserva.rejeitar(justificativa));</span>
+<span class="fc" id="L318">        AuditoriaService.registrar(&quot;Reserva&quot;, reserva.getId(), &quot;REJEICAO&quot;, responsavel.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L319">        return reserva;</span>
+    }
+
+    public Reserva consultar(Usuario autor, UUID reservaId) {
+<span class="fc" id="L323">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L324">        Reserva reserva = repositorio.buscar(reservaId);</span>
+<span class="fc bfc" id="L325" title="All 4 branches covered.">        if (autor.getPerfil() == Perfil.SOLICITANTE</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                &amp;&amp; (reserva == null || !reserva.getSolicitanteId().equals(autor.getId()))) {</span>
+<span class="fc" id="L327">            throw new RegraNegocioException(403, &quot;Solicitante não pode consultar reserva de outro solicitante&quot;);</span>
+        }
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (reserva == null) {</span>
+<span class="fc" id="L330">            throw new RegraNegocioException(409, &quot;Reserva inexistente&quot;);</span>
+        }
+<span class="fc" id="L332">        return reserva;</span>
+    }
+
+    /**
+     * Reservas visiveis ao usuario, da mais proxima para a mais distante: o Solicitante ve so as proprias; o Responsavel,
+     * as que ele pode decidir (mesma regra de competencia de {@link #aprovar}); o Administrador, todas.
+     */
+    public List&lt;Reserva&gt; listar(Usuario autor) {
+<span class="fc" id="L340">        Banco.seedSeNecessario();</span>
+<span class="fc" id="L341">        return repositorio.listar().stream()</span>
+<span class="fc bfc" id="L342" title="All 3 branches covered.">                .filter(reserva -&gt; switch (autor.getPerfil()) {</span>
+<span class="fc" id="L343">                    case SOLICITANTE -&gt; reserva.getSolicitanteId().equals(autor.getId());</span>
+<span class="fc" id="L344">                    case RESPONSAVEL -&gt; ehDecisorCompetente(autor, reserva);</span>
+<span class="fc" id="L345">                    case ADMINISTRADOR -&gt; true;</span>
+                })
+<span class="pc" id="L347">                .sorted(Comparator.comparing(Reserva::getInicio).thenComparing(r -&gt; r.getId().toString()))</span>
+<span class="fc" id="L348">                .toList();</span>
+    }
+
+    /**
+     * Historico auditavel da reserva, so para Responsavel e Administrador. O perfil e checado antes da existencia
+     * para que o Solicitante nao descubra quais ids de reserva existem.
+     */
+    public List&lt;RegistroHistoricoReserva&gt; consultarHistorico(Usuario autor, UUID reservaId) {
+<span class="fc" id="L356">        Banco.seedSeNecessario();</span>
+<span class="fc bfc" id="L357" title="All 4 branches covered.">        if (autor.getPerfil() != Perfil.RESPONSAVEL &amp;&amp; autor.getPerfil() != Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L358">            throw new RegraNegocioException(403, &quot;Apenas Responsável ou Administrador podem consultar o histórico da reserva&quot;);</span>
+        }
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        if (repositorio.buscar(reservaId) == null) {</span>
+<span class="fc" id="L361">            throw new RegraNegocioException(409, &quot;Reserva inexistente&quot;);</span>
+        }
+<span class="fc" id="L363">        return historico.listarPorReserva(reservaId);</span>
+    }
+
+    /**
+     * RF-30 / P-3: nenhuma reserva e apagada fisicamente, por nenhum perfil e em nenhum estado; o fim de uma reserva e
+     * o cancelamento. Sempre 403 (a rota existe, entao 405 contradiria o significado do codigo; DEF-006), sem consultar
+     * a reserva, para que a resposta nao revele estado nem existencia.
+     */
+    public void excluir(Usuario autor, UUID reservaId) {
+<span class="fc" id="L372">        throw new RegraNegocioException(403, &quot;Reservas não podem ser excluídas; para encerrar uma reserva, cancele-a&quot;);</span>
+    }
+
+    /**
+     * Aplica a mudanca de estado e grava reserva e historico na mesma transacao. Se a gravacao falhar, o banco
+     * desfaz as duas escritas e aqui a reserva em memoria volta ao estado anterior.
+     */
+    private void transicionar(Reserva reserva, Usuario autor, String motivo, Runnable mudanca) {
+<span class="fc" id="L380">        EstadoReserva estadoAnterior = reserva.getEstado();</span>
+<span class="fc" id="L381">        String justificativaAnterior = reserva.getJustificativaRejeicao();</span>
+<span class="fc" id="L382">        mudanca.run();</span>
+        try {
+<span class="fc" id="L384">            transacao.executar(() -&gt; {</span>
+<span class="fc" id="L385">                repositorio.atualizar(reserva);</span>
+<span class="fc" id="L386">                historico.registrar(registro(reserva, autor, estadoAnterior, motivo));</span>
+<span class="fc" id="L387">            });</span>
+<span class="fc" id="L388">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L389">            reserva.desfazerTransicao(estadoAnterior, justificativaAnterior);</span>
+<span class="fc" id="L390">            throw e;</span>
+<span class="fc" id="L391">        }</span>
+        // RF-31: so depois da gravacao. RF-33: falha de notificacao nunca desfaz a transicao.
+<span class="fc" id="L393">        notificarSemPropagar(() -&gt; notificacao.notificarTransicaoDeEstado(reserva), reserva);</span>
+<span class="fc" id="L394">    }</span>
+
+    private static void notificarSemPropagar(Runnable envio, Reserva reserva) {
+        try {
+<span class="fc" id="L398">            envio.run();</span>
+<span class="nc" id="L399">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L400">            LOG.log(Level.WARNING, &quot;Notificacao da reserva {0} falhou; a mudanca de estado foi mantida ({1})&quot;,</span>
+<span class="nc" id="L401">                    new Object[]{reserva.getId(), e.getClass().getSimpleName()});</span>
+<span class="fc" id="L402">        }</span>
+<span class="fc" id="L403">    }</span>
+
+    /**
+     * P-2 / RF-19 (DEF-010): o Administrador decide qualquer reserva; o Responsavel so decide reserva com sala de uma
+     * localizacao sob sua responsabilidade ({@link Banco#responsavelPorLocalizacao}). Checado antes do estado, para que
+     * o Responsavel nao competente nao descubra em que estado a reserva esta.
+     *
+     * &lt;p&gt;Lacuna conhecida: material e professor nao tem localizacao. Reserva sem nenhuma sala fica com qualquer
+     * Responsavel, como antes, ate o vinculo responsavel-recurso ser modelado (registrado em DEF-010).
+     */
+    private static void exigirDecisorCompetente(Usuario autor, Reserva reserva, String acao) {
+<span class="fc bfc" id="L414" title="All 2 branches covered.">        if (!ehDecisorCompetente(autor, reserva)) {</span>
+<span class="fc" id="L415">            throw new RegraNegocioException(403,</span>
+                    &quot;Apenas o Responsável pelo local do recurso (ou o Administrador) pode &quot; + acao + &quot; esta reserva&quot;);
+        }
+<span class="fc" id="L418">    }</span>
+
+    private static boolean ehDecisorCompetente(Usuario autor, Reserva reserva) {
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        if (autor.getPerfil() == Perfil.ADMINISTRADOR) {</span>
+<span class="fc" id="L422">            return true;</span>
+        }
+<span class="fc" id="L424">        List&lt;Sala&gt; salas = reserva.getRecursos().stream().map(ReservaRecurso::getRecurso)</span>
+<span class="fc" id="L425">                .filter(Sala.class::isInstance).map(Sala.class::cast).toList();</span>
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">        return salas.isEmpty() || salas.stream()</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                .anyMatch(sala -&gt; autor.getId().equals(Banco.responsavelPorLocalizacao.get(sala.getLocalizacao())));</span>
+    }
+
+    /**
+     * Posse (RF-03, P-1). Reserva inexistente conta como &quot;nao e sua&quot;: o 403 e o mesmo do id alheio, para que ninguem
+     * descubra quais ids existem comparando respostas (DEF-005).
+     */
+    private static boolean ehDono(Usuario autor, Reserva reserva) {
+<span class="fc bfc" id="L435" title="All 4 branches covered.">        return reserva != null &amp;&amp; reserva.getSolicitanteId().equals(autor.getId());</span>
+    }
+
+    private RegistroHistoricoReserva registro(Reserva reserva, Usuario autor, EstadoReserva estadoAnterior, String motivo) {
+<span class="fc" id="L439">        return new RegistroHistoricoReserva(UUID.randomUUID(), reserva.getId(), autor.getId(), clock.instant(),</span>
+<span class="fc" id="L440">                estadoAnterior, reserva.getEstado(), motivo);</span>
+    }
+
+    private void validarIntervalo(LocalDateTime inicio, LocalDateTime fim) {
+<span class="fc bfc" id="L444" title="All 6 branches covered.">        if (inicio == null || fim == null || !fim.isAfter(inicio)) {</span>
+<span class="fc" id="L445">            throw new RegraNegocioException(400, &quot;Intervalo inválido: fim deve ser posterior ao início (campos 'inicio' e 'fim')&quot;);</span>
+        }
+<span class="fc" id="L447">    }</span>
+
+    private boolean ehRestrito(ReservaRecurso rr) {
+<span class="fc" id="L450">        Object recurso = rr.getRecurso();</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">        if (recurso instanceof Sala sala) {</span>
+<span class="fc" id="L452">            return sala.isRestrito();</span>
+        }
+<span class="fc bfc" id="L454" title="All 2 branches covered.">        if (recurso instanceof com.edualoca.domain.recurso.Material material) {</span>
+<span class="fc" id="L455">            return material.isRestrito();</span>
+        }
+<span class="fc" id="L457">        return false;</span>
+    }
+
+    private void validarRecursoDisponivel(Object recurso, LocalDateTime inicio, LocalDateTime fim, UUID reservaIgnorada,
+                                          UUID reservaTentada, Usuario autor) {
+<span class="fc" id="L462">        boolean emManutencao = Banco.manutencoes.values().stream()</span>
+<span class="fc bfc" id="L463" title="All 4 branches covered.">                .anyMatch(m -&gt; m.getRecurso() == recurso &amp;&amp; Intervalos.sobrepoe(inicio, fim, m.getInicio(), m.getFim()));</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">        if (emManutencao) {</span>
+<span class="fc" id="L465">            throw new RegraNegocioException(409, &quot;Recurso em manutenção no intervalo solicitado&quot;);</span>
+        }
+<span class="fc bfc" id="L467" title="All 2 branches covered.">        if (repositorio.existeConflito(recurso, inicio, fim, reservaIgnorada)) {</span>
+<span class="fc" id="L468">            registrarRejeicaoPorSobreposicao(reservaTentada, autor);</span>
+<span class="fc" id="L469">            throw new RegraNegocioException(409, &quot;Recurso indisponível: sobreposição com reserva ativa&quot;);</span>
+        }
+<span class="fc" id="L471">    }</span>
+
+    /**
+     * Na gravacao, o unico 409 possivel vem da constraint de exclusao do banco (ADR-009): outra instancia gravou
+     * reserva sobreposta depois da checagem. Tambem e um conflito evitado (RF-35).
+     */
+    private void auditandoRecusaDoBanco(UUID reservaTentada, Usuario autor, Runnable gravacao) {
+        try {
+<span class="fc" id="L479">            gravacao.run();</span>
+<span class="fc" id="L480">        } catch (RegraNegocioException e) {</span>
+<span class="pc bpc" id="L481" title="1 of 2 branches missed.">            if (e.getStatusHttp() == 409) {</span>
+<span class="fc" id="L482">                registrarRejeicaoPorSobreposicao(reservaTentada, autor);</span>
+            }
+<span class="fc" id="L484">            throw e;</span>
+<span class="fc" id="L485">        }</span>
+<span class="fc" id="L486">    }</span>
+
+    /** RF-28/RF-35: base da contagem de conflitos evitados no relatorio de utilizacao. */
+    private void registrarRejeicaoPorSobreposicao(UUID reservaTentada, Usuario autor) {
+<span class="fc" id="L490">        AuditoriaService.registrar(&quot;Reserva&quot;, reservaTentada, &quot;REJEICAO_SOBREPOSICAO&quot;, autor.getId(), LocalDateTime.now(clock));</span>
+<span class="fc" id="L491">    }</span>
+
+    private List&lt;ReentrantLock&gt; adquirirLocksOrdenados(List&lt;ReservaRecurso&gt; recursos) {
+<span class="fc" id="L494">        List&lt;ReentrantLock&gt; locks = recursos.stream()</span>
+<span class="fc" id="L495">                .map(rr -&gt; LOCKS_POR_RECURSO.computeIfAbsent(identidadeDoRecurso(rr.getRecurso()), k -&gt; new ReentrantLock()))</span>
+<span class="fc" id="L496">                .distinct()</span>
+<span class="fc" id="L497">                .sorted((a, b) -&gt; Integer.compare(System.identityHashCode(a), System.identityHashCode(b)))</span>
+<span class="fc" id="L498">                .toList();</span>
+<span class="fc" id="L499">        locks.forEach(ReentrantLock::lock);</span>
+<span class="fc" id="L500">        return locks;</span>
+    }
+
+    private void liberarLocks(List&lt;ReentrantLock&gt; locks) {
+<span class="fc bfc" id="L504" title="All 2 branches covered.">        for (int i = locks.size() - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L505">            locks.get(i).unlock();</span>
+        }
+<span class="fc" id="L507">    }</span>
+
+    private UUID identidadeDoRecurso(Object recurso) {
+<span class="fc bfc" id="L510" title="All 2 branches covered.">        if (recurso instanceof Sala sala) {</span>
+<span class="fc" id="L511">            return sala.getId();</span>
+        }
+<span class="fc bfc" id="L513" title="All 2 branches covered.">        if (recurso instanceof com.edualoca.domain.recurso.Professor professor) {</span>
+<span class="fc" id="L514">            return professor.getId();</span>
+        }
+<span class="pc bpc" id="L516" title="1 of 2 branches missed.">        if (recurso instanceof com.edualoca.domain.recurso.Material material) {</span>
+<span class="fc" id="L517">            return material.getId();</span>
+        }
+<span class="nc" id="L519">        return UUID.nameUUIDFromBytes(String.valueOf(System.identityHashCode(recurso)).getBytes());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

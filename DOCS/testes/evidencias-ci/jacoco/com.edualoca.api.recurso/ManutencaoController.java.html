@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ManutencaoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.recurso</a> &gt; <span class="el_source">ManutencaoController.java</span></div><h1>ManutencaoController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.recurso;
+
+import com.edualoca.api.reserva.RecursoResolver;
+import com.edualoca.api.seguranca.Perfis;
+import com.edualoca.api.seguranca.UsuarioAutenticado;
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.Manutencao;
+import com.edualoca.domain.recurso.Material;
+import com.edualoca.domain.recurso.Professor;
+import com.edualoca.domain.recurso.Sala;
+import com.edualoca.domain.reserva.EstadoReserva;
+import com.edualoca.domain.reserva.Reserva;
+import com.edualoca.domain.reserva.ReservaService;
+import com.edualoca.domain.usuario.Perfil;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+/** Cadastro e consulta de manutencao/bloqueio (RF-21, RF-23): exclusivo do Administrador (RF-02). */
+@RestController
+public class ManutencaoController {
+
+    private static final String SO_ADMIN = &quot;Apenas o Administrador pode cadastrar manutenção de recursos&quot;;
+    private static final int MAX_MOTIVO = 120;
+
+    private final CadastroRecursoService cadastroRecursoService;
+    private final ReservaService reservaService;
+    private final RecursoResolver recursoResolver;
+
+    public ManutencaoController(CadastroRecursoService cadastroRecursoService, ReservaService reservaService,
+<span class="fc" id="L41">                                RecursoResolver recursoResolver) {</span>
+<span class="fc" id="L42">        this.cadastroRecursoService = cadastroRecursoService;</span>
+<span class="fc" id="L43">        this.reservaService = reservaService;</span>
+<span class="fc" id="L44">        this.recursoResolver = recursoResolver;</span>
+<span class="fc" id="L45">    }</span>
+
+    /** Manutencao com o recurso identificado, para a lista do Administrador. */
+<span class="fc" id="L48">    public record ManutencaoListada(UUID id, String tipoRecurso, UUID recursoId, String recursoNome,</span>
+                                    LocalDateTime inicio, LocalDateTime fim, String motivo) {
+
+        static ManutencaoListada de(Manutencao m) {
+<span class="pc bpc" id="L52" title="3 of 4 branches missed.">            return switch (m.getRecurso()) {</span>
+<span class="fc" id="L53">                case Sala s -&gt; new ManutencaoListada(m.getId(), &quot;SALA&quot;, s.getId(), s.getNome(), m.getInicio(), m.getFim(), m.getMotivo());</span>
+<span class="nc" id="L54">                case Material x -&gt; new ManutencaoListada(m.getId(), &quot;MATERIAL&quot;, x.getId(), x.getNome(), m.getInicio(), m.getFim(), m.getMotivo());</span>
+<span class="nc" id="L55">                case Professor p -&gt; new ManutencaoListada(m.getId(), &quot;PROFESSOR&quot;, p.getId(), p.getNome(), m.getInicio(), m.getFim(), m.getMotivo());</span>
+<span class="nc" id="L56">                default -&gt; new ManutencaoListada(m.getId(), &quot;DESCONHECIDO&quot;, null, null, m.getInicio(), m.getFim(), m.getMotivo());</span>
+            };
+        }
+    }
+
+    @GetMapping(&quot;/manutencoes&quot;)
+    public List&lt;ManutencaoListada&gt; listar(@UsuarioAutenticado Usuario usuario) {
+<span class="fc" id="L63">        Perfis.exigir(usuario, &quot;Apenas o Administrador pode consultar as manutenções&quot;, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L64">        return cadastroRecursoService.listarManutencoes().stream().map(ManutencaoListada::de).toList();</span>
+    }
+
+    @PostMapping(&quot;/manutencoes/{id}/encerramento&quot;)
+    public ManutencaoListada encerrar(@UsuarioAutenticado Usuario usuario, @PathVariable UUID id) {
+<span class="fc" id="L69">        Perfis.exigir(usuario, &quot;Apenas o Administrador pode encerrar manutenção&quot;, Perfil.ADMINISTRADOR);</span>
+<span class="fc" id="L70">        return ManutencaoListada.de(cadastroRecursoService.por(usuario).encerrarManutencao(id));</span>
+    }
+
+    @PostMapping(&quot;/manutencoes&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ManutencaoResposta cadastrar(@UsuarioAutenticado Usuario usuario, @RequestBody ManutencaoRequisicao requisicao) {
+<span class="fc" id="L76">        Perfis.exigir(usuario, SO_ADMIN, Perfil.ADMINISTRADOR);</span>
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">        if (requisicao.motivo() != null &amp;&amp; requisicao.motivo().strip().length() &gt; MAX_MOTIVO) {</span>
+<span class="nc" id="L78">            throw new RegraNegocioException(400, &quot;Campo 'motivo' excede &quot; + MAX_MOTIVO + &quot; caracteres&quot;);</span>
+        }
+<span class="fc" id="L80">        Object recurso = recursoResolver.resolver(requisicao.tipoRecurso(), requisicao.recursoId());</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (Boolean.TRUE.equals(requisicao.confirmarColisao())) {</span>
+<span class="fc" id="L82">            liberarReservasAprovadas(usuario, recurso, requisicao);</span>
+        }
+<span class="pc bpc" id="L84" title="3 of 4 branches missed.">        Manutencao manutencao = switch (recurso) {</span>
+<span class="fc" id="L85">            case Sala sala -&gt; cadastroRecursoService.por(usuario).cadastrarManutencao(sala, requisicao.inicio(), requisicao.fim(), requisicao.motivo());</span>
+<span class="nc" id="L86">            case Material material -&gt; cadastroRecursoService.por(usuario).cadastrarManutencao(material, requisicao.inicio(), requisicao.fim(), requisicao.motivo());</span>
+<span class="nc" id="L87">            case Professor professor -&gt; cadastroRecursoService.por(usuario).cadastrarManutencao(professor, requisicao.inicio(), requisicao.fim(), requisicao.motivo());</span>
+<span class="pc" id="L88">            default -&gt; throw new RegraNegocioException(400, &quot;Tipo de recurso inválido: use SALA, MATERIAL ou PROFESSOR&quot;);</span>
+        };
+<span class="fc" id="L90">        return ManutencaoResposta.de(manutencao);</span>
+    }
+
+    /**
+     * RF-23 com confirmacao: se alguma reserva colidente ja esta EM_USO, nada e cancelado (409). Senao, cada reserva
+     * APROVADA colidente e cancelada (historico, auditoria e notificacao ao Solicitante) antes do cadastro.
+     */
+    private void liberarReservasAprovadas(Usuario administrador, Object recurso, ManutencaoRequisicao requisicao) {
+<span class="fc" id="L98">        List&lt;Reserva&gt; colidentes = cadastroRecursoService.reservasQueColidemComManutencao(</span>
+<span class="fc" id="L99">                recurso, requisicao.inicio(), requisicao.fim());</span>
+<span class="fc bfc" id="L100" title="All 4 branches covered.">        if (colidentes.stream().anyMatch(r -&gt; r.getEstado() == EstadoReserva.EM_USO)) {</span>
+<span class="fc" id="L101">            throw new RegraNegocioException(409, &quot;Manutenção colide com reserva em uso; aguarde a conclusão do uso&quot;);</span>
+        }
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        for (Reserva reserva : colidentes) {</span>
+<span class="fc" id="L104">            reservaService.cancelarPorManutencao(administrador, reserva.getId(), requisicao.motivo());</span>
+<span class="fc" id="L105">        }</span>
+<span class="fc" id="L106">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

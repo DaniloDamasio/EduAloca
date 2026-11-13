@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntegracaoConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.integracao</a> &gt; <span class="el_source">IntegracaoConfig.java</span></div><h1>IntegracaoConfig.java</h1><pre class="source lang-java linenums">package com.edualoca.integracao;
+
+import com.edualoca.domain.notificacao.NotificacaoService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+
+/**
+ * Monta a porta de notificacao do dominio (RNF-16). Fica na camada de integracao, como
+ * {@code PersistenciaPostgresConfig} fica na de persistencia: a apresentacao so ve {@link NotificacaoService}.
+ */
+@Configuration
+<span class="fc" id="L15">public class IntegracaoConfig {</span>
+
+    /**
+     * RF-11 do enunciado (&quot;notificacao simulada ou integracao com API externa&quot;). Padrao: simulada, registrada em
+     * {@code Banco.notificacoes}. Com {@code edualoca.notificacao.externa.habilitada=true}, usa o adaptador HTTP
+     * (RNF-16); a chave vem de {@code EDUALOCA_NOTIFICACAO_API_KEY}, nunca do arquivo versionado.
+     */
+    @Bean
+    public NotificacaoService notificacaoService(
+            @Value(&quot;${edualoca.notificacao.externa.habilitada:false}&quot;) boolean externaHabilitada,
+            @Value(&quot;${edualoca.notificacao.externa.url}&quot;) String url,
+            @Value(&quot;${edualoca.notificacao.externa.api-key:}&quot;) String apiKey,
+            @Value(&quot;${edualoca.notificacao.externa.timeout-conexao-ms}&quot;) long timeoutConexaoMs,
+            @Value(&quot;${edualoca.notificacao.externa.timeout-leitura-ms}&quot;) long timeoutLeituraMs) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (!externaHabilitada) {</span>
+<span class="fc" id="L30">            return new NotificacaoService();</span>
+        }
+<span class="pc bpc" id="L32" title="2 of 4 branches missed.">        if (url == null || url.isBlank()) {</span>
+<span class="nc" id="L33">            throw new IllegalStateException(&quot;edualoca.notificacao.externa.url e obrigatoria com a integracao habilitada&quot;);</span>
+        }
+<span class="fc" id="L35">        return new NotificacaoService(new NotificacaoHttpAdapter(url, apiKey,</span>
+<span class="fc" id="L36">                Duration.ofMillis(timeoutConexaoMs), Duration.ofMillis(timeoutLeituraMs)));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

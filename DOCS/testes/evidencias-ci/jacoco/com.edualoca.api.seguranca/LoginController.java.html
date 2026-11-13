@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.api.seguranca</a> &gt; <span class="el_source">LoginController.java</span></div><h1>LoginController.java</h1><pre class="source lang-java linenums">package com.edualoca.api.seguranca;
+
+import com.edualoca.domain.comum.RegraNegocioException;
+import com.edualoca.domain.usuario.AutenticacaoService;
+import com.edualoca.domain.usuario.Usuario;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+/**
+ * Login (RF-01): troca e-mail e senha por um token Bearer opaco. Credencial invalida responde 401 com
+ * mensagem unica, sem revelar se o e-mail existe.
+ */
+@RestController
+public class LoginController {
+
+    private final AutenticacaoService autenticacaoService;
+    private final TokenService tokenService;
+
+<span class="fc" id="L27">    public LoginController(AutenticacaoService autenticacaoService, TokenService tokenService) {</span>
+<span class="fc" id="L28">        this.autenticacaoService = autenticacaoService;</span>
+<span class="fc" id="L29">        this.tokenService = tokenService;</span>
+<span class="fc" id="L30">    }</span>
+
+    @PostMapping(&quot;/auth/login&quot;)
+    public LoginResposta login(@RequestBody LoginRequisicao requisicao) {
+<span class="pc bpc" id="L34" title="1 of 6 branches missed.">        if (requisicao == null || vazio(requisicao.email()) || vazio(requisicao.senha())) {</span>
+<span class="fc" id="L35">            throw new RegraNegocioException(400, &quot;Informe e-mail e senha&quot;);</span>
+        }
+<span class="fc" id="L37">        return new LoginResposta(tokenService.emitir(autenticacaoService.autenticar(requisicao.email(), requisicao.senha())));</span>
+    }
+
+    /** Revoga o token do cabecalho; responde 204 mesmo sem token valido, para nao revelar quais tokens existem. */
+    @PostMapping(&quot;/auth/logout&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+<span class="fc" id="L44">        tokenService.revogar(authorization);</span>
+<span class="fc" id="L45">    }</span>
+
+    /** Quem e o usuario do token: a interface usa o perfil para montar as telas (a autorizacao continua no servidor). */
+    @GetMapping(&quot;/auth/eu&quot;)
+    public EuResposta eu(@UsuarioAutenticado Usuario usuario) {
+<span class="fc" id="L50">        return new EuResposta(usuario.getId(), usuario.getEmail(), usuario.getPerfil().name());</span>
+    }
+
+    private static boolean vazio(String valor) {
+<span class="fc bfc" id="L54" title="All 4 branches covered.">        return valor == null || valor.isBlank();</span>
+    }
+
+<span class="fc" id="L57">    public record LoginRequisicao(String email, String senha) {</span>
+    }
+
+<span class="fc" id="L60">    public record LoginResposta(String token) {</span>
+    }
+
+<span class="fc" id="L63">    public record EuResposta(UUID id, String email, String perfil) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

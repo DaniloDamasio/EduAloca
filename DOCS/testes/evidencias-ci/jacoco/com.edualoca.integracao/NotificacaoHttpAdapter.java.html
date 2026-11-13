@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificacaoHttpAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edualoca</a> &gt; <a href="index.source.html" class="el_package">com.edualoca.integracao</a> &gt; <span class="el_source">NotificacaoHttpAdapter.java</span></div><h1>NotificacaoHttpAdapter.java</h1><pre class="source lang-java linenums">package com.edualoca.integracao;
+
+import com.edualoca.domain.notificacao.NotificacaoService;
+import com.edualoca.domain.reserva.Reserva;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Adapter HTTP real para {@link NotificacaoService.NotificadorExterno}. 5xx recebe uma
+ * tentativa extra (erro transitorio); 4xx, timeout e demais falhas de comunicacao nao
+ * tem retry (erro permanente ou sem garantia de idempotencia). Nunca propaga excecao,
+ * corpo de resposta do provedor ou a api-key para fora de {@link #enviar(Reserva)}.
+ */
+public class NotificacaoHttpAdapter implements NotificacaoService.NotificadorExterno {
+
+<span class="fc" id="L26">    private static final Logger LOG = Logger.getLogger(NotificacaoHttpAdapter.class.getName());</span>
+    private static final int MAX_TENTATIVAS_ERRO_TRANSITORIO = 2;
+
+    private final String apiKey;
+    private final RestClient restClient;
+
+<span class="fc" id="L32">    public NotificacaoHttpAdapter(String baseUrl, String apiKey, Duration timeoutConexao, Duration timeoutLeitura) {</span>
+<span class="fc" id="L33">        this.apiKey = apiKey;</span>
+<span class="fc" id="L34">        HttpClient httpClient = HttpClient.newBuilder()</span>
+<span class="fc" id="L35">                .version(HttpClient.Version.HTTP_1_1)</span>
+<span class="fc" id="L36">                .connectTimeout(timeoutConexao)</span>
+<span class="fc" id="L37">                .build();</span>
+<span class="fc" id="L38">        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);</span>
+<span class="fc" id="L39">        requestFactory.setReadTimeout(timeoutLeitura);</span>
+<span class="fc" id="L40">        this.restClient = RestClient.builder()</span>
+<span class="fc" id="L41">                .baseUrl(baseUrl)</span>
+<span class="fc" id="L42">                .requestFactory(requestFactory)</span>
+<span class="fc" id="L43">                .build();</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public boolean enviar(Reserva reserva) {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        for (int tentativa = 1; tentativa &lt;= MAX_TENTATIVAS_ERRO_TRANSITORIO; tentativa++) {</span>
+            try {
+<span class="fc" id="L50">                restClient.post()</span>
+<span class="fc" id="L51">                        .uri(&quot;/notificacoes&quot;)</span>
+<span class="fc" id="L52">                        .header(&quot;Authorization&quot;, &quot;Bearer &quot; + apiKey)</span>
+<span class="fc" id="L53">                        .body(corpoDaNotificacao(reserva))</span>
+<span class="fc" id="L54">                        .retrieve()</span>
+<span class="fc" id="L55">                        .toBodilessEntity();</span>
+<span class="fc" id="L56">                return true;</span>
+<span class="fc" id="L57">            } catch (RestClientResponseException ex) {</span>
+<span class="fc" id="L58">                HttpStatusCode status = ex.getStatusCode();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                if (status.is4xxClientError()) {</span>
+<span class="fc" id="L60">                    registrarFalha(&quot;provedor de notificacao recusou a requisicao (erro permanente)&quot;);</span>
+<span class="fc" id="L61">                    return false;</span>
+                }
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                boolean ultimaTentativa = tentativa == MAX_TENTATIVAS_ERRO_TRANSITORIO;</span>
+<span class="fc" id="L64">                registrarFalha(&quot;provedor de notificacao respondeu com erro transitorio&quot;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                        + (ultimaTentativa ? &quot;, limite de tentativas atingido&quot; : &quot;, nova tentativa&quot;));</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (ultimaTentativa) {</span>
+<span class="fc" id="L67">                    return false;</span>
+                }
+<span class="fc" id="L69">            } catch (RestClientException ex) {</span>
+<span class="fc" id="L70">                registrarFalha(&quot;falha de comunicacao com o provedor de notificacao (&quot; + ex.getClass().getSimpleName() + &quot;)&quot;);</span>
+<span class="fc" id="L71">                return false;</span>
+<span class="fc" id="L72">            }</span>
+        }
+<span class="nc" id="L74">        return false;</span>
+    }
+
+    private Map&lt;String, Object&gt; corpoDaNotificacao(Reserva reserva) {
+<span class="fc" id="L78">        return Map.of(</span>
+<span class="fc" id="L79">                &quot;reservaId&quot;, reserva.getId().toString(),</span>
+<span class="fc" id="L80">                &quot;estado&quot;, reserva.getEstado().name(),</span>
+<span class="fc" id="L81">                &quot;destinatarioId&quot;, reserva.getSolicitanteId().toString()</span>
+        );
+    }
+
+    private void registrarFalha(String mensagem) {
+<span class="fc" id="L86">        UUID correlacaoId = UUID.randomUUID();</span>
+<span class="fc" id="L87">        LOG.log(Level.WARNING, &quot;[correlacaoId={0}] {1}&quot;, new Object[] {correlacaoId, mensagem});</span>
+<span class="fc" id="L88">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

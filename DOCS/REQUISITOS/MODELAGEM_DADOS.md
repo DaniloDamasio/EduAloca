@@ -118,7 +118,7 @@ consultável eficientemente para checagem de sobreposição — ver RNF-01/RNF-0
 `tsrange`, extensão `btree_gist`) combinada a lock otimista (`versao`, ver `Reserva`) e
 revalidação na camada de serviço, garantindo RF-15/RF-17 mesmo sob concorrência. PostgreSQL
 é o SGBD adotado pelo projeto — ver decisão e justificativa completa em
-[docs/arquitetura.md §11](../../docs/arquitetura.md#11-decisão-de-banco-de-dados-postgresql).
+[DOCS/arquitetura.md §11](../arquitetura.md#11-decisão-de-banco-de-dados-postgresql).
 
 ### Manutencao
 Período de bloqueio de um recurso. (Suporta RF-21, RF-22, RF-23)
@@ -217,7 +217,7 @@ Sala / Professor / Material (1) ──< AuditoriaEvento (entidade correspondente
 - **Campo `versao` em Reserva**: suporta controle de concorrência otimista (`@Version` em
   JPA), peça-chave para a proteção contra dupla reserva validada por teste (RF-17,
   RNF-08). Atua em conjunto com a constraint de exclusão do PostgreSQL em
-  `ReservaRecurso` (ver acima e [docs/arquitetura.md §11](../../docs/arquitetura.md#11-decisão-de-banco-de-dados-postgresql)):
+  `ReservaRecurso` (ver acima e [DOCS/arquitetura.md §11](../arquitetura.md#11-decisão-de-banco-de-dados-postgresql)):
   o lock otimista protege no nível da aplicação, a constraint de banco protege mesmo que a
   aplicação falhe em revalidar.
 - **`exigeAprovacao` derivado e persistido na Reserva**: evita recalcular a cada leitura se

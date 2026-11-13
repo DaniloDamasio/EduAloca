@@ -45,6 +45,10 @@ public final class Banco {
     public static final Map<String, com.edualoca.domain.usuario.TentativasLogin> tentativasLogin = new ConcurrentHashMap<>();
 
     public static final UUID SALA_EXCLUIDA_POR_CONFLITO_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    /** Ids fixos do seed: no modo PostgreSQL o catalogo sobrevive ao reinicio, e id aleatorio duplicaria o seed a cada subida. */
+    public static final UUID SALA_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    public static final UUID PROFESSOR_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    public static final UUID MATERIAL_SEED_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
     public static final UUID RESPONSAVEL_BLOCO_A_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
     public static final UUID RESPONSAVEL_BLOCO_B_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
     public static final UUID ADMINISTRADOR_ID = UUID.fromString("00000000-0000-0000-0000-0000000000ad");
@@ -86,7 +90,7 @@ public final class Banco {
             if (seeded) {
                 return;
             }
-            Sala salaSeed = new Sala(UUID.randomUUID(), "Laboratorio 1", "laboratorio", 20, "Bloco A", false);
+            Sala salaSeed = new Sala(SALA_SEED_ID, "Laboratorio 1", "laboratorio", 20, "Bloco A", false);
             salas.put(salaSeed.getId(), salaSeed);
 
             Sala salaExcluida = new Sala(SALA_EXCLUIDA_POR_CONFLITO_ID, "Laboratorio Indisponivel", "laboratorio", 20, "Bloco A", false);
@@ -95,12 +99,12 @@ public final class Banco {
                     LocalDateTime.of(2026, 3, 10, 9, 0), LocalDateTime.of(2026, 3, 10, 13, 0), "manutencao de exemplo");
             manutencoes.put(manutencaoSeed.getId(), manutencaoSeed);
 
-            Professor professorSeed = new Professor(UUID.randomUUID(), "Prof. Seed", "SEED-001",
+            Professor professorSeed = new Professor(PROFESSOR_SEED_ID, "Prof. Seed", "SEED-001",
                     List.of(new Competencia("Robotica")));
             professores.put(professorSeed.getId(), professorSeed);
             professorIdPorIdentificador.put(professorSeed.getIdentificadorInstitucional(), professorSeed.getId());
 
-            Material materialSeed = new Material(UUID.randomUUID(), "Projetor Seed", "projetor", 3, false);
+            Material materialSeed = new Material(MATERIAL_SEED_ID, "Projetor Seed", "projetor", 3, false);
             materiais.put(materialSeed.getId(), materialSeed);
 
             credenciais.putAll(HashesSeed.SOLICITANTES);

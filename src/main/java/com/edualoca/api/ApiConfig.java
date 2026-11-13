@@ -3,6 +3,7 @@ package com.edualoca.api;
 import com.edualoca.api.seguranca.UsuarioAutenticadoResolver;
 import com.edualoca.domain.notificacao.NotificacaoService;
 import com.edualoca.domain.recurso.CadastroRecursoService;
+import com.edualoca.domain.recurso.CatalogoRepositorio;
 import com.edualoca.domain.recurso.PesquisaRecursoService;
 import com.edualoca.domain.relatorio.RelatorioService;
 import com.edualoca.domain.reserva.HistoricoReservaRepositorio;
@@ -50,8 +51,9 @@ public class ApiConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public CadastroRecursoService cadastroRecursoService(Clock clock) {
-        return new CadastroRecursoService(clock);
+    public CadastroRecursoService cadastroRecursoService(Clock clock, ObjectProvider<CatalogoRepositorio> catalogo) {
+        // PostgreSQL quando configurado (PersistenciaPostgresConfig); caso contrario, so o cache em memoria.
+        return new CadastroRecursoService(clock, catalogo.getIfAvailable(() -> CatalogoRepositorio.NENHUM));
     }
 
     @Bean

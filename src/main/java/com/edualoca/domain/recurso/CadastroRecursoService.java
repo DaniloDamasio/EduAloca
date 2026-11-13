@@ -18,18 +18,25 @@ public class CadastroRecursoService {
     private final Clock clock;
     /** Autor gravado nos eventos de auditoria (RF-28); {@code null} quando o servico e usado sem ator (testes antigos). */
     private final UUID autorId;
+    /** Grava cada mudanca de cadastro (PostgreSQL) ou nada (memoria); o {@code Banco} continua sendo o cache de leitura. */
+    private final CatalogoRepositorio catalogo;
 
     public CadastroRecursoService() {
         this(Clock.systemDefaultZone());
     }
 
     public CadastroRecursoService(Clock clock) {
-        this(clock, null);
+        this(clock, CatalogoRepositorio.NENHUM);
     }
 
-    private CadastroRecursoService(Clock clock, UUID autorId) {
+    public CadastroRecursoService(Clock clock, CatalogoRepositorio catalogo) {
+        this(clock, null, catalogo);
+    }
+
+    private CadastroRecursoService(Clock clock, UUID autorId, CatalogoRepositorio catalogo) {
         this.clock = clock;
         this.autorId = autorId;
+        this.catalogo = catalogo;
     }
 
     /**
@@ -37,7 +44,7 @@ public class CadastroRecursoService {
      * inativacao e manutencao). Usado pela camada HTTP com o usuario do token; nunca com um campo do corpo.
      */
     public CadastroRecursoService por(Usuario autor) {
-        return new CadastroRecursoService(clock, autor == null ? null : autor.getId());
+        return new CadastroRecursoService(clock, autor == null ? null : autor.getId(), catalogo);
     }
 
     public Sala cadastrarSala(String nome, String tipo, int capacidade, String localizacao, boolean restrito) {
@@ -45,6 +52,7 @@ public class CadastroRecursoService {
         validarSala(nome, tipo, capacidade, localizacao);
         Sala sala = new Sala(UUID.randomUUID(), nome, tipo, capacidade, localizacao, restrito);
         Banco.salas.put(sala.getId(), sala);
+        catalogo.salvar(sala);
         AuditoriaService.registrar("Sala", sala.getId(), "CRIACAO", autorId, LocalDateTime.now(clock));
         return sala;
     }
@@ -59,6 +67,7 @@ public class CadastroRecursoService {
         Professor professor = new Professor(UUID.randomUUID(), nome, identificadorInstitucional, competencias);
         Banco.professores.put(professor.getId(), professor);
         Banco.professorIdPorIdentificador.put(identificadorInstitucional, professor.getId());
+        catalogo.salvar(professor);
         AuditoriaService.registrar("Professor", professor.getId(), "CRIACAO", autorId, LocalDateTime.now(clock));
         return professor;
     }
@@ -68,6 +77,7 @@ public class CadastroRecursoService {
         validarMaterial(nome, tipo, quantidadeTotal);
         Material material = new Material(UUID.randomUUID(), nome, tipo, quantidadeTotal, restrito);
         Banco.materiais.put(material.getId(), material);
+        catalogo.salvar(material);
         AuditoriaService.registrar("Material", material.getId(), "CRIACAO", autorId, LocalDateTime.now(clock));
         return material;
     }
@@ -144,6 +154,7 @@ public class CadastroRecursoService {
     public void inativarSala(Sala sala) {
         Banco.seedSeNecessario();
         sala.inativar();
+        catalogo.salvar(sala);
         AuditoriaService.registrar("Sala", sala.getId(), "INATIVACAO", autorId, LocalDateTime.now(clock));
     }
 
@@ -153,6 +164,7 @@ public class CadastroRecursoService {
         Sala sala = existente(Banco.salas.get(id), "Sala");
         validarSala(nome, tipo, capacidade, localizacao);
         sala.atualizar(nome, tipo, capacidade, localizacao, restrito);
+        catalogo.salvar(sala);
         AuditoriaService.registrar("Sala", sala.getId(), "ATUALIZACAO", autorId, LocalDateTime.now(clock));
         return sala;
     }
@@ -163,6 +175,7 @@ public class CadastroRecursoService {
         Professor professor = existente(Banco.professores.get(id), "Professor");
         validarProfessor(nome, competencias);
         professor.atualizar(nome, competencias);
+        catalogo.salvar(professor);
         AuditoriaService.registrar("Professor", professor.getId(), "ATUALIZACAO", autorId, LocalDateTime.now(clock));
         return professor;
     }
@@ -171,6 +184,7 @@ public class CadastroRecursoService {
         Banco.seedSeNecessario();
         Professor professor = existente(Banco.professores.get(id), "Professor");
         professor.inativar();
+        catalogo.salvar(professor);
         AuditoriaService.registrar("Professor", professor.getId(), "INATIVACAO", autorId, LocalDateTime.now(clock));
     }
 
@@ -180,6 +194,7 @@ public class CadastroRecursoService {
         Material material = existente(Banco.materiais.get(id), "Material");
         validarMaterial(nome, tipo, quantidadeTotal);
         material.atualizar(nome, tipo, quantidadeTotal, restrito);
+        catalogo.salvar(material);
         AuditoriaService.registrar("Material", material.getId(), "ATUALIZACAO", autorId, LocalDateTime.now(clock));
         return material;
     }
@@ -188,6 +203,7 @@ public class CadastroRecursoService {
         Banco.seedSeNecessario();
         Material material = existente(Banco.materiais.get(id), "Material");
         material.inativar();
+        catalogo.salvar(material);
         AuditoriaService.registrar("Material", material.getId(), "INATIVACAO", autorId, LocalDateTime.now(clock));
     }
 

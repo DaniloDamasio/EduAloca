@@ -155,4 +155,32 @@ class PersistenciaReinicioIT {
                 () -> assertEquals(Boolean.FALSE, jdbc.queryForObject("SELECT ativo FROM sala WHERE id = ?", Boolean.class, salaId),
                         "inativação feita depois do reinício foi gravada"));
     }
+
+    @Test
+    @DisplayName("Login real: depois do reinício, o Solicitante do seed continua dono das próprias reservas e pode cancelá-las")
+    void solicitanteDoSeedContinuaDonoDepoisDoReinicio() {
+        UUID reservaId;
+        UUID idAntes;
+        try (ConfigurableApplicationContext a = subirAplicacao()) {
+            Usuario ana = a.getBean(com.edualoca.domain.usuario.AutenticacaoService.class)
+                    .autenticar("usuario@example.com", "senhaValida123");
+            Sala sala = a.getBean(CadastroRecursoService.class).por(administrador)
+                    .cadastrarSala("Sala do Dono", "aula", 20, "Bloco A", false);
+            reservaId = a.getBean(ReservaService.class)
+                    .criar(ana, INICIO.plusDays(3), FIM.plusDays(3), "Aula da Ana", List.of(new ReservaRecurso(sala, 1))).getId();
+            idAntes = ana.getId();
+        }
+
+        Banco.resetParaTeste();
+
+        try (ConfigurableApplicationContext b = subirAplicacao()) {
+            Usuario ana = b.getBean(com.edualoca.domain.usuario.AutenticacaoService.class)
+                    .autenticar("usuario@example.com", "senhaValida123");
+            ReservaService reservas = b.getBean(ReservaService.class);
+            assertAll(
+                    () -> assertEquals(idAntes, ana.getId(), "o id da conta não pode mudar a cada subida"),
+                    () -> assertThat(reservas.listar(ana)).extracting(Reserva::getId).contains(reservaId));
+            assertEquals(EstadoReserva.CANCELADA, reservas.cancelar(ana, reservaId, "remarcada").getEstado());
+        }
+    }
 }
